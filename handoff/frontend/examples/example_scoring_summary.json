@@ -1,0 +1,13 @@
+{
+  "input": "outputs\\smoke_test\\crew_observations.jsonl",
+  "astronauts_scored": 8,
+  "days_scored": 240,
+  "errors": [],
+  "sans_tier_distribution": {
+    "unresolved": 240
+  },
+  "venous_tier_distribution": {
+    "unresolved": 240
+  },
+  "note": "Every probability in crew_scored.jsonl is null: no approved assumption currently authorizes a SANS or venous probability calculation. Tiers reflect only rule-based logic (red-flag -> urgent, poor quality -> repeat) or the explicit 'unresolved' insufficient-evidence state."
+}

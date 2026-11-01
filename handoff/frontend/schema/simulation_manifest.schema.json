@@ -1,0 +1,87 @@
+{
+  "additionalProperties": false,
+  "description": "Defect 2 fix: an approved numeric assumption authorizes a VALUE, not a working\nGENERATION ALGORITHM for that value - the two fields below must never be collapsed\ninto one \"generation_status\" string, because that previously let \"complete\"-looking\nstatus imply a physiological model that does not yet exist in code.",
+  "properties": {
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "random_seed": {
+      "title": "Random Seed",
+      "type": "integer"
+    },
+    "crew_size": {
+      "title": "Crew Size",
+      "type": "integer"
+    },
+    "mission_duration_days": {
+      "title": "Mission Duration Days",
+      "type": "integer"
+    },
+    "scenario_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Scenario Counts",
+      "type": "object"
+    },
+    "schema_version": {
+      "default": "0.2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "parameter_registry_parameter_count": {
+      "title": "Parameter Registry Parameter Count",
+      "type": "integer"
+    },
+    "assumption_registry_assumption_count": {
+      "title": "Assumption Registry Assumption Count",
+      "type": "integer"
+    },
+    "active_assumption_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Active Assumption Ids",
+      "type": "array"
+    },
+    "scenario_structure_generated": {
+      "default": true,
+      "title": "Scenario Structure Generated",
+      "type": "boolean"
+    },
+    "physiological_values_generated": {
+      "default": false,
+      "title": "Physiological Values Generated",
+      "type": "boolean"
+    },
+    "physiological_generation_blocked_reasons": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Physiological Generation Blocked Reasons",
+      "type": "object"
+    },
+    "generation_status": {
+      "title": "Generation Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "created_at",
+    "random_seed",
+    "crew_size",
+    "mission_duration_days",
+    "scenario_counts",
+    "parameter_registry_parameter_count",
+    "assumption_registry_assumption_count",
+    "generation_status"
+  ],
+  "title": "SimulationManifest",
+  "type": "object"
+}

@@ -1,0 +1,391 @@
+{
+  "$defs": {
+    "MeasurementQuality": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/QualityStatus"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "weight": {
+          "default": 1.0,
+          "title": "Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "MeasurementQuality",
+      "type": "object"
+    },
+    "ObservationMetadata": {
+      "additionalProperties": false,
+      "description": "Monitoring-visible provenance only. Schema v0.2.0 (breaking change from v0.1.0):\n``scenario_label`` was REMOVED from here - see Defect 1 of the Unified Prompt 4-5\ncorrective review. A hidden ground-truth scenario identity must never be readable\nfrom a record that the monitoring engine, scheduler, or frontend can see. Scenario\nlabel and onset-day information now live exclusively on GroundTruthRecord, which\nis written to a separate evaluation-only file and is never passed to\nassess_history() or any scheduling policy.",
+      "properties": {
+        "synthetic": {
+          "default": true,
+          "title": "Synthetic",
+          "type": "boolean"
+        },
+        "synthetic_label": {
+          "default": "SYNTHETIC - NOT REAL ASTRONAUT DATA",
+          "title": "Synthetic Label",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": "0.2.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "generation_blocked": {
+          "default": false,
+          "title": "Generation Blocked",
+          "type": "boolean"
+        },
+        "blocked_reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Blocked Reasons",
+          "type": "array"
+        },
+        "approved_assumptions_used": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Approved Assumptions Used",
+          "type": "array"
+        }
+      },
+      "required": [
+        "run_id"
+      ],
+      "title": "ObservationMetadata",
+      "type": "object"
+    },
+    "OutcomeProbability": {
+      "additionalProperties": false,
+      "description": "SANS and venous probabilities are always independent fields - never a\ncombined/overall score. None means no validated calculation is currently possible;\n0 is never substituted for an unknown probability.",
+      "properties": {
+        "sans": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sans"
+        },
+        "venous": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Venous"
+        }
+      },
+      "title": "OutcomeProbability",
+      "type": "object"
+    },
+    "OutcomeTier": {
+      "additionalProperties": false,
+      "properties": {
+        "sans": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TierValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "venous": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TierValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "OutcomeTier",
+      "type": "object"
+    },
+    "QualityStatus": {
+      "enum": [
+        "ok",
+        "degraded",
+        "failed",
+        "not_taken"
+      ],
+      "title": "QualityStatus",
+      "type": "string"
+    },
+    "ScanMeasurement": {
+      "additionalProperties": false,
+      "description": "Structured confirmatory measurement. Units: onsd_mm, jugular_area_mm2 as named.",
+      "properties": {
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScanType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "onsd_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Onsd Mm"
+        },
+        "on_axis": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "On Axis"
+        },
+        "jugular_area_mm2": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jugular Area Mm2"
+        },
+        "jugular_flow_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jugular Flow Class"
+        },
+        "jugular_collapsibility_lost": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jugular Collapsibility Lost"
+        },
+        "oct_disc_edema": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Oct Disc Edema"
+        },
+        "visual_acuity_change": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Visual Acuity Change"
+        },
+        "red_flag_symptom": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Red Flag Symptom"
+        },
+        "quality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MeasurementQuality"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "ScanMeasurement",
+      "type": "object"
+    },
+    "ScanType": {
+      "enum": [
+        "onsd",
+        "jugular",
+        "oct",
+        "visual_acuity",
+        "symptoms"
+      ],
+      "title": "ScanType",
+      "type": "string"
+    },
+    "TierValue": {
+      "enum": [
+        "monitor",
+        "repeat",
+        "consult",
+        "urgent",
+        "unresolved"
+      ],
+      "title": "TierValue",
+      "type": "string"
+    },
+    "WeakSignals": {
+      "additionalProperties": false,
+      "description": "Daily cheap signals. Units: hrv_hf_power/hrv_lf_hf are dimensionless ratios as\ngiven in the source (no further normalization is specified); ptt_ms is milliseconds.",
+      "properties": {
+        "hrv_hf_power": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hrv Hf Power"
+        },
+        "hrv_lf_hf": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hrv Lf Hf"
+        },
+        "ptt_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ptt Ms"
+        }
+      },
+      "title": "WeakSignals",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One record per astronaut per day - the shared contract's core unit.",
+  "properties": {
+    "astronaut_id": {
+      "title": "Astronaut Id",
+      "type": "string"
+    },
+    "day": {
+      "title": "Day",
+      "type": "integer"
+    },
+    "weak_signals": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WeakSignals"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "scan": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ScanMeasurement"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "probability": {
+      "$ref": "#/$defs/OutcomeProbability"
+    },
+    "tier": {
+      "$ref": "#/$defs/OutcomeTier"
+    },
+    "metadata": {
+      "$ref": "#/$defs/ObservationMetadata"
+    }
+  },
+  "required": [
+    "astronaut_id",
+    "day",
+    "metadata"
+  ],
+  "title": "AstronautDayObservation",
+  "type": "object"
+}

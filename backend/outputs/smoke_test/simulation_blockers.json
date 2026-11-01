@@ -1,0 +1,53 @@
+{
+  "run_id": "run-smoke-001",
+  "stage": "generate_crew",
+  "blockers": [
+    {
+      "capability": "personal_onsd_baseline_values",
+      "blocked_by": [
+        "onsd_baseline_sd_values"
+      ],
+      "message": "Requires assumption(s) ['onsd_baseline_sd_values'] to be approved with an assigned value before personal_onsd_baseline_values can be generated without fabrication."
+    },
+    {
+      "capability": "daily_hrv_weak_signal",
+      "blocked_by": [
+        "hrv_trigger_assumed_accuracy"
+      ],
+      "message": "Requires assumption(s) ['hrv_trigger_assumed_accuracy'] to be approved with an assigned value before daily_hrv_weak_signal can be generated without fabrication."
+    },
+    {
+      "capability": "daily_ptt_weak_signal",
+      "blocked_by": [
+        "ptt_trigger_assumed_usefulness"
+      ],
+      "message": "Requires assumption(s) ['ptt_trigger_assumed_usefulness'] to be approved with an assigned value before daily_ptt_weak_signal can be generated without fabrication."
+    },
+    {
+      "capability": "onsd_scan_values",
+      "blocked_by": [
+        "onsd_baseline_sd_values"
+      ],
+      "message": "Requires assumption(s) ['onsd_baseline_sd_values'] to be approved with an assigned value before onsd_scan_values can be generated without fabrication."
+    },
+    {
+      "capability": "jugular_scan_values",
+      "blocked_by": [
+        "jugular_flow_risk_mapping"
+      ],
+      "message": "Requires assumption(s) ['jugular_flow_risk_mapping'] to be approved with an assigned value before jugular_scan_values can be generated without fabrication."
+    },
+    {
+      "capability": "measurement_quality_failure_injection",
+      "blocked_by": [
+        "onsd_scan_failure_rate"
+      ],
+      "message": "Requires assumption(s) ['onsd_scan_failure_rate'] to be approved with an assigned value before measurement_quality_failure_injection can be generated without fabrication."
+    },
+    {
+      "capability": "sans_venous_onset_day_assignment",
+      "blocked_by": [],
+      "message": "No approved convention exists for choosing which day a hidden SANS/venous onset is placed within the 30-day mission. Picking one (e.g. a fixed day, or a sampled day) requires a human-approved simulation-design rule - it is not itself a sourced scientific parameter, but assigning it without approval would silently bake in an unreviewed assumption, which this generator does not do."
+    }
+  ]
+}

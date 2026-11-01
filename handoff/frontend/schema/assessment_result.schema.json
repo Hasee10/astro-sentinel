@@ -1,0 +1,117 @@
+{
+  "$defs": {
+    "OutcomeAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "probability": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Probability"
+        },
+        "probability_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Probability Label"
+        },
+        "tier": {
+          "$ref": "#/$defs/TierValue"
+        },
+        "measurement_quality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QualityStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "evidence_references": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence References",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tier",
+        "explanation"
+      ],
+      "title": "OutcomeAssessment",
+      "type": "object"
+    },
+    "QualityStatus": {
+      "enum": [
+        "ok",
+        "degraded",
+        "failed",
+        "not_taken"
+      ],
+      "title": "QualityStatus",
+      "type": "string"
+    },
+    "TierValue": {
+      "enum": [
+        "monitor",
+        "repeat",
+        "consult",
+        "urgent",
+        "unresolved"
+      ],
+      "title": "TierValue",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "astronaut_id": {
+      "title": "Astronaut Id",
+      "type": "string"
+    },
+    "as_of_day": {
+      "title": "As Of Day",
+      "type": "integer"
+    },
+    "sans": {
+      "$ref": "#/$defs/OutcomeAssessment"
+    },
+    "venous": {
+      "$ref": "#/$defs/OutcomeAssessment"
+    }
+  },
+  "required": [
+    "astronaut_id",
+    "as_of_day",
+    "sans",
+    "venous"
+  ],
+  "title": "AssessmentResult",
+  "type": "object"
+}

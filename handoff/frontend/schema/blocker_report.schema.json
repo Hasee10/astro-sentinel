@@ -1,0 +1,54 @@
+{
+  "$defs": {
+    "Blocker": {
+      "additionalProperties": false,
+      "properties": {
+        "capability": {
+          "title": "Capability",
+          "type": "string"
+        },
+        "blocked_by": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Blocked By",
+          "type": "array"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "capability",
+        "message"
+      ],
+      "title": "Blocker",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "stage": {
+      "title": "Stage",
+      "type": "string"
+    },
+    "blockers": {
+      "items": {
+        "$ref": "#/$defs/Blocker"
+      },
+      "title": "Blockers",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "stage"
+  ],
+  "title": "BlockerReport",
+  "type": "object"
+}

@@ -1,0 +1,20 @@
+doc attached has a parameter sheet,
+that doc has all the data mainly on which the simulation needs to be run and whatever number
+is in there will come from that parameter sheet. nothing no thing else that AI does must be there,
+as we will strictly use these numbers. this can cause the tool to be messed up. 
+
+once u go over the parameters u will see I have mentioned some things that are not on the 
+research paper or other materials or in literature anywhere broadly saying, so I have labelled them
+and mentioned them as speculation. this is an assumption and not a hard core fact.
+
+venus has thrombosis and one more thing I dont remember and those are seperate plots so you will
+not correlate those as well, keep those estimates distinctive as is.
+
+we will make the software monitoring only and not any treatment type thing. we wont write that
+we will make a treatment for this. the simulation we run needs to be made sure that we tell it is 
+synthetic and not actual data of the astronauts themselves on where we have run these simulations.
+
+go within the parameter sheet	
+
+
+

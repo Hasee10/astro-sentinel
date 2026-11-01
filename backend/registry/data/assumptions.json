@@ -1,0 +1,156 @@
+[
+  {
+    "assumption_id": "sans_prior_mapping",
+    "description": "A formula mapping pre-flight susceptibility inputs (baseline ONSD, optic cup size, dural sinus asymmetry) to a numeric starting SANS-progression probability (prior).",
+    "value_or_range": null,
+    "scientific_purpose": "Would initialize a per-astronaut Bayesian prior for SANS monitoring, if and when a SANS probability model is approved. The source document's own worked example uses an illustrative 5% prior and explicitly labels it 'a placeholder assumption', not a derived or validated figure.",
+    "assumption_kind": "numerical",
+    "related_parameters": ["onsd_healthy_baseline_range", "onsd_baseline_spread_assumption"],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "Optic cup size and dural sinus asymmetry are named as inputs in the mission brief's prose but have no corresponding numeric entry anywhere in the Table 4 parameter sheet. No mapping formula exists in the source. Per Correction 2, the 5% illustrative figure must not be treated as a real clinical prior."
+  },
+  {
+    "assumption_id": "venous_probability_model",
+    "description": "Whether and how to produce any calibrated numeric probability for venous stasis, versus keeping venous monitoring as a qualitative/insufficient-evidence state.",
+    "value_or_range": null,
+    "scientific_purpose": "Would determine whether the Venous Monitoring Engine (future phase) ever emits a probability field, or only qualitative evidence (flow class, collapsibility, days persistent).",
+    "assumption_kind": "scope_decision",
+    "related_parameters": ["jugular_stasis_prevalence_iss", "jugular_csa_by_gravity_level", "jugular_area_velocity_cutoffs", "jugular_ultrasound_measures_inflight"],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "No sensitivity, specificity, or likelihood-ratio data exists anywhere in the parameter sheet for any jugular ultrasound measure. Per Correction 2, no venous likelihood ratio may be invented. Recommended default pending approval: venous monitoring state remains qualitative / insufficient-evidence, never a fabricated percentage."
+  },
+  {
+    "assumption_id": "decision_tier_thresholds",
+    "description": "The numeric probability thresholds that would separate the Monitor / Repeat / Consult / Urgent tiers, for each outcome independently.",
+    "value_or_range": null,
+    "scientific_purpose": "Would gate tier assignment in the Explainable Monitoring Decision Engine (future phase). The tier states themselves are specified in the mission brief (Table 2); the numeric cutoffs between them are not.",
+    "assumption_kind": "numerical",
+    "related_parameters": [],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "No threshold values exist anywhere in the source document. Any future values must be clearly labeled as simulation-only design choices, swept in the sensitivity analysis rather than fixed, and never presented as clinical cutoffs."
+  },
+  {
+    "assumption_id": "onsd_baseline_sd_values",
+    "description": "The within-person ONSD standard deviation (and/or between-astronaut spread SD) used to generate synthetic personal baselines and to judge drift from baseline.",
+    "value_or_range": null,
+    "scientific_purpose": "Needed by the Synthetic Mission Simulator and Personal Baseline Manager (future phases) to generate per-astronaut baselines and noise.",
+    "assumption_kind": "numerical",
+    "related_parameters": ["onsd_baseline_spread_assumption", "onsd_healthy_baseline_range"],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "The source document explicitly states no within-person SD is given anywhere, and instructs that it be 'set by lead' and swept across a range rather than fixed to one value."
+  },
+  {
+    "assumption_id": "hrv_trigger_assumed_accuracy",
+    "description": "The assumed predictive accuracy of the HRV weak-signal trigger, used only as a swept parameter across simulation runs (e.g. the document's own illustrative example points of 50%, 60%, 70% and up).",
+    "value_or_range": null,
+    "scientific_purpose": "Drives the Adaptive Measurement Scheduler's trigger logic and the fixed-vs-adaptive sensitivity analysis (future phases). This is the project's central open research question, not a settled input.",
+    "assumption_kind": "numerical",
+    "related_parameters": ["hrv_onsd_coefficient", "hrv_confounders"],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "No coefficient relating HRV to ONSD/SANS exists in the source; the document explicitly frames this accuracy as unknown and to be swept, never as a measured or validated figure. Must never be displayed to crew or ground as a calibrated accuracy."
+  },
+  {
+    "assumption_id": "ptt_trigger_assumed_usefulness",
+    "description": "The assumed predictive usefulness of pulse transit time (PTT) as an optional secondary trigger modifier.",
+    "value_or_range": null,
+    "scientific_purpose": "Same role as hrv_trigger_assumed_accuracy but for PTT, which the mission brief calls an 'optional slow modifier' and a lower priority than HRV.",
+    "assumption_kind": "numerical",
+    "related_parameters": [],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "PTT is named only in the mission brief's prose inputs list; it has no corresponding row in the Table 4 parameter sheet at all. Labeled a hypothesis in the source, same as HRV."
+  },
+  {
+    "assumption_id": "jugular_flow_risk_mapping",
+    "description": "A numeric mapping from jugular area / flow class to a venous-stasis risk flag or level, derived from jugular_csa_by_gravity_level and swept rather than asserted.",
+    "value_or_range": null,
+    "scientific_purpose": "Would let the Venous Monitoring Engine (future phase) turn a structured jugular reading into a risk-relevant signal, pending resolution of venous_probability_model.",
+    "assumption_kind": "numerical",
+    "related_parameters": ["jugular_csa_by_gravity_level", "jugular_area_velocity_cutoffs", "jugular_ultrasound_measures_inflight"],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "No numeric cutoff exists in any cited source, per jugular_area_velocity_cutoffs. Any future mapping is simulation-only and must be clearly labeled as such."
+  },
+  {
+    "assumption_id": "onsd_icu_cutoff_reuse_scope",
+    "description": "Whether, and exactly how, the ICU/ICP 5.0mm ONSD cutoff may be reused within SANS monitoring (e.g. as a soft trend marker rather than a hard diagnostic threshold).",
+    "value_or_range": null,
+    "scientific_purpose": "Would govern how onsd_icu_icp_cutoff may be consumed by the SANS Monitoring Engine (future phase), if at all.",
+    "assumption_kind": "scope_decision",
+    "related_parameters": ["onsd_icu_icp_cutoff", "onsd_healthy_baseline_range"],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "The source document itself labels this cutoff 'Established for ICU ICP; Assumption when applied to SANS' - the reuse itself is the open question, independent of the cutoff value."
+  },
+  {
+    "assumption_id": "onsd_interobserver_noise_magnitude",
+    "description": "A numeric magnitude for inter-observer ONSD measurement variability, for use as simulated scan noise.",
+    "value_or_range": null,
+    "scientific_purpose": "Would parameterize synthetic scan-noise generation in the Synthetic Mission Simulator (future phase).",
+    "assumption_kind": "numerical",
+    "related_parameters": ["onsd_interobserver_variability"],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "Source gives direction/existence only (Ballantyne et al. 2002), no numeric magnitude."
+  },
+  {
+    "assumption_id": "fixed_schedule_interval_choice",
+    "description": "The fixed measurement interval used as the comparator policy against adaptive scheduling in the evaluation (the mission brief gives 'one measurement every 7 days' only as an example, not a chosen value).",
+    "value_or_range": null,
+    "scientific_purpose": "Baseline policy for the Experimental Evaluation Engine (future phase). The source document instructs that 'the team picks the fixed schedule and states it.'",
+    "assumption_kind": "numerical",
+    "related_parameters": [],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "Must be an explicit, declared team decision, not a value inferred or defaulted silently by implementation."
+  },
+  {
+    "assumption_id": "sans_cnn_reuse_scope",
+    "description": "Whether, and exactly how, the SANS-CNN sensitivity/specificity/accuracy figures may be used given this system is explicitly not an image-analysis model.",
+    "value_or_range": null,
+    "scientific_purpose": "Would clarify, for a future phase, whether these figures may be used as the assumed reliability of an external/offline OCT classification step that produces a structured input field - the most plausible scientifically-defensible role identified - or excluded entirely.",
+    "assumption_kind": "scope_decision",
+    "related_parameters": ["sans_cnn_sensitivity", "sans_cnn_specificity", "sans_cnn_accuracy_f1"],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "The mission brief does not spell out this mapping directly; it is this project's own proposed interpretation and requires explicit sign-off before use, per Correction 2's instruction to preserve reported performance figures in their original study context."
+  },
+  {
+    "assumption_id": "evidence_atlas_lr_reliance",
+    "description": "Whether the 'Evidence Atlas' pooled ONSD likelihood-ratio figure may be used at all before its original meta-analysis is located, and if so, at what confidence relative to the three named primary studies.",
+    "value_or_range": null,
+    "scientific_purpose": "Governs how onsd_pooled_lr_evidence_atlas may be weighted relative to onsd_accuracy_koziarz_2019 / ohle_2015 / maissan_2015 in any future probability model.",
+    "assumption_kind": "scope_decision",
+    "related_parameters": ["onsd_pooled_lr_evidence_atlas"],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "Source document itself labels this 'Established (weak source)' and instructs the team to find the original meta-analysis."
+  },
+  {
+    "assumption_id": "communication_delay_exact_value",
+    "description": "The exact one-way communication delay (or delay-generation rule) to use within the documented 0-20 minute design range.",
+    "value_or_range": null,
+    "scientific_purpose": "Would configure the Communication Delay Simulator (future phase) and the crew/ground delay toggle's default and bounds.",
+    "assumption_kind": "numerical",
+    "related_parameters": ["communication_delay_one_way"],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "Source document status for this range is literally 'Confirm' - not yet confirmed by the team."
+  },
+  {
+    "assumption_id": "onsd_scan_failure_rate",
+    "description": "A numeric rate at which synthetic ONSD scans should be generated as degraded or failed (off-axis, artifact-affected, etc.).",
+    "value_or_range": null,
+    "scientific_purpose": "Would parameterize failure injection in the Synthetic Mission Simulator and drive repeat-measurement behavior (future phases).",
+    "assumption_kind": "numerical",
+    "related_parameters": ["onsd_technical_artifacts", "onsd_measurement_protocol"],
+    "approval_status": "unapproved",
+    "approved_by": null,
+    "limitations": "Source document explicitly states the failure rate is not sourced - only the qualitative artifact types are documented."
+  }
+]
