@@ -32,15 +32,44 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Sequence
 
-from contracts.models import AstronautDayObservation, Blocker
-from monitoring.engine import assess_history
+from contracts.models import AstronautDayObservation, Blocker, QualityStatus, ScanMeasurement, WeakSignals
+from monitoring.engine import SANS_SCAN_TYPES, VENOUS_SCAN_TYPES, assess_history
+from registry.design_decisions import DESIGN_DECISIONS
 from registry.loader import Registry
+
+_OUTCOME_SCAN_TYPES = {"sans": SANS_SCAN_TYPES, "venous": VENOUS_SCAN_TYPES}
 
 REQUIRED_FOR_SWEEP = {
     "fixed_schedule_interval_choice": "the fixed-schedule comparator interval",
     "hrv_trigger_assumed_accuracy": "the swept trigger-accuracy values",
     "decision_tier_thresholds": "the probability-to-tier thresholds the metrics key off of",
 }
+
+# Issue D fix (Unified Prompt 8-9); strengthened per Unified Prompt 10-11
+# section 6.3. Whether a tested trigger-firing algorithm actually exists in
+# code - empty today, exactly like
+# simulation.generation_models.IMPLEMENTED_GENERATION_ALGORITHMS. The blocker
+# below clears ONLY when this is True AND the design decision is approved -
+# never from a registry/assumption value alone, and never from a code change
+# that just deletes the blocker.
+#
+# Flipping this to True is NOT "change a boolean" - it is a claim that ALL FIVE
+# of the following are simultaneously true, and whoever flips it is asserting
+# that claim:
+#   1. The trigger model's definition has been approved
+#      (registry/design_decisions.py::DESIGN_DECISIONS["trigger_firing_simulation_model"]).
+#   2. Its numerical parameters are approved
+#      (registry/data/assumptions.json::hrv_trigger_assumed_accuracy, active).
+#   3. A concrete algorithm implementing that approved definition exists in code
+#      (not a stub, not a TODO, not a partial branch).
+#   4. That algorithm's signature actually IS a `TriggerFn` - i.e. it only
+#      consumes a `PolicyDayView` and an accuracy value, nothing broader. The
+#      type system already makes any other signature a TypeError at call time;
+#      this point exists so a reviewer checks the algorithm was WRITTEN against
+#      that contract, not merely happens to satisfy it.
+#   5. Dedicated, deterministic, passing tests exist proving (3) and (4), not
+#      just that `sweep_blockers()` returns an empty list.
+TRIGGER_FIRING_MODEL_IMPLEMENTED: bool = False
 
 
 def sweep_blockers(registry: Registry) -> list[Blocker]:
@@ -53,22 +82,28 @@ def sweep_blockers(registry: Registry) -> list[Blocker]:
         for aid, description in REQUIRED_FOR_SWEEP.items()
         if not registry.assumptions[aid].is_active()
     ]
-    # Even granting all three above, no approved rule exists for translating an assumed
-    # trigger accuracy into day-by-day firing behavior for a synthetic cohort - that
-    # translation is itself an unreviewed modeling choice, not a sourced parameter, and
-    # is listed unconditionally so it is never silently skipped.
-    blockers.append(
-        Blocker(
-            capability="trigger_firing_simulation_model",
-            blocked_by=[],
-            message=(
-                "No approved rule exists for translating an assumed trigger accuracy "
-                "(e.g. 0.7) into which days a synthetic trigger actually fires. This is "
-                "a simulation-design choice, not a parameter-sheet value, and needs "
-                "explicit human sign-off before any sweep point can be executed."
-            ),
+    # Even granting all three above, this still needs BOTH an approved design
+    # decision (registry/design_decisions.py - there is no Experimental Assumption
+    # slot for this, since it's a simulation-design choice, not a sourced
+    # parameter) AND an implemented algorithm (TRIGGER_FIRING_MODEL_IMPLEMENTED).
+    # Today neither holds, so this still fires unconditionally in practice - but
+    # unlike before, approving the decision and shipping the algorithm is enough
+    # to clear it with NO further code change needed here.
+    decision = DESIGN_DECISIONS["trigger_firing_simulation_model"]
+    if not (decision.is_approved() and TRIGGER_FIRING_MODEL_IMPLEMENTED):
+        blockers.append(
+            Blocker(
+                capability="trigger_firing_simulation_model",
+                blocked_by=[],
+                message=(
+                    "No approved rule exists for translating an assumed trigger accuracy "
+                    "(e.g. 0.7) into which days a synthetic trigger actually fires. This is "
+                    "a simulation-design choice, not a parameter-sheet value, and needs "
+                    "explicit human sign-off (registry/design_decisions.py) plus an "
+                    "implemented algorithm before any sweep point can be executed."
+                ),
+            )
         )
-    )
     return blockers
 
 
@@ -103,7 +138,14 @@ def find_crossover(
 @dataclass(frozen=True)
 class ObservableCase:
     """Everything a scheduling policy or the monitoring engine may legitimately see.
-    No onset day, no scenario label, anywhere on this type - that is the point."""
+    No onset day, no scenario label, anywhere on this type - that is the point.
+
+    `observations_by_day` is the underlying synthetic case's full day-by-day record
+    (shared, unmodified, between the fixed and adaptive runs over the SAME cohort -
+    this is what makes the two policies' comparison causally fair in the first
+    place). It is NOT, by itself, safe to hand to the monitoring engine: see
+    `visible_history()`.
+    """
 
     case_id: str
     days: Sequence[int]
@@ -111,14 +153,105 @@ class ObservableCase:
     # empty/partial for an engineering fixture that only exercises scheduling math.
     observations_by_day: dict[int, AstronautDayObservation] = field(default_factory=dict)
 
-    def history_through(self, day: int) -> list[AstronautDayObservation]:
-        """Observations with day <= `day`, sorted - the no-look-ahead slice that
-        score_crew.py's convention also uses."""
-        return [
-            self.observations_by_day[d]
-            for d in sorted(self.observations_by_day)
-            if d <= day
-        ]
+    def visible_history(self, as_of_day: int, scanned_days: set[int]) -> list[AstronautDayObservation]:
+        """Issue A fix (Unified Prompt 8-9): the POLICY-SPECIFIC, causally valid
+        history a scheduling policy's monitoring call may see as of `as_of_day`.
+
+        Before this fix, `history_through(day)` returned every recorded observation
+        with day <= as_of_day regardless of which days THIS policy actually
+        scanned - so a scan the case data happens to carry on day 6 was visible to
+        the fixed policy's day-8 assessment even though the fixed policy never
+        requested a day-6 scan. Both policies share the same underlying
+        `observations_by_day` (so they're evaluated on equivalent cases), but a
+        day's confirmatory `scan` is only revealed here when `d in scanned_days` -
+        i.e. this specific policy run actually acquired it that day. Daily
+        `weak_signals` remain visible for every day <= as_of_day regardless of scan
+        schedule (per the mission brief: cheap daily signals are not gated behind a
+        scan decision). A day outside `scanned_days` that genuinely has no scan in
+        the underlying data stays that way - this never fabricates a measurement,
+        it only ever masks one that was already there but not legitimately
+        requested.
+        """
+        visible: list[AstronautDayObservation] = []
+        for d in sorted(self.observations_by_day):
+            if d > as_of_day:
+                continue
+            obs = self.observations_by_day[d]
+            if obs.scan is not None and d not in scanned_days:
+                obs = obs.model_copy(update={"scan": None})
+            visible.append(obs)
+        return visible
+
+
+@dataclass(frozen=True)
+class PolicyDayView:
+    """Phase 10 fix (Unified Prompt 10-11, section 4.1): the restricted, explicitly
+    bounded input a scheduling TRIGGER decision may see for "today" - never the
+    full `ObservableCase`. Before this type existed, `trigger_fired_fn` received
+    the whole `ObservableCase`, including every future day's weak signals and
+    scans - a trigger implementation could have accidentally looked ahead with
+    no type-level boundary stopping it (only a comment).
+
+    Built fresh for each day by `_build_policy_day_view()`. Contains ONLY:
+    - `case_id`, `day`: identity and "today".
+    - `weak_signals_by_day`: every day's weak signals with day <= today - daily
+      cheap signals are never gated behind a scan decision.
+    - `acquired_scans_by_day`: only scans on days < today that THIS policy run
+      already scanned (its own `scanned_days_so_far`) - never today's scan
+      (the decision being made is whether to request it), never a future day's,
+      and never another policy run's acquisition.
+    - `scanned_days_so_far`: which days < today this policy already scanned.
+    - `last_known_tier`: the most recent sans/venous tier this policy computed on
+      a prior scanned day, or None if it has never scanned yet - "previous
+      monitoring states when available", with no re-derivation and no access to
+      future information.
+
+    Deliberately does NOT contain: any day > today's data, today's own scan
+    result, any onset day, any scenario label, or another policy run's state.
+    There is no field here to accidentally read any of those from - this is a
+    type-level boundary, not a comment-based promise.
+    """
+
+    case_id: str
+    day: int
+    weak_signals_by_day: dict[int, Optional[WeakSignals]] = field(default_factory=dict)
+    acquired_scans_by_day: dict[int, ScanMeasurement] = field(default_factory=dict)
+    scanned_days_so_far: tuple[int, ...] = ()
+    last_known_tier: dict[str, Optional[str]] = field(default_factory=lambda: {"sans": None, "venous": None})
+
+
+def _build_policy_day_view(
+    observable: ObservableCase,
+    day: int,
+    scanned_days_so_far: list[int],
+    last_known_tier: dict[str, Optional[str]],
+) -> PolicyDayView:
+    """Builds the restricted view for deciding whether to scan on `day`. Only
+    days strictly before `day` ever contribute a scan - see PolicyDayView's
+    docstring. `scanned_days_so_far` and `last_known_tier` are this policy run's
+    OWN state, carried forward by `_run_policy` - never another run's."""
+    weak_signals_by_day: dict[int, Optional[WeakSignals]] = {}
+    for d in observable.days:
+        if d > day:
+            continue
+        obs = observable.observations_by_day.get(d)
+        weak_signals_by_day[d] = obs.weak_signals if obs is not None else None
+
+    acquired_scans_by_day: dict[int, ScanMeasurement] = {}
+    prior_scanned_days = [d for d in scanned_days_so_far if d < day]
+    for d in prior_scanned_days:
+        obs = observable.observations_by_day.get(d)
+        if obs is not None and obs.scan is not None:
+            acquired_scans_by_day[d] = obs.scan
+
+    return PolicyDayView(
+        case_id=observable.case_id,
+        day=day,
+        weak_signals_by_day=weak_signals_by_day,
+        acquired_scans_by_day=acquired_scans_by_day,
+        scanned_days_so_far=tuple(prior_scanned_days),
+        last_known_tier=dict(last_known_tier),
+    )
 
 
 @dataclass(frozen=True)
@@ -149,8 +282,29 @@ class SweepCase:
 
 
 @dataclass(frozen=True)
+class ScanAccounting:
+    """Issue C fix: 'scans used' alone conflates several different things - a
+    scheduled day is not automatically a completed measurement, and the generator
+    currently emits only null physiological values. This makes each stage
+    explicit so the research metric's exact meaning stays transparent and can
+    never silently claim a scan-count saving the underlying data doesn't support.
+
+    `requested` is the count the legacy `scans_used` metric always meant (a day
+    the policy decided a scan was due) - unchanged. The other fields are new,
+    purely diagnostic engineering quantities.
+    """
+
+    requested: int             # policy decided a scan was due this day
+    data_available: int        # of those, the underlying case actually has non-null scan data
+    valid: int                 # of those, quality status is OK (a genuinely usable measurement)
+    degraded_or_unknown: int   # quality is DEGRADED, FAILED, or UNKNOWN
+    unavailable: int           # requested, but the underlying case has no scan data at all
+
+
+@dataclass(frozen=True)
 class OutcomeMetrics:
-    scans_used: int
+    scans_used: int  # UNCHANGED meaning: see ScanAccounting.requested - never redefined here
+    scan_accounting: ScanAccounting
     detection_delay: Optional[int]
     missed_event: bool
     false_escalations: int
@@ -163,7 +317,25 @@ class PolicyRunResult:
     per_case: dict[str, dict[str, OutcomeMetrics]]  # case_id -> outcome -> metrics
 
     def total_scans(self, outcome: str) -> int:
+        """UNCHANGED meaning (Issue C): the 'scans used' research metric - count
+        of days the policy decided a scan was due. See `total_scans_with_valid_data`
+        etc. below for the new, separate engineering breakdown."""
         return sum(m[outcome].scans_used for m in self.per_case.values())
+
+    def total_scans_with_data(self, outcome: str) -> int:
+        return sum(m[outcome].scan_accounting.data_available for m in self.per_case.values())
+
+    def total_scans_valid(self, outcome: str) -> int:
+        return sum(m[outcome].scan_accounting.valid for m in self.per_case.values())
+
+    def total_scans_degraded_or_unknown(self, outcome: str) -> int:
+        return sum(m[outcome].scan_accounting.degraded_or_unknown for m in self.per_case.values())
+
+    def total_scans_unavailable(self, outcome: str) -> int:
+        """Requested but the underlying case had no scan data at all. Today this
+        equals total_scans() exactly, for every case, because physiological
+        generation remains blocked - a stark, honest number, not a bug."""
+        return sum(m[outcome].scan_accounting.unavailable for m in self.per_case.values())
 
     def mean_detection_delay(self, outcome: str) -> Optional[float]:
         delays = [m[outcome].detection_delay for m in self.per_case.values() if m[outcome].detection_delay is not None]
@@ -183,10 +355,22 @@ class PolicyRunResult:
 
 
 # TierFn signature: (observable_case, scan_days_so_far, outcome) -> tier string, one
-# of "monitor" | "repeat" | "consult" | "urgent" | "unresolved". Receives ONLY the
-# ObservableCase - never a SweepCase, never ground truth.
+# of "monitor" | "repeat" | "consult" | "urgent" | "unresolved". Receives the
+# ObservableCase (needed because assess_history requires the full masked history,
+# not just "today") - never a SweepCase, never ground truth. Only called AFTER a
+# scan has already been requested for `scan_days_so_far[-1]`, so this is not
+# itself a same-day-leakage path (see IsDueFn/TriggerFn below for that boundary).
 TierFn = Callable[[ObservableCase, list[int], str], str]
-TriggerFn = Callable[[ObservableCase, int, float], bool]
+
+# TriggerFn signature (Phase 10 fix): receives ONLY a PolicyDayView - never the
+# full ObservableCase, never today's own scan, never the future. This is the
+# type-level fix for the temporal-leakage finding in Unified Prompt 10-11 section 4.
+TriggerFn = Callable[[PolicyDayView, float], bool]
+
+# IsDueFn signature: both policies' scheduling decision is now made from the same
+# restricted PolicyDayView, built once per day regardless of policy - the fixed
+# policy simply doesn't use most of it.
+IsDueFn = Callable[[PolicyDayView], bool]
 
 
 def make_engine_tier_fn(registry: Registry) -> TierFn:
@@ -200,7 +384,9 @@ def make_engine_tier_fn(registry: Registry) -> TierFn:
         if not scan_days_so_far:
             return "unresolved"
         as_of_day = scan_days_so_far[-1]
-        history = observable.history_through(as_of_day)
+        # Issue A fix: mask out any scan the policy itself did not request - see
+        # ObservableCase.visible_history's docstring.
+        history = observable.visible_history(as_of_day, set(scan_days_so_far))
         if not history:
             return "unresolved"
         result = assess_history(history, registry)
@@ -210,9 +396,42 @@ def make_engine_tier_fn(registry: Registry) -> TierFn:
     return _tier_fn
 
 
+def _scan_accounting(
+    observable: ObservableCase, scan_days: list[int], scan_types: set
+) -> ScanAccounting:
+    """Issue C fix: classify each requested day's scan (if any) against the
+    underlying case data - never against anything the policy could not have
+    requested. `scan_types` restricts "data available" to scans relevant to the
+    outcome being accounted for (SANS vs. venous), matching
+    monitoring.engine's own SANS_SCAN_TYPES/VENOUS_SCAN_TYPES split.
+    """
+    data_available = 0
+    valid = 0
+    degraded_or_unknown = 0
+    for day in scan_days:
+        obs = observable.observations_by_day.get(day)
+        scan = obs.scan if obs is not None else None
+        if scan is None or scan.type not in scan_types:
+            continue
+        data_available += 1
+        status = scan.quality.status if scan.quality is not None else None
+        if status == QualityStatus.OK:
+            valid += 1
+        elif status in (QualityStatus.DEGRADED, QualityStatus.FAILED, QualityStatus.UNKNOWN):
+            degraded_or_unknown += 1
+    requested = len(scan_days)
+    return ScanAccounting(
+        requested=requested,
+        data_available=data_available,
+        valid=valid,
+        degraded_or_unknown=degraded_or_unknown,
+        unavailable=requested - data_available,
+    )
+
+
 def _run_policy(
     cohort: Sequence[SweepCase],
-    is_due_fn: Callable[[ObservableCase, int], bool],
+    is_due_fn: IsDueFn,
     tier_fn: TierFn,
     policy_name: str,
 ) -> PolicyRunResult:
@@ -229,6 +448,7 @@ def _run_policy(
     for case in cohort:
         observable = case.observable  # scheduling/tier decisions see only this
         scan_days: list[int] = []
+        last_known_tier: dict[str, Optional[str]] = {"sans": None, "venous": None}
         # Tracked separately per Defect 5: Repeat-or-higher (for detection/missed-event,
         # per the mission brief's "Repeat or higher" wording) vs Consult/Urgent-only
         # (for false escalations). Never merge these two lists.
@@ -236,11 +456,16 @@ def _run_policy(
         consult_or_urgent_days: dict[str, list[int]] = {"sans": [], "venous": []}
 
         for day in observable.days:
-            if not is_due_fn(observable, day):
+            # Phase 10 fix: the scheduling decision for `day` is made from a view
+            # built BEFORE that day's own scan is requested/acquired - STEP 1
+            # (weak signals) then STEP 2 (decide) per section 4.2's ordering.
+            day_view = _build_policy_day_view(observable, day, scan_days, last_known_tier)
+            if not is_due_fn(day_view):
                 continue
             scan_days.append(day)
             for outcome in ("sans", "venous"):
                 tier = tier_fn(observable, scan_days, outcome)
+                last_known_tier[outcome] = tier
                 if tier in ESCALATION_TIERS:
                     repeat_or_higher_days[outcome].append(day)
                 if tier in CONSULT_OR_URGENT:
@@ -254,6 +479,7 @@ def _run_policy(
             fe = false_escalations(consult_or_urgent_days[outcome], onset)
             outcomes[outcome] = OutcomeMetrics(
                 scans_used=scans_used(scan_days),
+                scan_accounting=_scan_accounting(observable, scan_days, _OUTCOME_SCAN_TYPES[outcome]),
                 detection_delay=detection_delay(onset, repeat_or_higher_days[outcome]),
                 missed_event=is_missed_event(onset, repeat_or_higher_days[outcome], observable.days[-1]),
                 false_escalations=fe,
@@ -274,8 +500,9 @@ def run_sweep(
 ) -> list[dict]:
     """Run both policies, for every swept accuracy value, over the same cohort.
 
-    `trigger_fired_fn(observable_case, day, assumed_accuracy) -> bool` supplies the
-    adaptive trigger signal and receives only the ObservableCase - never ground
+    `trigger_fired_fn(day_view, assumed_accuracy) -> bool` supplies the adaptive
+    trigger signal and receives ONLY a `PolicyDayView` (Phase 10 fix) - never the
+    full `ObservableCase`, never today's own scan, never the future, never ground
     truth. `tier_fn` defaults to `make_engine_tier_fn(registry)` (the real
     `assess_history()` adapter, Defect 3's fix); pass an explicit `tier_fn` only for
     engineering-fixture tests of the scheduling/metric math, never for a reported
@@ -291,14 +518,14 @@ def run_sweep(
     fixed_policy = FixedSchedulePolicy(interval_days=fixed_interval_days)
     adaptive_policy = AdaptiveSchedulePolicy(interval_days=fixed_interval_days)
 
-    fixed_result = _run_policy(cohort, lambda observable, day: fixed_policy.is_scan_due(day), tier_fn, "fixed")
+    fixed_result = _run_policy(cohort, lambda view: fixed_policy.is_scan_due(view.day), tier_fn, "fixed")
 
     points = []
     for accuracy in accuracy_values:
         adaptive_result = _run_policy(
             cohort,
-            lambda observable, day, acc=accuracy: adaptive_policy.is_scan_due(
-                day, trigger_fired_fn(observable, day, acc)
+            lambda view, acc=accuracy: adaptive_policy.is_scan_due(
+                view.day, trigger_fired_fn(view, acc)
             ),
             tier_fn,
             "adaptive",

@@ -27,7 +27,7 @@
     },
     "ObservationMetadata": {
       "additionalProperties": false,
-      "description": "Monitoring-visible provenance only. Schema v0.2.0 (breaking change from v0.1.0):\n``scenario_label`` was REMOVED from here - see Defect 1 of the Unified Prompt 4-5\ncorrective review. A hidden ground-truth scenario identity must never be readable\nfrom a record that the monitoring engine, scheduler, or frontend can see. Scenario\nlabel and onset-day information now live exclusively on GroundTruthRecord, which\nis written to a separate evaluation-only file and is never passed to\nassess_history() or any scheduling policy.",
+      "description": "Monitoring-visible provenance only. Schema v0.2.0 introduced a breaking change from v0.1.0:\n``scenario_label`` was REMOVED from here - see Defect 1 of the Unified Prompt 4-5\ncorrective review. A hidden ground-truth scenario identity must never be readable\nfrom a record that the monitoring engine, scheduler, or frontend can see. Scenario\nlabel and onset-day information now live exclusively on GroundTruthRecord, which\nis written to a separate evaluation-only file and is never passed to\nassess_history() or any scheduling policy.",
       "properties": {
         "synthetic": {
           "default": true,
@@ -44,7 +44,7 @@
           "type": "string"
         },
         "schema_version": {
-          "default": "0.2.0",
+          "default": "0.4.0",
           "title": "Schema Version",
           "type": "string"
         },
@@ -136,11 +136,13 @@
       "type": "object"
     },
     "QualityStatus": {
+      "description": "Schema v0.3.0 adds UNKNOWN (additive, non-breaking - OK/DEGRADED/FAILED/\nNOT_TAKEN are unchanged): a scan whose documented protocol metadata (e.g.\non-axis acquisition) was never recorded, so quality cannot be established\neither way - distinct from NOT_TAKEN (no scan attempted at all). See\nmonitoring/measurement_quality.py for the one sourced rule that can derive\nthis automatically.",
       "enum": [
         "ok",
         "degraded",
         "failed",
-        "not_taken"
+        "not_taken",
+        "unknown"
       ],
       "title": "QualityStatus",
       "type": "string"

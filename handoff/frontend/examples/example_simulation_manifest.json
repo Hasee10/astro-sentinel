@@ -10,7 +10,7 @@
     "venous_stasis": 2,
     "both": 2
   },
-  "schema_version": "0.2.0",
+  "schema_version": "0.4.0",
   "parameter_registry_parameter_count": 26,
   "assumption_registry_assumption_count": 14,
   "active_assumption_ids": [],
@@ -18,12 +18,12 @@
   "physiological_values_generated": false,
   "physiological_generation_blocked_reasons": {
     "personal_onsd_baseline_values": "blocked: assumption(s) not approved: ['onsd_baseline_sd_values']",
+    "onsd_scan_values": "blocked: assumption(s) not approved: ['onsd_baseline_sd_values']",
     "daily_hrv_weak_signal": "blocked: assumption(s) not approved: ['hrv_trigger_assumed_accuracy']",
     "daily_ptt_weak_signal": "blocked: assumption(s) not approved: ['ptt_trigger_assumed_usefulness']",
-    "onsd_scan_values": "blocked: assumption(s) not approved: ['onsd_baseline_sd_values']",
-    "jugular_scan_values": "blocked: assumption(s) not approved: ['jugular_flow_risk_mapping']",
+    "jugular_scan_values": "scope decision not approved: 'venous_probability_model'",
     "measurement_quality_failure_injection": "blocked: assumption(s) not approved: ['onsd_scan_failure_rate']",
-    "sans_venous_onset_day_assignment": "No approved convention exists for choosing which day a hidden SANS/venous onset is placed within the 30-day mission. Picking one (e.g. a fixed day, or a sampled day) requires a human-approved simulation-design rule - it is not itself a sourced scientific parameter, but assigning it without approval would silently bake in an unreviewed assumption, which this generator does not do."
+    "sans_venous_onset_day_assignment": "design decision not approved: 'sans_venous_onset_day_assignment'"
   },
   "generation_status": "fully_blocked"
 }

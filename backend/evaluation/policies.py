@@ -39,6 +39,29 @@ class FixedSchedulePolicy:
 
 @dataclass(frozen=True)
 class AdaptiveSchedulePolicy:
+    """Issue B (Unified Prompt 8-9): this implements exactly ONE of several
+    possible adaptive-scheduling designs - "FIXED BACKSTOP PLUS TRIGGERED SCANS".
+    `is_scan_due` is a logical OR of the fixed anchor days and the trigger signal,
+    so by construction this policy's scan set is always a SUPERSET of the fixed
+    policy's for the same interval (see test_scheduling_policies.py's
+    `test_adaptive_scan_set_is_always_a_superset_of_fixed`). It can add early
+    detections; it can never use FEWER scheduled scans than the fixed comparator.
+    That is not a bug - it is this specific, narrow policy's honest ceiling.
+
+    Two other designs were explicitly NOT implemented here, because they would
+    materially change what the experiment measures and need research-lead
+    sign-off first (see handoff/research_lead/DECISIONS_NEEDED_NOW.md):
+
+    - OPTION B: defer or replace some fixed-interval scans based on evidence,
+      potentially reducing total scans, with explicit maximum-scan-gap and safety
+      rules.
+    - OPTION C: a fixed scan BUDGET reallocated to more informative days, rather
+      than an unbounded backstop-plus-extra approach.
+
+    Do not describe this class's behavior as "scan-saving" anywhere - it isn't,
+    and never silently becomes Option B/C without an explicit approved redesign.
+    """
+
     interval_days: int  # the same fixed backstop, scanned sooner if the trigger fires
 
     def __post_init__(self) -> None:

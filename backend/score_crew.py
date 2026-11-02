@@ -18,6 +18,7 @@ from pathlib import Path
 
 from contracts.models import AstronautDayObservation
 from monitoring.engine import AssessmentResult, HistoryError, assess_history
+from monitoring.measurement_quality import validate_observation_structure
 from registry.loader import load_all
 
 
@@ -50,6 +51,7 @@ def score_crew(input_path: Path, output_dir: Path) -> dict[str, Path]:
     astronauts_scored = 0
     days_scored = 0
     errors: list[str] = []
+    structural_warnings: list[str] = []
 
     with scored_path.open("w", encoding="utf-8") as out:
         for astronaut_id, records in by_astronaut.items():
@@ -57,6 +59,11 @@ def score_crew(input_path: Path, output_dir: Path) -> dict[str, Path]:
             astronauts_scored += 1
             for i in range(len(records_sorted)):
                 history_so_far = records_sorted[: i + 1]  # no look-ahead: only day <= current
+                # Phase 7 structural validation (section 4.1) - non-fatal: a flagged
+                # record is still scored, so reviewers see both the issue and the
+                # resulting assessment rather than a silently skipped day.
+                for issue in validate_observation_structure(records_sorted[i]):
+                    structural_warnings.append(f"{astronaut_id} day {records_sorted[i].day}: {issue}")
                 try:
                     result: AssessmentResult = assess_history(history_so_far, registry)
                 except HistoryError as exc:
@@ -72,6 +79,7 @@ def score_crew(input_path: Path, output_dir: Path) -> dict[str, Path]:
         "astronauts_scored": astronauts_scored,
         "days_scored": days_scored,
         "errors": errors,
+        "structural_warnings": structural_warnings,
         "sans_tier_distribution": dict(tier_counts["sans"]),
         "venous_tier_distribution": dict(tier_counts["venous"]),
         "note": (

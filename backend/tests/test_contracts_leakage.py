@@ -62,5 +62,5 @@ def test_ground_truth_record_still_carries_scenario_and_onset_evaluation_only():
     assert gt.sans_onset_day == 12
 
 
-def test_schema_version_bumped_for_this_breaking_change():
-    assert SCHEMA_VERSION == "0.2.0"
+def test_schema_version_reflects_latest_contract_revision():
+    assert SCHEMA_VERSION == "0.4.0"

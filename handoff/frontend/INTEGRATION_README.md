@@ -1,4 +1,4 @@
-# Frontend Integration Guide — Autonomous Fluid-Shift Monitoring (Backend v0.2.0)
+# Frontend Integration Guide — Autonomous Fluid-Shift Monitoring (Backend v0.4.0)
 
 This package is everything the frontend developer needs to start building the crew
 and Earth dashboards **without reading the backend's scientific source code**.
@@ -98,7 +98,7 @@ explanation text, not a fabricated percentage or a blank.
 | Tier | Meaning | Source |
 |---|---|---|
 | `monitor` | Routine — no concern raised. Not currently reachable without an approved probability model; reserved for future use. | Table 2 |
-| `repeat` | The latest relevant scan's quality was degraded or failed; it barely moved any estimate and should be retaken. | Table 2, rule-based, live today |
+| `repeat` | The latest relevant scan's quality was degraded, failed, or indeterminate (`unknown`, v0.3.0+); it barely moved any estimate and should be retaken. Check `tier_reason` (v0.4.0+) — a measurement-quality Repeat is never evidence a physiological event was detected. | Table 2, rule-based, live today |
 | `consult` | Would indicate a moderate concern warranting clinician review. Not currently reachable without an approved probability/threshold model. | Table 2 |
 | `urgent` | A red-flag symptom was recorded on a scan. Escalates unconditionally, independent of any probability. | Table 2, rule-based, live today |
 | `unresolved` | Explicit "insufficient evidence to decide" state — the honest default while probability calculation is blocked. **Not an error.** | This project's own convention — never silently substitute `monitor` for this. |
@@ -156,6 +156,8 @@ pip install -r requirements.txt
 python -m pytest -q
 ```
 
-Expect `142 passed` as of this handoff (78 scientific-registry tests + 64 new tests
-covering the generator, monitoring engine, scheduling, evaluation metrics, sweep,
-plotting, and CLI integration).
+Expect `184 passed` as of this handoff (78 scientific-registry tests + 64 tests
+from the Unified Prompt 4-5 milestone + 21 tests from the Unified Prompt 6-7
+milestone + 21 new tests covering policy-specific scan-visibility isolation, scan
+accounting, adaptive-policy scheduling semantics, design-decision tracking, and
+tier-reason transparency).

@@ -35,6 +35,7 @@ from evaluation.plotting import plot_metric
 from evaluation.sweep import (
     HiddenGroundTruth,
     ObservableCase,
+    PolicyDayView,
     PolicyRunResult,
     SweepCase,
     make_engine_tier_fn,
@@ -104,6 +105,10 @@ def _comparison_rows(points: list[dict]) -> list[dict]:
                         "policy": policy_name,
                         "outcome": outcome,
                         "scans_used": result.total_scans(outcome),
+                        "scans_with_data": result.total_scans_with_data(outcome),
+                        "scans_valid": result.total_scans_valid(outcome),
+                        "scans_degraded_or_unknown": result.total_scans_degraded_or_unknown(outcome),
+                        "scans_unavailable": result.total_scans_unavailable(outcome),
                         "mean_detection_delay": result.mean_detection_delay(outcome),
                         "missed_events": result.total_missed_events(outcome),
                         "false_escalations": result.total_false_escalations(outcome),
@@ -159,11 +164,13 @@ def run_evaluation(
     cohort = build_cohort(observations_path, ground_truth_path)
     tier_fn = make_engine_tier_fn(registry)
 
-    def trigger_fired_fn(observable: ObservableCase, day: int, assumed_accuracy: float) -> bool:
+    def trigger_fired_fn(day_view: PolicyDayView, assumed_accuracy: float) -> bool:
         # No approved rule exists for this (see sweep_blockers's unconditional
         # "trigger_firing_simulation_model" entry, which guarantees this code path is
         # unreachable against the real registry until a human adds one). Kept as an
         # explicit, documented refusal rather than ever being silently implemented.
+        # Receives only the restricted PolicyDayView (Phase 10 fix) - even a future
+        # real implementation here could not see future data or today's own scan.
         raise NotImplementedError(
             "trigger_firing_simulation_model has no approved rule; run_evaluation() "
             "must not be called with real accuracy_values until sweep_blockers() is "

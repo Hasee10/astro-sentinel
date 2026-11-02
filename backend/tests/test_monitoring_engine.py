@@ -10,6 +10,7 @@ from contracts.models import (
     QualityStatus,
     ScanMeasurement,
     ScanType,
+    TierReason,
     TierValue,
 )
 from monitoring.engine import HistoryError, assess_history
@@ -124,3 +125,39 @@ def test_unresolved_explanation_names_the_blocking_assumptions(registry):
     result = assess_history([_obs(1)], registry)
     assert "sans_prior_mapping" in str(result.sans.limitations)
     assert "venous_probability_model" in str(result.venous.limitations)
+
+
+# ---- Section 4 (Unified Prompt 8-9): tier_reason transparency ----
+
+
+def test_tier_reason_distinguishes_red_flag_from_quality_from_unresolved(registry):
+    red_flag_scan = ScanMeasurement(type=ScanType.ONSD, red_flag_symptom=True, quality=_ok_quality())
+    urgent = assess_history([_obs(1, scan=red_flag_scan)], registry)
+    assert urgent.sans.tier_reason == TierReason.RED_FLAG_SYMPTOM
+
+    degraded_scan = ScanMeasurement(type=ScanType.ONSD, quality=MeasurementQuality(status=QualityStatus.DEGRADED))
+    repeat = assess_history([_obs(1, scan=degraded_scan)], registry)
+    assert repeat.sans.tier_reason == TierReason.MEASUREMENT_QUALITY
+
+    unresolved = assess_history([_obs(1)], registry)
+    assert unresolved.sans.tier_reason == TierReason.INSUFFICIENT_EVIDENCE_FOR_PROBABILITY
+
+
+def test_measurement_quality_repeat_is_never_mislabeled_as_red_flag(registry):
+    """A Repeat caused by poor quality must carry tier_reason=MEASUREMENT_QUALITY,
+    never RED_FLAG_SYMPTOM - the two must not be conflated downstream."""
+    failed_scan = ScanMeasurement(type=ScanType.ONSD, quality=MeasurementQuality(status=QualityStatus.FAILED))
+    result = assess_history([_obs(1, scan=failed_scan)], registry)
+    assert result.sans.tier == TierValue.REPEAT
+    assert result.sans.tier_reason != TierReason.RED_FLAG_SYMPTOM
+
+
+def test_red_flag_remains_urgent_on_a_later_day_sticky_rule(registry):
+    """Documents the current sticky-Urgent behavior explicitly (section 4): once a
+    red flag appears, later days stay Urgent even with no new red flag - there is
+    no implemented clearance/reset rule."""
+    red_flag_scan = ScanMeasurement(type=ScanType.ONSD, red_flag_symptom=True, quality=_ok_quality())
+    history = [_obs(1, scan=red_flag_scan), _obs(2), _obs(3)]
+    result = assess_history(history, registry)
+    assert result.sans.tier == TierValue.URGENT
+    assert result.sans.tier_reason == TierReason.RED_FLAG_SYMPTOM

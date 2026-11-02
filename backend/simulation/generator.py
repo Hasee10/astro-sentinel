@@ -24,78 +24,50 @@ from contracts.models import (
     SimulationManifest,
 )
 from registry.loader import Registry, load_all
+from simulation.generation_models import GENERATION_MODEL_SPECS, ModelReadiness, check_readiness
 from simulation.scenarios import assign_scenarios, scenario_counts, validate_scenario_config
 
-# capability -> the assumption_id(s) in registry/data/assumptions.json that would
-# unblock it, or [] when the gap is a simulation-design choice with no registry entry
-GENERATIVE_CAPABILITIES: dict[str, list[str]] = {
-    "personal_onsd_baseline_values": ["onsd_baseline_sd_values"],
-    "daily_hrv_weak_signal": ["hrv_trigger_assumed_accuracy"],
-    "daily_ptt_weak_signal": ["ptt_trigger_assumed_usefulness"],
-    "onsd_scan_values": ["onsd_baseline_sd_values"],
-    "jugular_scan_values": ["jugular_flow_risk_mapping"],
-    "measurement_quality_failure_injection": ["onsd_scan_failure_rate"],
-}
-
-# Defect 2: an approved numeric value does NOT by itself mean a generation algorithm
-# exists. This set names the capabilities for which simulation/generator.py actually
-# implements a tested numerical generation method today - it is empty, because none
-# does yet. When a method is implemented and tested, add its capability name here;
-# until then, physiological_values_generated in the manifest stays False even for a
-# capability whose backing assumption has been approved.
-IMPLEMENTED_GENERATION_ALGORITHMS: frozenset[str] = frozenset()
-
-# gaps with no corresponding registry assumption at all - a simulation-engineering
-# choice (which day to place a hidden onset on) rather than a scientific parameter
-UNREGISTERED_CAPABILITIES: dict[str, str] = {
-    "sans_venous_onset_day_assignment": (
-        "No approved convention exists for choosing which day a hidden SANS/venous "
-        "onset is placed within the 30-day mission. Picking one (e.g. a fixed day, or "
-        "a sampled day) requires a human-approved simulation-design rule - it is not "
-        "itself a sourced scientific parameter, but assigning it without approval would "
-        "silently bake in an unreviewed assumption, which this generator does not do."
-    ),
-}
+# Phase 6 (Unified Prompt 6-7): the explicit per-capability dependency declarations
+# formerly hardcoded here now live in simulation/generation_models.py as
+# GENERATION_MODEL_SPECS, alongside the five-state ModelReadiness interface
+# (section 3.6) and the approval-ready technical spec for each (section 3.7). This
+# module only decides WHICH of those specs are this generator's concern -
+# "trigger_firing_simulation_model" belongs to the evaluation sweep instead (see
+# evaluation/sweep.py::sweep_blockers()), not to crew generation.
+_GENERATOR_CAPABILITIES: tuple[str, ...] = tuple(
+    c for c in GENERATION_MODEL_SPECS if c != "trigger_firing_simulation_model"
+)
 
 
 def blocked_capabilities(registry: Registry) -> dict[str, Blocker]:
     """Which generative capabilities are currently blocked, and by what."""
     blocked: dict[str, Blocker] = {}
-    for capability, assumption_ids in GENERATIVE_CAPABILITIES.items():
-        inactive = [aid for aid in assumption_ids if not registry.assumptions[aid].is_active()]
-        if inactive:
+    for capability in _GENERATOR_CAPABILITIES:
+        spec = GENERATION_MODEL_SPECS[capability]
+        result = check_readiness(spec, registry)
+        if result.state != ModelReadiness.READY:
             blocked[capability] = Blocker(
                 capability=capability,
-                blocked_by=inactive,
-                message=(
-                    f"Requires assumption(s) {inactive} to be approved with an assigned "
-                    f"value before {capability} can be generated without fabrication."
-                ),
+                blocked_by=list(spec.required_assumptions),
+                message="; ".join(result.reasons) or f"{capability} is not ready ({result.state.value}).",
             )
-    for capability, message in UNREGISTERED_CAPABILITIES.items():
-        blocked[capability] = Blocker(capability=capability, blocked_by=[], message=message)
     return blocked
 
 
 def physiological_generation_status(registry: Registry) -> tuple[bool, dict[str, str]]:
-    """Defect 2: distinguish "assumption approved" from "algorithm implemented".
+    """Defect 2: distinguish "assumption approved" from "algorithm implemented" -
+    computed via simulation.generation_models.check_readiness() for every known
+    generator capability (section 3.6's explicit readiness-state interface).
 
     Returns (all_generated, reasons) where reasons maps each capability that is NOT
-    producing real physiological values to why - either an inactive assumption or an
-    approved assumption with no implemented generation method yet.
+    producing real physiological values to why.
     """
     reasons: dict[str, str] = {}
-    for capability, assumption_ids in GENERATIVE_CAPABILITIES.items():
-        inactive = [aid for aid in assumption_ids if not registry.assumptions[aid].is_active()]
-        if inactive:
-            reasons[capability] = f"blocked: assumption(s) not approved: {inactive}"
-        elif capability not in IMPLEMENTED_GENERATION_ALGORITHMS:
-            reasons[capability] = (
-                "assumption(s) approved, but no generation algorithm is implemented in "
-                "simulation/generator.py yet - approval alone does not produce numbers"
-            )
-    for capability, message in UNREGISTERED_CAPABILITIES.items():
-        reasons[capability] = message
+    for capability in _GENERATOR_CAPABILITIES:
+        spec = GENERATION_MODEL_SPECS[capability]
+        result = check_readiness(spec, registry)
+        if result.state != ModelReadiness.READY:
+            reasons[capability] = "; ".join(result.reasons)
     return (not reasons, reasons)
 
 

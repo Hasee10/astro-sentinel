@@ -19,7 +19,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from contracts.models import AstronautDayObservation, QualityStatus, ScanType, TierValue
+from contracts.models import AstronautDayObservation, QualityStatus, ScanType, TierReason, TierValue
+from monitoring.measurement_quality import derive_onsd_quality
 from registry.loader import Registry
 
 # Which scan types are read as evidence for which outcome. A symptom record's
@@ -43,6 +44,7 @@ class OutcomeAssessment(BaseModel):
     probability: float | None = None
     probability_label: str | None = None
     tier: TierValue
+    tier_reason: TierReason  # section 4: WHY, kept structurally separate from the tier itself
     measurement_quality: QualityStatus | None = None
     evidence_references: list[str] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
@@ -82,6 +84,11 @@ def _latest_scan_of(history: list[AstronautDayObservation], scan_types: set[Scan
 
 
 def _any_red_flag(history: list[AstronautDayObservation], scan_types: set[ScanType]) -> bool:
+    """Section 4 note: this is intentionally "sticky" - once ANY day in history
+    carries a red-flag symptom, every later assessment stays Urgent forever,
+    because there is no human-approved resolution/reset/clearance rule. This
+    function does not, and must not, implement one on its own initiative (that
+    would be inventing an automatic medical clearance rule)."""
     return any(
         obs.scan is not None and obs.scan.type in scan_types and obs.scan.red_flag_symptom
         for obs in history
@@ -95,7 +102,13 @@ def _assess_outcome(
     registry: Registry,
 ) -> OutcomeAssessment:
     latest_scan = _latest_scan_of(history, scan_types)
-    quality = latest_scan.quality.status if (latest_scan and latest_scan.quality) else None
+    # Phase 7: derive quality for an ONSD scan the caller left unset, using the one
+    # sourced on-axis rule (monitoring/measurement_quality.py) - never overrides a
+    # quality the caller already recorded.
+    if latest_scan is not None and latest_scan.type == ScanType.ONSD and latest_scan.quality is None:
+        quality = derive_onsd_quality(latest_scan).status
+    else:
+        quality = latest_scan.quality.status if (latest_scan and latest_scan.quality) else None
     evidence_references: list[str] = []
     if latest_scan is not None:
         evidence_references.append(
@@ -109,33 +122,45 @@ def _assess_outcome(
         return OutcomeAssessment(
             probability=None,
             tier=TierValue.URGENT,
+            tier_reason=TierReason.RED_FLAG_SYMPTOM,
             measurement_quality=quality,
             evidence_references=evidence_references,
             limitations=[f"No approved probability model ({inactive}); escalation is rule-based only."],
             explanation=(
                 "A red-flag symptom was recorded. Per the mission brief's decision tiers "
                 "(Table 2), this escalates to Urgent independent of any probability "
-                "calculation, which is not performed here."
+                "calculation, which is not performed here. NOTE: this rule is 'sticky' - "
+                "any red flag anywhere in history keeps every later day's assessment "
+                "Urgent too (see _any_red_flag), since no human-approved "
+                "resolution/reset/clearance policy currently exists. This is a deliberate "
+                "conservative default, not an oversight - see "
+                "handoff/research_lead/DECISIONS_NEEDED_NOW.md."
             ),
         )
 
-    if quality in (QualityStatus.DEGRADED, QualityStatus.FAILED):
+    if quality in (QualityStatus.DEGRADED, QualityStatus.FAILED, QualityStatus.UNKNOWN):
         return OutcomeAssessment(
             probability=None,
             tier=TierValue.REPEAT,
+            tier_reason=TierReason.MEASUREMENT_QUALITY,
             measurement_quality=quality,
             evidence_references=evidence_references,
             limitations=[f"No approved probability model ({inactive})."],
             explanation=(
                 f"The latest relevant scan quality is '{quality.value}'. Per the mission "
-                "brief, a failed or poor scan should barely move the estimate and is "
-                "flagged for repeat."
+                "brief, a failed, poor, or quality-indeterminate scan should barely move "
+                "the estimate and is flagged for repeat. IMPORTANT: this Repeat is a "
+                "MEASUREMENT-QUALITY finding only - it is not, and must never be "
+                "interpreted as, evidence that a physiological event was detected. No "
+                "other Repeat-triggering rule (e.g. a genuine measurement trend) is "
+                "implemented or approved today."
             ),
         )
 
     return OutcomeAssessment(
         probability=None,
         tier=TierValue.UNRESOLVED,
+        tier_reason=TierReason.INSUFFICIENT_EVIDENCE_FOR_PROBABILITY,
         measurement_quality=quality,
         evidence_references=evidence_references,
         limitations=[

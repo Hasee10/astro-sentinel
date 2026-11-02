@@ -1,6 +1,46 @@
 # Contract Changelog
 
-## v0.2.0 (this handoff, Unified Prompt 4-5 corrective milestone) — BREAKING
+## v0.4.0 (this handoff, Unified Prompt 8-9) — additive, non-breaking
+
+- **Added** `TierReason` enum (`red_flag_symptom` / `measurement_quality` /
+  `insufficient_evidence_for_probability`) and a new required field
+  `{sans,venous}.tier_reason` on every `AssessmentResult` record
+  (`crew_scored.jsonl`). This is WHY a tier was assigned, kept structurally
+  separate from the tier itself - a `repeat` tier caused by poor scan quality
+  must never be read as evidence a physiological event was detected. **Any
+  frontend code that parses `crew_scored.jsonl` records should read this new
+  field when deciding how to phrase a Repeat/Urgent explanation**, rather than
+  inferring the reason from `explanation`'s free text.
+- **Added** `ScanAccounting` (`requested` / `data_available` / `valid` /
+  `degraded_or_unknown` / `unavailable`) on evaluation output only (not on
+  `AstronautDayObservation` or `AssessmentResult` - this is an
+  `evaluate_policies.py` CSV/JSON addition, not a per-observation field). The
+  legacy `scans_used` research metric is **unchanged** in meaning.
+  See `evaluate_policies.py`'s `adaptive_vs_fixed.csv`/`.json` new columns:
+  `scans_with_data`, `scans_valid`, `scans_degraded_or_unknown`,
+  `scans_unavailable`.
+- **No field was removed or renamed** from `AstronautDayObservation`
+  (`astronaut_id`, `day`, `weak_signals`, `scan`, `probability`, `tier`,
+  `metadata` are all unchanged).
+
+## v0.3.0 (Unified Prompt 6-7) — additive, non-breaking
+
+- **Added** `QualityStatus.UNKNOWN` — a scan whose documented protocol metadata
+  (currently: ONSD on-axis acquisition) was never recorded, so quality cannot be
+  established either way. Distinct from `not_taken`. Existing consumers that only
+  handle `ok`/`degraded`/`failed`/`not_taken` are unaffected unless they assume
+  that list is exhaustive; treat `unknown` the same as `degraded`/`failed` for
+  display (it drives `repeat`, same as those two).
+- **Added** `monitoring/measurement_quality.py`: `derive_onsd_quality()` now fills
+  in a missing ONSD scan's quality automatically from its `on_axis` field (an
+  already-existing field — no new input required from the generator or frontend).
+  An explicitly-set `quality` is never overridden.
+- **Added** `scoring_summary.json`'s `structural_warnings` field (non-fatal
+  structural-consistency flags, separate from `errors`).
+- **No field was removed or renamed.** `metadata.schema_version` on new records
+  now reads `"0.3.0"`.
+
+## v0.2.0 (Unified Prompt 4-5 corrective milestone) — BREAKING
 
 - **Removed** `ObservationMetadata.scenario_label` from every monitoring-visible
   `AstronautDayObservation`. This was a ground-truth-leakage defect (Defect 1 of

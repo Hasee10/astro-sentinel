@@ -14,7 +14,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-SCHEMA_VERSION = "0.2.0"
+SCHEMA_VERSION = "0.4.0"
 SYNTHETIC_LABEL = "SYNTHETIC - NOT REAL ASTRONAUT DATA"
 
 
@@ -34,10 +34,18 @@ class ScanType(str, Enum):
 
 
 class QualityStatus(str, Enum):
+    """Schema v0.3.0 adds UNKNOWN (additive, non-breaking - OK/DEGRADED/FAILED/
+    NOT_TAKEN are unchanged): a scan whose documented protocol metadata (e.g.
+    on-axis acquisition) was never recorded, so quality cannot be established
+    either way - distinct from NOT_TAKEN (no scan attempted at all). See
+    monitoring/measurement_quality.py for the one sourced rule that can derive
+    this automatically."""
+
     OK = "ok"
     DEGRADED = "degraded"
     FAILED = "failed"
     NOT_TAKEN = "not_taken"
+    UNKNOWN = "unknown"
 
 
 class TierValue(str, Enum):
@@ -46,6 +54,17 @@ class TierValue(str, Enum):
     CONSULT = "consult"
     URGENT = "urgent"
     UNRESOLVED = "unresolved"  # explicit insufficient-evidence state, never a guess
+
+
+class TierReason(str, Enum):
+    """Schema v0.4.0 (additive): WHY a tier was assigned, kept structurally
+    separate from the tier itself (section 4, Unified Prompt 8-9) - a
+    measurement-quality Repeat is not evidence a physiological event was
+    detected, and must never be read as one just because the tier is Repeat."""
+
+    RED_FLAG_SYMPTOM = "red_flag_symptom"
+    MEASUREMENT_QUALITY = "measurement_quality"
+    INSUFFICIENT_EVIDENCE_FOR_PROBABILITY = "insufficient_evidence_for_probability"
 
 
 class WeakSignals(BaseModel):
@@ -103,7 +122,7 @@ class OutcomeTier(BaseModel):
 
 
 class ObservationMetadata(BaseModel):
-    """Monitoring-visible provenance only. Schema v0.2.0 (breaking change from v0.1.0):
+    """Monitoring-visible provenance only. Schema v0.2.0 introduced a breaking change from v0.1.0:
     ``scenario_label`` was REMOVED from here - see Defect 1 of the Unified Prompt 4-5
     corrective review. A hidden ground-truth scenario identity must never be readable
     from a record that the monitoring engine, scheduler, or frontend can see. Scenario
