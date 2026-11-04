@@ -399,6 +399,16 @@ function FailedMarker({ cx, cy }) {
   )
 }
 
+// The words for one row's value and quality. The tooltip and the table both use
+// these, so they always say the same thing.
+function onsdValueText(row) {
+  return row.onsdMm === null ? 'No value' : `${row.onsdMm.toFixed(2)} mm`
+}
+
+function onsdQualityText(row) {
+  return row.quality === null ? 'No scan' : row.quality.replace('_', ' ')
+}
+
 // The box that appears when hovering over or tapping a day on the chart.
 function OnsdTooltip({ active, payload }) {
   // Both lines share the same row of data, so the first one is enough.
@@ -410,11 +420,44 @@ function OnsdTooltip({ active, payload }) {
       <div>
         <strong>Day {row.day}</strong>
       </div>
-      <div>
-        ONSD: {row.onsdMm === null ? 'No value' : `${row.onsdMm.toFixed(2)} mm`}
-      </div>
-      <div>Quality: {row.quality === null ? 'No scan' : row.quality.replace('_', ' ')}</div>
+      {row.isFuture ? (
+        <div>Not reached yet</div>
+      ) : (
+        <>
+          <div>ONSD: {onsdValueText(row)}</div>
+          <div>Quality: {onsdQualityText(row)}</div>
+        </>
+      )}
     </div>
+  )
+}
+
+// The chart's values as a table, closed until the user opens it. This gives
+// screen readers and anyone who can't use the tooltip the same information.
+//   rows = only the days reached so far, so this can't show a later day either
+function OnsdTable({ rows }) {
+  return (
+    <details className="onsd-values">
+      <summary>Show values as a table</summary>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Day</th>
+            <th scope="col">ONSD</th>
+            <th scope="col">Quality</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.day}>
+              <td>{row.day}</td>
+              <td>{onsdValueText(row)}</td>
+              <td>{onsdQualityText(row)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
   )
 }
 
@@ -441,6 +484,7 @@ function OnsdLegend() {
         Failed (no value)
       </li>
       <li>Gap in the line: no value that day</li>
+      <li>Days after the selected day stay hidden</li>
     </ul>
   )
 }
@@ -451,20 +495,26 @@ function OnsdLegend() {
 //   loadFailed    = true if that file couldn't be loaded
 //   astronautId   = whose scans to show
 //   missionLength = how many days the x-axis covers
-//   selectedDay   = where to draw the vertical marker, which follows playback
+//   selectedDay   = where to draw the vertical marker, which follows playback. No
+//                   scan after this day is shown, because it hasn't happened yet
 function OnsdChart({ observations, loadFailed, astronautId, missionLength, selectedDay }) {
   const axis = observations && getOnsdAxis(observations)
 
   // One row per mission day, whether or not it has a scan. A row whose value is
-  // null is what makes the gap in the line.
+  // null is what makes the gap in the line. Later days are never looked up, so
+  // the rows hold nothing about them.
   const rows = Array.from({ length: missionLength }, (_, index) => {
     const day = index + 1
-    const observation = observations?.find(
-      (record) => record.astronaut_id === astronautId && record.day === day,
-    )
+    const isFuture = day > selectedDay
+    const observation = isFuture
+      ? undefined
+      : observations?.find(
+          (record) => record.astronaut_id === astronautId && record.day === day,
+        )
     const { onsdMm, quality } = readOnsdScan(observation)
     return {
       day: day,
+      isFuture: isFuture,
       onsdMm: onsdMm,
       quality: quality,
       failedMarker: quality === 'failed' ? axis?.failedLane : null,
@@ -572,6 +622,7 @@ function OnsdChart({ observations, loadFailed, astronautId, missionLength, selec
               </LineChart>
             </ResponsiveContainer>
           </div>
+          <OnsdTable rows={rows.filter((row) => !row.isFuture)} />
         </>
       )}
 

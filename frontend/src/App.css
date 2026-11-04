@@ -493,6 +493,32 @@ button.timeline-box {
   margin: 8px 0 0;
 }
 
+/* The collapsible table of the chart's values. */
+.onsd-values {
+  margin-top: 8px;
+  font-size: 0.875rem;
+}
+
+.onsd-values summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.onsd-values table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  /* Lines the digits up in columns. */
+  font-variant-numeric: tabular-nums;
+}
+
+.onsd-values th,
+.onsd-values td {
+  padding: 2px 8px 2px 0;
+  border-bottom: 1px solid #9ca3af;
+  text-align: left;
+}
+
 .onsd-dot-solid {
   fill: #2563eb;
   stroke: Canvas;
