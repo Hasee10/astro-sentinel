@@ -27,6 +27,13 @@ const DATA_FILES = [
 const MS_PER_DAY_AT_1X = 2000
 const PLAYBACK_SPEEDS = [1, 2, 4]
 
+// The timeline shows every mission day, 1 to 30, whether or not it has a record.
+const MISSION_DAYS = Array.from({ length: 30 }, (_, index) => index + 1)
+
+// The tier names for the legend, in the order they are shown. Each name also
+// picks its color: "urgent" uses the .tier-urgent rule in App.css, and so on.
+const TIER_NAMES = ['unresolved', 'monitor', 'repeat', 'consult', 'urgent']
+
 // JSONL means "one JSON object on each line". The file as a whole is not valid
 // JSON, so we split it into lines and parse each line separately.
 function parseJsonl(text) {
@@ -92,6 +99,83 @@ function OutcomeCard({ title, outcome }) {
         </ul>
       )}
     </section>
+  )
+}
+
+// One row of the timeline, for one outcome. We use this component twice, once
+// for SANS and once for venous, and each row only reads its own outcome. The
+// two are never combined.
+//   title            = the label to show above the row
+//   outcomeKey       = which part of each record to read: "sans" or "venous"
+//   astronautRecords = the selected astronaut's records, earliest day first
+//   selectedDay      = the day to highlight
+//   onJump           = the function to call when the user clicks a box
+function TimelineRow({ title, outcomeKey, astronautRecords, selectedDay, onJump }) {
+  return (
+    <div className="timeline-row">
+      <h3>{title}</h3>
+      <div className="timeline-boxes">
+        {MISSION_DAYS.map((day) => {
+          // Find this day's position in the list. findIndex gives -1 if the
+          // astronaut has no record for this day.
+          const recordIndex = astronautRecords.findIndex(
+            (record) => record.as_of_day === day,
+          )
+
+          // No record: show an empty box. It is not a button, because there
+          // is nothing to jump to.
+          if (recordIndex === -1) {
+            const text = `Day ${day}: no record`
+            return (
+              <span
+                key={day}
+                className="timeline-box timeline-empty"
+                role="img"
+                title={text}
+                aria-label={`${title}, ${text}`}
+              />
+            )
+          }
+
+          // The tier comes straight from the backend's record for this day.
+          const tier = astronautRecords[recordIndex][outcomeKey].tier
+          const isSelected = day === selectedDay
+          const text = `Day ${day}: ${tier}`
+
+          return (
+            <button
+              key={day}
+              type="button"
+              className={`timeline-box tier-${tier} ${isSelected ? 'timeline-selected' : ''}`}
+              // "title" is the tooltip the browser shows on hover.
+              title={text}
+              // Screen readers can't see colors, so this says it in words.
+              aria-label={`${title}, ${text}`}
+              aria-current={isSelected}
+              onClick={() => onJump(recordIndex)}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// The small key that says what each box color means.
+function TimelineLegend() {
+  return (
+    <ul className="timeline-legend">
+      {TIER_NAMES.map((tier) => (
+        <li key={tier}>
+          <span className={`legend-swatch tier-${tier}`} />
+          {tier}
+        </li>
+      ))}
+      <li>
+        <span className="legend-swatch timeline-empty" />
+        no record
+      </li>
+    </ul>
   )
 }
 
@@ -220,6 +304,13 @@ function App() {
     setDayIndex(Number(event.target.value))
   }
 
+  // Runs when the user clicks a timeline box. Like the slider, it pauses
+  // playback. The box gives us the day's position in the list.
+  function handleTimelineJump(recordIndex) {
+    setIsPlaying(false)
+    setDayIndex(recordIndex)
+  }
+
   return (
     <main className="page">
       {/* The handoff docs require this label on any screen showing this data,
@@ -323,6 +414,25 @@ function App() {
             <OutcomeCard title="SANS" outcome={selectedRecord.sans} />
             <OutcomeCard title="Venous" outcome={selectedRecord.venous} />
           </div>
+
+          <section className="timeline">
+            <h2>Timeline</h2>
+            <TimelineRow
+              title="SANS"
+              outcomeKey="sans"
+              astronautRecords={astronautRecords}
+              selectedDay={selectedRecord.as_of_day}
+              onJump={handleTimelineJump}
+            />
+            <TimelineRow
+              title="Venous"
+              outcomeKey="venous"
+              astronautRecords={astronautRecords}
+              selectedDay={selectedRecord.as_of_day}
+              onJump={handleTimelineJump}
+            />
+            <TimelineLegend />
+          </section>
         </>
       )}
     </main>

@@ -118,8 +118,97 @@
   text-transform: uppercase;
 }
 
-/* One color per tier. Amber is a light color, so it gets dark text; the others
-   get white text. These colors are for display only and decide nothing. */
+/* The timeline strip below the cards. */
+.timeline {
+  margin-top: 24px;
+}
+
+.timeline h2 {
+  margin: 0 0 8px;
+}
+
+.timeline-row {
+  margin-bottom: 12px;
+}
+
+.timeline-row h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+/* Fits all 30 boxes on one line by sharing out the available width equally.
+   minmax(0, 1fr) lets the boxes shrink as far as a phone screen needs, so the
+   page never has to scroll sideways. */
+.timeline-boxes {
+  display: grid;
+  grid-template-columns: repeat(30, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.timeline-box {
+  display: block;
+  /* Buttons have their own built-in spacing and border, so we remove those. */
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  height: 28px;
+  /* Makes any border part of the box's size, not extra width on top of it. */
+  box-sizing: border-box;
+}
+
+button.timeline-box {
+  cursor: pointer;
+}
+
+/* An outlined box with no fill, for a day with no record. */
+.timeline-empty {
+  border: 1px solid #6b7280;
+}
+
+/* The selected day gets a ring in the page's main text color, which shows up in
+   both light and dark mode. z-index draws it on top of the boxes beside it. */
+.timeline-selected {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid CanvasText;
+  outline-offset: 1px;
+}
+
+/* Shows which box has keyboard focus when moving around with the Tab key. */
+.timeline-box:focus-visible {
+  position: relative;
+  z-index: 2;
+  outline: 3px solid #2563eb;
+  outline-offset: 1px;
+}
+
+/* The tier color key. Wraps onto more lines when the screen is narrow. */
+.timeline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.timeline-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+
+/* One color per tier, used by the badges, the timeline and the legend. Amber is
+   a light color, so it gets dark text; the others get white text. These colors
+   are for display only and decide nothing. */
 .tier-unresolved {
   background: #4b5563; /* neutral grey */
   color: #ffffff;
