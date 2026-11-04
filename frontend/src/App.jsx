@@ -87,7 +87,7 @@ const TIER_ACTIONS = {
 const ONSD_TICK_STEP = 0.5
 
 // Words in the backend's names that read better in capitals, for the Run info panel.
-const ACRONYMS = ['onsd', 'hrv', 'ptt', 'sans', 'sd']
+const ACRONYMS = ['onsd', 'hrv', 'ptt', 'sans', 'sd', 'oct']
 
 // The newest backend contract this page was built for. Data from a newer one
 // gets a small warning, because its fields may have changed.
@@ -669,14 +669,85 @@ function RecordCards({ record }) {
   )
 }
 
+// Is this value in the file? Checking for null specifically means a real value of
+// 0 or false still counts as present.
+function hasValue(value) {
+  return value !== null && value !== undefined
+}
+
+// Describes one scan, such as "ONSD scan: ok (5.62 mm)". A failed scan shows no
+// value, the same as on the chart.
+function describeScan(scan) {
+  const name = hasValue(scan.type) ? `${readableName(scan.type)} scan` : 'Scan'
+  const status = scan.quality?.status
+
+  if (status === 'failed') return `${name}: failed quality check`
+  if (!hasValue(status)) return `${name}: quality not stated`
+
+  const value = scan.type === 'onsd' && hasValue(scan.onsd_mm) ? ` (${scan.onsd_mm.toFixed(2)} mm)` : ''
+  return `${name}: ${status.replace('_', ' ')}${value}`
+}
+
+// Builds the lines for the "Data available today" row. Each line only reports what
+// is in this one record, and nothing here decides anything about the astronaut.
+//   observation = the selected astronaut's record for the selected day, if any
+function listDataToday(observation) {
+  if (!observation) return [{ text: 'No observation record for this day', isMissing: true }]
+
+  const { weak_signals: signals, scan } = observation
+  const items = []
+
+  // An object whose fields are all null holds no signals, the same as a null.
+  const hasSignals = hasValue(signals) && Object.values(signals).some(hasValue)
+  items.push(
+    hasSignals
+      ? { text: 'Daily signals (HRV, pulse transit): available – hypothesis signals', isMissing: false }
+      : { text: 'Daily signals (HRV, pulse transit): not available', isMissing: true },
+  )
+
+  items.push(
+    hasValue(scan)
+      ? { text: describeScan(scan), isMissing: false }
+      : { text: 'Scan: none today', isMissing: true },
+  )
+
+  // A jugular scan already has its own line above, so "not available" would
+  // contradict it, even if that scan holds no values.
+  const hasJugularValues =
+    hasValue(scan) &&
+    [scan.jugular_area_mm2, scan.jugular_flow_class, scan.jugular_collapsibility_lost].some(hasValue)
+  if (!hasJugularValues && scan?.type !== 'jugular') {
+    items.push({ text: 'Jugular scan: not available', isMissing: true })
+  }
+
+  return items
+}
+
+// The small "Data available today" row in the crew panel.
+function DataToday({ observation }) {
+  return (
+    <div className="data-today">
+      <h3>Data available today</h3>
+      <ul>
+        {listDataToday(observation).map((item) => (
+          <li key={item.text} className={item.isMissing ? 'data-today-missing' : undefined}>
+            {item.text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 // The left panel: what the crew sees now, plus the button to send it to Earth.
 //   record           = the record for the selected day
+//   observation      = that astronaut's observation for the same day, if any
 //   messages         = every message sent so far, in both directions
 //   now              = the current time, used to work out each message's status
 //   onSend           = the function to call when the user presses the button
 //   autoSend         = is "Auto-send on tier change" ticked?
 //   onAutoSendChange = the function to call when the user changes the checkbox
-function CrewPanel({ record, messages, now, onSend, autoSend, onAutoSendChange }) {
+function CrewPanel({ record, observation, messages, now, onSend, autoSend, onAutoSendChange }) {
   const hasMessageInTransit = messages.some((message) => !isDelivered(message, now))
   const replies = messages.filter((message) => message.direction === GROUND_TO_CREW)
   const repliesInTransit = replies.filter((reply) => !isDelivered(reply, now))
@@ -730,6 +801,8 @@ function CrewPanel({ record, messages, now, onSend, autoSend, onAutoSendChange }
           </div>
         )
       })}
+
+      <DataToday observation={observation} />
 
       <RecordCards record={record} />
     </section>
@@ -1375,6 +1448,13 @@ function App() {
   // even when there are gaps between them.
   const selectedRecord = isStillLoading ? undefined : astronautRecords[dayIndex]
 
+  // The same astronaut's observation for the same day. This stays undefined if
+  // the observations file isn't loaded or has no record for that day.
+  const selectedObservation = observations?.find(
+    (observation) =>
+      observation.astronaut_id === astronautId && observation.day === selectedRecord?.as_of_day,
+  )
+
   // The slider position of this astronaut's last day. Lists count from 0, so
   // with 30 days, the last position is 29.
   const lastDayIndex = astronautRecords.length - 1
@@ -1673,6 +1753,7 @@ function App() {
           <div className="panels">
             <CrewPanel
               record={selectedRecord}
+              observation={selectedObservation}
               messages={messages}
               now={now}
               onSend={() => sendUpdate(selectedRecord, 'Manual')}

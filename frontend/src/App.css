@@ -606,6 +606,39 @@ button.timeline-box {
   margin-bottom: 0;
 }
 
+/* The small "Data available today" row in the crew panel. */
+.data-today {
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.data-today h3 {
+  margin: 0 0 4px;
+  font-size: 0.875rem;
+}
+
+.data-today ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.data-today li {
+  padding: 2px 8px;
+  border: 1px solid #9ca3af;
+  border-radius: 4px;
+}
+
+/* Something the file doesn't have. Grey, because a missing item isn't an alert.
+   The see-through fill works on both the light and the dark page background. */
+.data-today .data-today-missing {
+  background: rgba(156, 163, 175, 0.15);
+}
+
 /* The tier color key. Wraps onto more lines when the screen is narrow. */
 .timeline-legend {
   display: flex;
