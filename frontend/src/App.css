@@ -381,6 +381,12 @@
   font-weight: bold;
 }
 
+/* Muted by fading the text color, which works in light and dark mode. */
+.card .evidence-references {
+  font-size: 0.8125rem;
+  opacity: 0.75;
+}
+
 /* Degraded, failed and unknown quality. An outline in the text color works in
    light and dark mode, and can't be mistaken for a filled tier color. */
 .quality-poor {

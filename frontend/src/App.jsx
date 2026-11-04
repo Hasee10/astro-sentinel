@@ -89,6 +89,10 @@ const ONSD_TICK_STEP = 0.5
 // Words in the backend's names that read better in capitals, for the Run info panel.
 const ACRONYMS = ['onsd', 'hrv', 'ptt', 'sans', 'sd', 'oct']
 
+// The banner text if the observations file gives no label, so the banner always
+// shows.
+const FALLBACK_SYNTHETIC_LABEL = 'SYNTHETIC – NOT REAL ASTRONAUT DATA'
+
 // The newest backend contract this page was built for. Data from a newer one
 // gets a small warning, because its fields may have changed.
 const SUPPORTED_SCHEMA_VERSION = '0.6.0'
@@ -170,6 +174,13 @@ function parseJsonl(text) {
   return nonEmptyLines.map((line) => JSON.parse(line))
 }
 
+// The banner text: the first observation's label, exactly as the file gives it.
+//   observations = every record from the observations file, or null if not loaded
+function getSyntheticLabel(observations) {
+  const label = observations?.[0]?.metadata?.synthetic_label
+  return typeof label === 'string' && label.trim() !== '' ? label : FALLBACK_SYNTHETIC_LABEL
+}
+
 // Says why the backend gave this tier, in plain words. The tier and the reason
 // are separate fields, and a "repeat" caused by scan quality must never read as
 // a detected problem.
@@ -249,6 +260,16 @@ function OutcomeCard({ title, outcome }) {
 
       <h3>Why this tier</h3>
       <p className="tier-reason">{describeTierReason(outcome.tier, outcome.tier_reason)}</p>
+
+      {/* "?." covers older data files, where this field may be left out. */}
+      {outcome.evidence_references?.length > 0 && (
+        <p className="evidence-references">
+          Based on:{' '}
+          {outcome.evidence_references
+            .map((reference) => reference.replaceAll('_', ' '))
+            .join(', ')}
+        </p>
+      )}
 
       {/* This section only appears when the backend gave us a quality value. */}
       {hasQuality && (
@@ -833,8 +854,9 @@ function IncomingMessage({ label, message, now }) {
 //   messages      = every message sent so far, in both directions
 //   now           = the current time, used to work out each message's status
 //   isFixture     = true if the data is hand-made test data
+//   syntheticLabel = the text for this panel's banner
 //   onAcknowledge = the function to call when the user presses Acknowledge
-function GroundPanel({ messages, now, isFixture, onAcknowledge }) {
+function GroundPanel({ messages, now, isFixture, syntheticLabel, onAcknowledge }) {
   const updates = messages.filter((message) => message.direction === CREW_TO_GROUND)
   const inTransit = updates.filter((update) => !isDelivered(update, now))
   const delivered = updates.filter((update) => isDelivered(update, now))
@@ -855,7 +877,7 @@ function GroundPanel({ messages, now, isFixture, onAcknowledge }) {
 
       {/* This panel can be far from the top banner on a phone, so it carries
           its own copy of the labels. */}
-      <p className="banner">SYNTHETIC – NOT REAL ASTRONAUT DATA</p>
+      <p className="banner">{syntheticLabel}</p>
       {isFixture && (
         <p className="fixture-warning">
           Engineering test data – not a simulation result.
@@ -1448,6 +1470,8 @@ function App() {
   // even when there are gaps between them.
   const selectedRecord = isStillLoading ? undefined : astronautRecords[dayIndex]
 
+  const syntheticLabel = getSyntheticLabel(observations)
+
   // The same astronaut's observation for the same day. This stays undefined if
   // the observations file isn't loaded or has no record for that day.
   const selectedObservation = observations?.find(
@@ -1598,7 +1622,7 @@ function App() {
     <main className="page">
       {/* The handoff docs require this label on any screen showing this data,
           so it sits outside the conditions below and always appears. */}
-      <p className="banner">SYNTHETIC – NOT REAL ASTRONAUT DATA</p>
+      <p className="banner">{syntheticLabel}</p>
 
       {selectedFile.isFixture && (
         <p className="fixture-warning">
@@ -1764,6 +1788,7 @@ function App() {
               messages={messages}
               now={now}
               isFixture={selectedFile.isFixture}
+              syntheticLabel={syntheticLabel}
               onAcknowledge={handleAcknowledge}
             />
           </div>
