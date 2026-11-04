@@ -83,11 +83,91 @@
   min-width: 5em;
 }
 
-/* Puts the cards side by side, and stacks them when the screen is too narrow
-   to fit two cards of at least 280px. */
+/* The delay slider, as wide as the page, with its label above it. */
+.delay-control {
+  margin-bottom: 16px;
+}
+
+.delay-control input {
+  display: block;
+  width: 100%;
+  margin: 4px 0;
+}
+
+/* A small line of explanation, such as the demo time scale. */
+.hint {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+}
+
+/* Puts the crew and ground panels side by side, and stacks them when the screen
+   is too narrow to fit two panels of at least 340px. min(100%, 340px) stops a
+   panel from being wider than a very small phone screen. */
+.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 24px;
+  /* Lines the tops of the panels up, so one panel doesn't stretch to match
+     the height of the other. */
+  align-items: start;
+}
+
+/* min-width: 0 lets a panel get narrower than its contents would like, so long
+   text wraps instead of pushing the page wider. */
+.panel {
+  min-width: 0;
+  padding-top: 8px;
+  border-top: 4px solid #6b7280;
+}
+
+.panel > h2 {
+  margin: 0 0 12px;
+  font-size: 1.75rem;
+}
+
+.panel .banner,
+.panel .fixture-warning {
+  margin: 0 0 8px;
+}
+
+.send-button {
+  margin-bottom: 8px;
+  padding: 8px 16px;
+  font: inherit;
+  font-weight: bold;
+}
+
+/* The list of sent messages and their statuses. */
+.message-log {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  font-size: 0.875rem;
+}
+
+/* One countdown and progress bar per incoming message. */
+.incoming {
+  margin-bottom: 12px;
+}
+
+.incoming p {
+  margin: 0 0 4px;
+  font-weight: bold;
+}
+
+.incoming progress {
+  display: block;
+  width: 100%;
+}
+
+.received-label {
+  font-weight: bold;
+}
+
+/* Stacks the cards when a panel is too narrow to fit two cards of at least
+   280px. min(100%, 280px) stops a card from being wider than its panel. */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 16px;
 }
 

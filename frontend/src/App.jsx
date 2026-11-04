@@ -36,6 +36,32 @@ const FALLBACK_MISSION_LENGTH = 30
 // picks its color: "urgent" uses the .tier-urgent rule in App.css, and so on.
 const TIER_NAMES = ['unresolved', 'monitor', 'repeat', 'consult', 'urgent']
 
+// The simulated Earth–Mars delay, for display only. To keep the demo short,
+// 1 second of real time stands for 1 mission minute.
+const DEFAULT_DELAY_MINUTES = 12
+const MAX_DELAY_MINUTES = 20
+const MS_PER_MISSION_MINUTE = 1000
+
+// A message has arrived once the current time reaches its arrival time.
+function isDelivered(message, now) {
+  return message.arrivesAt <= now
+}
+
+// Turns a time in milliseconds into a countdown such as "0:09". It rounds up,
+// so the countdown only shows 0:00 at the moment the message arrives.
+function formatCountdown(milliseconds) {
+  const totalSeconds = Math.ceil(milliseconds / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  // padStart adds a leading zero when needed, so 9 becomes "09".
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+// Turns a timestamp into a clock time in the viewer's own format, like "14:05:09".
+function formatClockTime(timestamp) {
+  return new Date(timestamp).toLocaleTimeString()
+}
+
 // JSONL means "one JSON object on each line". The file as a whole is not valid
 // JSON, so we split it into lines and parse each line separately.
 function parseJsonl(text) {
@@ -186,6 +212,117 @@ function TimelineLegend() {
   )
 }
 
+// The SANS and Venous cards for one record. Both panels use this, so the crew
+// and the ground always display a record in exactly the same way.
+function RecordCards({ record }) {
+  return (
+    <div className="cards">
+      <OutcomeCard title="SANS" outcome={record.sans} />
+      <OutcomeCard title="Venous" outcome={record.venous} />
+    </div>
+  )
+}
+
+// The left panel: what the crew sees now, plus the button to send it to Earth.
+//   record   = the record for the selected day
+//   messages = every message sent so far
+//   now      = the current time, used to work out each message's status
+//   onSend   = the function to call when the user presses the button
+function CrewPanel({ record, messages, now, onSend }) {
+  const hasMessageInTransit = messages.some((message) => !isDelivered(message, now))
+
+  return (
+    <section className="panel panel-crew">
+      <h2>Crew (onboard)</h2>
+
+      <button type="button" className="send-button" onClick={onSend}>
+        Send update to Earth
+      </button>
+
+      {hasMessageInTransit && (
+        <p className="hint">Playback is paused while a message is in transit.</p>
+      )}
+
+      {messages.length > 0 && (
+        <ul className="message-log">
+          {messages.map((message) => (
+            <li key={message.number}>
+              Update {message.number} (Day {message.snapshot.as_of_day}, sent at{' '}
+              {formatClockTime(message.sentAt)}):{' '}
+              <strong>{isDelivered(message, now) ? 'Delivered' : 'In transit'}</strong>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <RecordCards record={record} />
+    </section>
+  )
+}
+
+// The countdown and progress bar for one message on its way to Earth. It doesn't
+// show the day or tier, because the ground can't know those until it arrives.
+function IncomingUpdate({ message, now }) {
+  const timeLeft = message.arrivesAt - now
+
+  return (
+    <div className="incoming">
+      <p>Incoming update – arrives in {formatCountdown(timeLeft)}</p>
+      <progress
+        aria-label="Progress of the incoming update"
+        max={message.delayMs}
+        value={message.delayMs - timeLeft}
+      />
+    </div>
+  )
+}
+
+// The right panel: what Earth knows, which is only what has already arrived.
+//   messages  = every message sent so far
+//   now       = the current time, used to work out each message's status
+//   isFixture = true if the data is hand-made test data
+function GroundPanel({ messages, now, isFixture }) {
+  const inTransit = messages.filter((message) => !isDelivered(message, now))
+  const delivered = messages.filter((message) => isDelivered(message, now))
+
+  // The last received message is the one with the latest arrival time. Sorting
+  // puts that one at the end of the list, and .at(-1) takes the last item. It
+  // gives "undefined" when nothing has arrived yet.
+  const lastReceived = delivered.sort((a, b) => a.arrivesAt - b.arrivesAt).at(-1)
+
+  return (
+    <section className="panel panel-ground">
+      <h2>Ground (Earth)</h2>
+
+      {/* This panel can be far from the top banner on a phone, so it carries
+          its own copy of the labels. */}
+      <p className="banner">SYNTHETIC – NOT REAL ASTRONAUT DATA</p>
+      {isFixture && (
+        <p className="fixture-warning">
+          Engineering test data – not a simulation result.
+        </p>
+      )}
+
+      {inTransit.map((message) => (
+        <IncomingUpdate key={message.number} message={message} now={now} />
+      ))}
+
+      {lastReceived ? (
+        <>
+          <p className="received-label">
+            Last received: Day {lastReceived.snapshot.as_of_day}, sent at{' '}
+            {formatClockTime(lastReceived.sentAt)}
+          </p>
+          <p>Astronaut: {lastReceived.snapshot.astronaut_id}</p>
+          <RecordCards record={lastReceived.snapshot} />
+        </>
+      ) : (
+        <p className="received-label">No update received yet</p>
+      )}
+    </section>
+  )
+}
+
 // The main page. React re-runs this function whenever a state value changes.
 function App() {
   // Each useState gives us the current value and a function to change it.
@@ -199,6 +336,23 @@ function App() {
   const [speed, setSpeed] = useState(PLAYBACK_SPEEDS[0]) // playback speed: 1, 2 or 4
   const [missionLength, setMissionLength] = useState(null) // null = not known yet
   const [usedFallback, setUsedFallback] = useState(false) // did we have to use the fallback?
+  const [delayMinutes, setDelayMinutes] = useState(DEFAULT_DELAY_MINUTES) // the delay slider
+  const [messages, setMessages] = useState([]) // every update sent to Earth so far
+  const [now, setNow] = useState(0) // the current time, updated while messages travel
+
+  // Is any message still on its way? This is worked out from the arrival times,
+  // so a message's status can never disagree with its countdown.
+  const hasMessageInTransit = messages.some((message) => !isDelivered(message, now))
+
+  // While a message is on its way, update "now" 10 times a second. Each update
+  // refreshes the countdowns, and a message becomes delivered as soon as "now"
+  // reaches its arrival time. The timer stops when nothing is left in transit.
+  useEffect(() => {
+    if (!hasMessageInTransit) return
+
+    const timer = setInterval(() => setNow(Date.now()), 100)
+    return () => clearInterval(timer)
+  }, [hasMessageInTransit])
 
   // Read the mission length once when the page opens. The empty [] at the end
   // means "do not run this again when the page updates".
@@ -259,10 +413,12 @@ function App() {
     }
   }, [fileUrl])
 
-  // Runs when the user picks another file. The old file's records, astronaut
-  // and day don't apply to the new file, so we clear them all.
+  // Runs when the user picks another file. The old file's records, astronaut,
+  // day and messages don't apply to the new file, so we clear them all. The
+  // ground snapshot comes from the messages, so it is cleared with them.
   function handleFileChange(event) {
     setIsPlaying(false)
+    setMessages([])
     setFileUrl(event.target.value)
     setRecords([])
     setChosenAstronaut(null)
@@ -272,9 +428,11 @@ function App() {
   }
 
   // Runs when the user picks another astronaut. Their days may be different,
-  // so we go back to their first available day.
+  // so we go back to their first available day. The messages belong to the
+  // previous astronaut, so we clear those too.
   function handleAstronautChange(event) {
     setIsPlaying(false)
+    setMessages([])
     setChosenAstronaut(event.target.value)
     setDayIndex(0)
   }
@@ -355,6 +513,29 @@ function App() {
     setDayIndex(recordIndex)
   }
 
+  // Runs when the user presses "Send update to Earth". This creates a message
+  // holding the record exactly as it came from the file. The delay is stored in
+  // the message, so moving the delay slider later can't change this message.
+  function handleSendUpdate() {
+    const sentAt = Date.now()
+    const delayMs = delayMinutes * MS_PER_MISSION_MINUTE
+
+    // With a delay of 0, the message is never in transit, so nothing to pause.
+    if (delayMs > 0) setIsPlaying(false)
+
+    setNow(sentAt)
+    setMessages([
+      ...messages, // keep the existing messages, and add the new one at the end
+      {
+        number: messages.length + 1,
+        snapshot: selectedRecord,
+        sentAt: sentAt,
+        delayMs: delayMs,
+        arrivesAt: sentAt + delayMs,
+      },
+    ])
+  }
+
   return (
     <main className="page">
       {/* The handoff docs require this label on any screen showing this data,
@@ -422,7 +603,11 @@ function App() {
           </label>
 
           <div className="playback">
-            <button type="button" onClick={handlePlayPause} disabled={hasOnlyOneDay}>
+            <button
+              type="button"
+              onClick={handlePlayPause}
+              disabled={hasOnlyOneDay || hasMessageInTransit}
+            >
               {isPlaying ? 'Pause' : 'Play'}
             </button>
 
@@ -465,9 +650,34 @@ function App() {
             </label>
           </div>
 
-          <div className="cards">
-            <OutcomeCard title="SANS" outcome={selectedRecord.sans} />
-            <OutcomeCard title="Venous" outcome={selectedRecord.venous} />
+          <div className="delay-control">
+            <label htmlFor="delay-slider">
+              One-way delay: <strong>{delayMinutes}</strong>{' '}
+              {delayMinutes === 1 ? 'minute' : 'minutes'}
+            </label>
+            <input
+              id="delay-slider"
+              type="range"
+              min={0}
+              max={MAX_DELAY_MINUTES}
+              value={delayMinutes}
+              onChange={(event) => setDelayMinutes(Number(event.target.value))}
+            />
+            <p className="hint">Demo time: 1 second = 1 mission minute</p>
+          </div>
+
+          <div className="panels">
+            <CrewPanel
+              record={selectedRecord}
+              messages={messages}
+              now={now}
+              onSend={handleSendUpdate}
+            />
+            <GroundPanel
+              messages={messages}
+              now={now}
+              isFixture={selectedFile.isFixture}
+            />
           </div>
 
           <section className="timeline">
