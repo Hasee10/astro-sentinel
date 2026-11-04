@@ -893,6 +893,57 @@ function readableReason(reason) {
   return reason.split('. ')[0]
 }
 
+// Makes a blocker's message safe to put on screen. Some messages quote counts from
+// the hidden ground truth, such as "(ground-truth status counts: {...})", and the
+// handoff docs say those must never reach the page. Everything else is the
+// backend's own wording.
+function readableBlockerMessage(message) {
+  return message.replace(/\s*\([^)]*ground[- ]truth[^)]*\)/gi, '')
+}
+
+// The "adaptive vs fixed" section at the bottom of the page. It only repeats what
+// the backend's report says. It never calculates or shows a result of its own.
+//   report     = the contents of evaluation_blockers.json, or null if not loaded
+//   loadFailed = true if that file couldn't be loaded
+function ResultsSection({ report, loadFailed }) {
+  const blockers = report?.blockers ?? []
+
+  return (
+    <section className="results">
+      <h2>Results: adaptive vs fixed scanning</h2>
+      <p>
+        This will compare scanning on a fixed 7-day schedule with scanning when the
+        system flags a need, and find how reliable the daily signal must be for
+        adaptive scanning to win.
+      </p>
+
+      {loadFailed && <p className="results-notice">Results file not found</p>}
+      {!loadFailed && !report && <p>Loading results…</p>}
+
+      {report && blockers.length === 0 && (
+        <p className="results-notice">This file lists no blockers and holds no results to show.</p>
+      )}
+
+      {blockers.length > 0 && (
+        <div className="results-notice">
+          <p>
+            Comparison not yet available – the backend refuses to produce this result
+            until these are resolved:
+          </p>
+          <ul>
+            {blockers.map((blocker) => (
+              <li key={blocker.capability}>
+                <strong>{readableName(blocker.capability)}:</strong>{' '}
+                {readableBlockerMessage(blocker.message)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  )
+}
+
 // One label and value in the run info list. If the manifest left this value out,
 // it says so instead of leaving a blank.
 function RunFact({ label, value }) {
@@ -1062,6 +1113,8 @@ function App() {
   const [summaryFailed, setSummaryFailed] = useState(false) // did the summary fail to load?
   const [observations, setObservations] = useState(null) // null = none loaded
   const [observationsFailed, setObservationsFailed] = useState(false) // did they fail to load?
+  const [resultsReport, setResultsReport] = useState(null) // null = not loaded
+  const [resultsFailed, setResultsFailed] = useState(false) // did the report fail to load?
   const [delayMinutes, setDelayMinutes] = useState(DEFAULT_DELAY_MINUTES) // the delay slider
   const [messages, setMessages] = useState([]) // every message so far, oldest first
   const [now, setNow] = useState(0) // the current time, updated while messages travel
@@ -1148,6 +1201,31 @@ function App() {
       isCurrent = false
     }
   }, [fileUrl])
+
+  // Read the evaluation report once, when the page opens. It doesn't depend on the
+  // chosen data file. When a file is missing, the dev server may send the page's
+  // HTML instead of a 404, so a reply that isn't valid JSON counts as a failure too.
+  useEffect(() => {
+    let isCurrent = true
+
+    fetch('/data/evaluation_blockers.json')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server responded with status ${response.status}`)
+        }
+        return response.json()
+      })
+      .then((report) => {
+        if (isCurrent) setResultsReport(report)
+      })
+      .catch(() => {
+        if (isCurrent) setResultsFailed(true)
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [])
 
   // Read the chosen file's scans for the ONSD chart, if it has any.
   useEffect(() => {
@@ -1621,6 +1699,8 @@ function App() {
           )}
         </>
       )}
+
+      <ResultsSection report={resultsReport} loadFailed={resultsFailed} />
     </main>
   )
 }

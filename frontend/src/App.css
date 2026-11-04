@@ -549,6 +549,44 @@ button.timeline-box {
   font-size: 0.875rem;
 }
 
+/* The adaptive vs fixed section at the bottom of the page. */
+.results {
+  margin-top: 24px;
+  overflow-wrap: anywhere;
+}
+
+.results h2 {
+  margin: 0 0 8px;
+}
+
+/* A neutral grey, because a blocked comparison is an honest state, not an alert.
+   The see-through fill works on both the light and the dark page background. */
+.results-notice {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #9ca3af;
+  border-radius: 8px;
+  background: rgba(156, 163, 175, 0.15);
+}
+
+.results-notice p {
+  margin: 0 0 8px;
+  font-weight: bold;
+}
+
+.results-notice ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.results-notice li {
+  margin-bottom: 8px;
+}
+
+.results-notice li:last-child {
+  margin-bottom: 0;
+}
+
 /* The tier color key. Wraps onto more lines when the screen is narrow. */
 .timeline-legend {
   display: flex;
