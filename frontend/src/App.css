@@ -137,11 +137,82 @@
   font-weight: bold;
 }
 
-/* The list of sent messages and their statuses. */
-.message-log {
-  margin: 0 0 12px;
-  padding-left: 20px;
+.skip-button {
+  padding: 2px 8px;
+  font: inherit;
   font-size: 0.875rem;
+}
+
+/* Puts the checkbox on its own line, below the send button. */
+.auto-send {
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* A reply that has arrived from the ground. */
+.reply {
+  margin-bottom: 12px;
+  padding-left: 8px;
+  border-left: 4px solid #6b7280;
+}
+
+.reply p {
+  margin: 0 0 4px;
+}
+
+.reply-status {
+  font-weight: bold;
+}
+
+.reply .hint {
+  margin-bottom: 0;
+}
+
+.acknowledge {
+  margin: 0 0 12px;
+}
+
+.acknowledge button {
+  margin-left: 8px;
+  padding: 4px 12px;
+  font: inherit;
+}
+
+/* The message log below both panels. */
+.log {
+  margin-top: 24px;
+}
+
+.log h2 {
+  margin: 0 0 8px;
+}
+
+.log-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each message is a row of labelled values. The columns fit as many as they can
+   at 120px or wider, then wrap, so a phone screen never scrolls sideways. */
+.log-entry {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-top: 1px solid #9ca3af;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+/* Puts each label above its value. */
+.log-label {
+  display: block;
+  font-weight: bold;
+}
+
+.log-value {
+  display: block;
 }
 
 /* One countdown and progress bar per incoming message. */

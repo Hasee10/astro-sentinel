@@ -1,6 +1,8 @@
 // useState lets a component remember a value between screen updates.
 // useEffect lets a component run code after it appears on screen.
-import { useEffect, useState } from 'react'
+// useEffectEvent makes a function that a useEffect can call, and that always
+// sees the latest values without making the useEffect start over.
+import { useEffect, useEffectEvent, useState } from 'react'
 import './App.css'
 
 // The data files the user can choose from. Files in the "public" folder are
@@ -41,6 +43,24 @@ const TIER_NAMES = ['unresolved', 'monitor', 'repeat', 'consult', 'urgent']
 const DEFAULT_DELAY_MINUTES = 12
 const MAX_DELAY_MINUTES = 20
 const MS_PER_MISSION_MINUTE = 1000
+
+// Every message has one of these two directions.
+const CREW_TO_GROUND = 'Crew → Ground' // an update, carrying a snapshot of a record
+const GROUND_TO_CREW = 'Ground → Crew' // a reply, carrying only an acknowledgement
+
+// Compares the tiers on two records and describes any change, such as
+// "Tier change: SANS repeat → urgent". SANS and Venous are checked separately,
+// and each is named separately. It gives null if neither tier changed.
+function describeTierChange(previousRecord, record) {
+  const changes = []
+  if (previousRecord.sans.tier !== record.sans.tier) {
+    changes.push(`SANS ${previousRecord.sans.tier} → ${record.sans.tier}`)
+  }
+  if (previousRecord.venous.tier !== record.venous.tier) {
+    changes.push(`Venous ${previousRecord.venous.tier} → ${record.venous.tier}`)
+  }
+  return changes.length > 0 ? `Tier change: ${changes.join(', ')}` : null
+}
 
 // A message has arrived once the current time reaches its arrival time.
 function isDelivered(message, now) {
@@ -224,12 +244,17 @@ function RecordCards({ record }) {
 }
 
 // The left panel: what the crew sees now, plus the button to send it to Earth.
-//   record   = the record for the selected day
-//   messages = every message sent so far
-//   now      = the current time, used to work out each message's status
-//   onSend   = the function to call when the user presses the button
-function CrewPanel({ record, messages, now, onSend }) {
+//   record           = the record for the selected day
+//   messages         = every message sent so far, in both directions
+//   now              = the current time, used to work out each message's status
+//   onSend           = the function to call when the user presses the button
+//   autoSend         = is "Auto-send on tier change" ticked?
+//   onAutoSendChange = the function to call when the user changes the checkbox
+function CrewPanel({ record, messages, now, onSend, autoSend, onAutoSendChange }) {
   const hasMessageInTransit = messages.some((message) => !isDelivered(message, now))
+  const replies = messages.filter((message) => message.direction === GROUND_TO_CREW)
+  const repliesInTransit = replies.filter((reply) => !isDelivered(reply, now))
+  const repliesDelivered = replies.filter((reply) => isDelivered(reply, now))
 
   return (
     <section className="panel panel-crew">
@@ -239,37 +264,65 @@ function CrewPanel({ record, messages, now, onSend }) {
         Send update to Earth
       </button>
 
+      <label className="auto-send">
+        <input
+          type="checkbox"
+          checked={autoSend}
+          onChange={(event) => onAutoSendChange(event.target.checked)}
+        />{' '}
+        Auto-send on tier change
+      </label>
+
       {hasMessageInTransit && (
         <p className="hint">Playback is paused while a message is in transit.</p>
       )}
 
-      {messages.length > 0 && (
-        <ul className="message-log">
-          {messages.map((message) => (
-            <li key={message.number}>
-              Update {message.number} (Day {message.snapshot.as_of_day}, sent at{' '}
-              {formatClockTime(message.sentAt)}):{' '}
-              <strong>{isDelivered(message, now) ? 'Delivered' : 'In transit'}</strong>
-            </li>
-          ))}
-        </ul>
-      )}
+      {repliesInTransit.map((reply) => (
+        <IncomingMessage
+          key={reply.number}
+          label="Incoming reply"
+          message={reply}
+          now={now}
+        />
+      ))}
+
+      {repliesDelivered.map((reply) => {
+        // The update this reply answers. Adding the two delays gives the round
+        // trip. Time spent waiting for someone to press Acknowledge isn't counted.
+        const update = messages.find((message) => message.number === reply.repliesTo)
+        const roundTripMs = update.delayMs + reply.delayMs
+
+        return (
+          <div className="reply" key={reply.number}>
+            <p>{reply.text}</p>
+            <p className="reply-status">
+              Acknowledged by ground at {formatClockTime(reply.sentAt)}
+            </p>
+            <p className="hint">
+              Round trip: {roundTripMs / MS_PER_MISSION_MINUTE} min (simulated)
+            </p>
+          </div>
+        )
+      })}
 
       <RecordCards record={record} />
     </section>
   )
 }
 
-// The countdown and progress bar for one message on its way to Earth. It doesn't
-// show the day or tier, because the ground can't know those until it arrives.
-function IncomingUpdate({ message, now }) {
+// The countdown and progress bar for one message on its way. It doesn't show
+// the message's contents, because the receiver can't know those until it arrives.
+//   label = what is on its way, such as "Incoming update"
+function IncomingMessage({ label, message, now }) {
   const timeLeft = message.arrivesAt - now
 
   return (
     <div className="incoming">
-      <p>Incoming update – arrives in {formatCountdown(timeLeft)}</p>
+      <p>
+        {label} – arrives in {formatCountdown(timeLeft)}
+      </p>
       <progress
-        aria-label="Progress of the incoming update"
+        aria-label={`Progress of the ${label.toLowerCase()}`}
         max={message.delayMs}
         value={message.delayMs - timeLeft}
       />
@@ -278,14 +331,21 @@ function IncomingUpdate({ message, now }) {
 }
 
 // The right panel: what Earth knows, which is only what has already arrived.
-//   messages  = every message sent so far
-//   now       = the current time, used to work out each message's status
-//   isFixture = true if the data is hand-made test data
-function GroundPanel({ messages, now, isFixture }) {
-  const inTransit = messages.filter((message) => !isDelivered(message, now))
-  const delivered = messages.filter((message) => isDelivered(message, now))
+//   messages      = every message sent so far, in both directions
+//   now           = the current time, used to work out each message's status
+//   isFixture     = true if the data is hand-made test data
+//   onAcknowledge = the function to call when the user presses Acknowledge
+function GroundPanel({ messages, now, isFixture, onAcknowledge }) {
+  const updates = messages.filter((message) => message.direction === CREW_TO_GROUND)
+  const inTransit = updates.filter((update) => !isDelivered(update, now))
+  const delivered = updates.filter((update) => isDelivered(update, now))
 
-  // The last received message is the one with the latest arrival time. Sorting
+  // Delivered updates that nobody has replied to yet.
+  const waitingForAcknowledge = delivered.filter(
+    (update) => !messages.some((message) => message.repliesTo === update.number),
+  )
+
+  // The last received update is the one with the latest arrival time. Sorting
   // puts that one at the end of the list, and .at(-1) takes the last item. It
   // gives "undefined" when nothing has arrived yet.
   const lastReceived = delivered.sort((a, b) => a.arrivesAt - b.arrivesAt).at(-1)
@@ -303,8 +363,22 @@ function GroundPanel({ messages, now, isFixture }) {
         </p>
       )}
 
-      {inTransit.map((message) => (
-        <IncomingUpdate key={message.number} message={message} now={now} />
+      {inTransit.map((update) => (
+        <IncomingMessage
+          key={update.number}
+          label="Incoming update"
+          message={update}
+          now={now}
+        />
+      ))}
+
+      {waitingForAcknowledge.map((update) => (
+        <p className="acknowledge" key={update.number}>
+          Update for Day {update.day}{' '}
+          <button type="button" onClick={() => onAcknowledge(update)}>
+            Acknowledge
+          </button>
+        </p>
       ))}
 
       {lastReceived ? (
@@ -323,6 +397,50 @@ function GroundPanel({ messages, now, isFixture }) {
   )
 }
 
+// One labelled value in the message log.
+function LogField({ label, children }) {
+  return (
+    <div>
+      <span className="log-label">{label}</span>
+      <span className="log-value">{children}</span>
+    </div>
+  )
+}
+
+// The list of every message in both directions, newest first.
+function MessageLog({ messages, now }) {
+  // Messages are stored oldest first. [...messages] makes a copy to reverse,
+  // because .reverse() would otherwise change the original list.
+  const newestFirst = [...messages].reverse()
+
+  return (
+    <section className="log">
+      <h2>Message log</h2>
+
+      {messages.length === 0 && <p>No messages yet.</p>}
+
+      <ol className="log-list">
+        {newestFirst.map((message) => (
+          <li className="log-entry" key={message.number}>
+            <LogField label="Direction">{message.direction}</LogField>
+            <LogField label="Day">{message.day}</LogField>
+            <LogField label="Reason">{message.reason}</LogField>
+            <LogField label="Sent">{formatClockTime(message.sentAt)}</LogField>
+            <LogField label="Delay">
+              {message.delayMs / MS_PER_MISSION_MINUTE} min
+            </LogField>
+            <LogField label="Status">
+              {isDelivered(message, now)
+                ? 'Delivered'
+                : `In transit ${formatCountdown(message.arrivesAt - now)}`}
+            </LogField>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
 // The main page. React re-runs this function whenever a state value changes.
 function App() {
   // Each useState gives us the current value and a function to change it.
@@ -337,8 +455,9 @@ function App() {
   const [missionLength, setMissionLength] = useState(null) // null = not known yet
   const [usedFallback, setUsedFallback] = useState(false) // did we have to use the fallback?
   const [delayMinutes, setDelayMinutes] = useState(DEFAULT_DELAY_MINUTES) // the delay slider
-  const [messages, setMessages] = useState([]) // every update sent to Earth so far
+  const [messages, setMessages] = useState([]) // every message so far, oldest first
   const [now, setNow] = useState(0) // the current time, updated while messages travel
+  const [autoSend, setAutoSend] = useState(true) // the "Auto-send on tier change" checkbox
 
   // Is any message still on its way? This is worked out from the arrival times,
   // so a message's status can never disagree with its countdown.
@@ -469,23 +588,82 @@ function App() {
   const lastDayIndex = astronautRecords.length - 1
   const hasOnlyOneDay = astronautRecords.length === 1
 
+  // Adds one message to the list. Every message goes through here: updates sent
+  // by the button, updates sent automatically, and replies from the ground. The
+  // delay is stored in the message, so moving the delay slider later can't
+  // change it.
+  //   details = the parts that differ between messages, such as the reason
+  function addMessage(details) {
+    const sentAt = Date.now()
+
+    // With a delay of 0, the message is never in transit, so nothing to pause.
+    if (details.delayMs > 0) setIsPlaying(false)
+
+    setNow(sentAt)
+    setMessages([
+      ...messages, // keep the existing messages, and add the new one at the end
+      {
+        ...details, // copy in everything from details
+        number: messages.length + 1,
+        sentAt: sentAt,
+        arrivesAt: sentAt + details.delayMs,
+      },
+    ])
+  }
+
+  // Sends an update holding a record exactly as it came from the file.
+  function sendUpdate(record, reason) {
+    addMessage({
+      direction: CREW_TO_GROUND,
+      day: record.as_of_day,
+      reason: reason,
+      snapshot: record,
+      delayMs: delayMinutes * MS_PER_MISSION_MINUTE,
+    })
+  }
+
+  // Runs when the user moves to a new day by playback or with the slider. If a
+  // tier differs from the previous available day, this sends an update.
+  function autoSendIfTierChanged(newDayIndex) {
+    if (!autoSend) return
+
+    // The first available day has no previous day to compare with.
+    const previousRecord = astronautRecords[newDayIndex - 1]
+    if (!previousRecord) return
+
+    const record = astronautRecords[newDayIndex]
+    const reason = describeTierChange(previousRecord, record)
+    if (!reason) return
+
+    // Dragging the slider back and forth can land on the same day many times,
+    // so only send the first time.
+    const alreadySent = messages.some(
+      (message) => message.day === record.as_of_day && message.reason === reason,
+    )
+    if (!alreadySent) sendUpdate(record, reason)
+  }
+
+  // One step of playback: move to the next day.
+  const moveToNextDay = useEffectEvent(() => {
+    const nextDayIndex = dayIndex + 1
+    setDayIndex(nextDayIndex)
+    // Stop as soon as we arrive at the last day.
+    if (nextDayIndex >= lastDayIndex) setIsPlaying(false)
+    autoSendIfTierChanged(nextDayIndex)
+  })
+
   // While playing, wait, then move to the next day. Moving changes dayIndex,
   // which is listed at the end of this useEffect, so React runs it again and
   // starts the wait for the following day.
   useEffect(() => {
     if (!isPlaying) return
 
-    const timer = setTimeout(() => {
-      const nextDayIndex = dayIndex + 1
-      setDayIndex(nextDayIndex)
-      // Stop as soon as we arrive at the last day.
-      if (nextDayIndex >= lastDayIndex) setIsPlaying(false)
-    }, MS_PER_DAY_AT_1X / speed)
+    const timer = setTimeout(() => moveToNextDay(), MS_PER_DAY_AT_1X / speed)
 
     // React runs this cleanup before the next run, and it cancels the pending
     // wait. This is how pausing stops the next step from happening.
     return () => clearTimeout(timer)
-  }, [isPlaying, dayIndex, lastDayIndex, speed])
+  }, [isPlaying, dayIndex, speed])
 
   // Runs when the user clicks the Play/Pause button.
   function handlePlayPause() {
@@ -503,7 +681,9 @@ function App() {
     setIsPlaying(false)
     // A slider's value is always text, like "7", so we convert it to a number
     // before using it as a position in the list.
-    setDayIndex(Number(event.target.value))
+    const newDayIndex = Number(event.target.value)
+    setDayIndex(newDayIndex)
+    autoSendIfTierChanged(newDayIndex)
   }
 
   // Runs when the user clicks a timeline box. Like the slider, it pauses
@@ -513,27 +693,33 @@ function App() {
     setDayIndex(recordIndex)
   }
 
-  // Runs when the user presses "Send update to Earth". This creates a message
-  // holding the record exactly as it came from the file. The delay is stored in
-  // the message, so moving the delay slider later can't change this message.
-  function handleSendUpdate() {
-    const sentAt = Date.now()
-    const delayMs = delayMinutes * MS_PER_MISSION_MINUTE
+  // Runs when the user presses Acknowledge on a delivered update. The reply uses
+  // the same delay as that update, and its fixed sentence is all it ever says.
+  function handleAcknowledge(update) {
+    addMessage({
+      direction: GROUND_TO_CREW,
+      day: update.day,
+      reason: 'Acknowledgement',
+      text: `Ground acknowledges update for Day ${update.day}.`,
+      repliesTo: update.number,
+      delayMs: update.delayMs,
+    })
+  }
 
-    // With a delay of 0, the message is never in transit, so nothing to pause.
-    if (delayMs > 0) setIsPlaying(false)
+  // Runs when the user presses "Skip countdown". This delivers the oldest
+  // message still in transit by moving its arrival time to right now. The list
+  // is oldest first, so .find() gives the oldest match.
+  function handleSkipCountdown() {
+    const oldest = messages.find((message) => !isDelivered(message, now))
+    if (!oldest) return
 
-    setNow(sentAt)
-    setMessages([
-      ...messages, // keep the existing messages, and add the new one at the end
-      {
-        number: messages.length + 1,
-        snapshot: selectedRecord,
-        sentAt: sentAt,
-        delayMs: delayMs,
-        arrivesAt: sentAt + delayMs,
-      },
-    ])
+    const skippedAt = Date.now()
+    setNow(skippedAt)
+    setMessages(
+      messages.map((message) =>
+        message === oldest ? { ...message, arrivesAt: skippedAt } : message,
+      ),
+    )
   }
 
   return (
@@ -664,6 +850,15 @@ function App() {
               onChange={(event) => setDelayMinutes(Number(event.target.value))}
             />
             <p className="hint">Demo time: 1 second = 1 mission minute</p>
+            {/* For demo rehearsals. */}
+            <button
+              type="button"
+              className="skip-button"
+              onClick={handleSkipCountdown}
+              disabled={!hasMessageInTransit}
+            >
+              Skip countdown
+            </button>
           </div>
 
           <div className="panels">
@@ -671,14 +866,19 @@ function App() {
               record={selectedRecord}
               messages={messages}
               now={now}
-              onSend={handleSendUpdate}
+              onSend={() => sendUpdate(selectedRecord, 'Manual')}
+              autoSend={autoSend}
+              onAutoSendChange={setAutoSend}
             />
             <GroundPanel
               messages={messages}
               now={now}
               isFixture={selectedFile.isFixture}
+              onAcknowledge={handleAcknowledge}
             />
           </div>
+
+          <MessageLog messages={messages} now={now} />
 
           <section className="timeline">
             <h2>Timeline</h2>
