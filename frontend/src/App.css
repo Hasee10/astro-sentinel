@@ -457,6 +457,72 @@ button.timeline-box {
   outline-offset: 1px;
 }
 
+/* The ONSD chart below the timeline. */
+.onsd {
+  margin-top: 24px;
+}
+
+.onsd h2 {
+  margin: 0 0 8px;
+}
+
+/* A fixed height that includes the axis labels. min-width: 0 lets the chart get
+   narrower with the page instead of holding it wide on a phone. */
+.onsd-chart {
+  width: 100%;
+  min-width: 0;
+  height: 320px;
+}
+
+/* No focus box after a tap or click. Keyboard users still get theirs. */
+.onsd-chart :focus:not(:focus-visible) {
+  outline: none;
+}
+
+.onsd-legend {
+  margin-bottom: 8px;
+}
+
+.onsd-swatch {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+
+.onsd-note {
+  margin: 8px 0 0;
+}
+
+.onsd-dot-solid {
+  fill: #2563eb;
+  stroke: Canvas;
+  stroke-width: 1;
+}
+
+/* Canvas is the page's background color, in light and dark mode, which is what
+   makes this dot look hollow on top of the line. */
+.onsd-dot-hollow {
+  fill: Canvas;
+  stroke: #d97706;
+  stroke-width: 2;
+}
+
+.onsd-failed {
+  fill: none;
+  stroke: #dc2626;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.onsd-tooltip {
+  padding: 6px 10px;
+  border: 1px solid #9ca3af;
+  border-radius: 4px;
+  background: Canvas;
+  color: CanvasText;
+  font-size: 0.875rem;
+}
+
 /* The tier color key. Wraps onto more lines when the screen is narrow. */
 .timeline-legend {
   display: flex;

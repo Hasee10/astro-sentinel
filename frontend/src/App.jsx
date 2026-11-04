@@ -3,6 +3,17 @@
 // useEffectEvent makes a function that a useEffect can call, and that always
 // sees the latest values without making the useEffect start over.
 import { useEffect, useEffectEvent, useState } from 'react'
+// Recharts draws the ONSD chart from these building blocks.
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import './App.css'
 
 // The data files the user can choose from. Files in the "public" folder are
@@ -12,6 +23,7 @@ import './App.css'
 //   url         = where to load the file from
 //   manifestUrl = where to read this file's mission length from
 //   summaryUrl  = where to read this file's run summary from, if it has one
+//   observationsUrl = where to read this file's scans from, if it has any
 //   isFixture   = true for hand-made test data, which needs a warning on screen
 //
 // The first file in this list is the one selected when the page opens.
@@ -25,6 +37,7 @@ const DATA_FILES = [
     url: '/data/crew_scored.jsonl',
     manifestUrl: '/data/simulation_manifest.json',
     summaryUrl: '/data/scoring_summary.json',
+    observationsUrl: '/data/crew_observations.jsonl',
     isFixture: false,
   },
   {
@@ -53,6 +66,9 @@ const FALLBACK_MISSION_LENGTH = 30
 // The tier names for the legend, in the order they are shown. Each name also
 // picks its color: "urgent" uses the .tier-urgent rule in App.css, and so on.
 const TIER_NAMES = ['unresolved', 'monitor', 'repeat', 'consult', 'urgent']
+
+// The gap between the numbers on the ONSD chart's y-axis, in mm.
+const ONSD_TICK_STEP = 0.5
 
 // Words in the backend's names that read better in capitals, for the Run info panel.
 const ACRONYMS = ['onsd', 'hrv', 'ptt', 'sans', 'sd']
@@ -323,6 +339,247 @@ function TimelineLegend() {
         no record
       </li>
     </ul>
+  )
+}
+
+// Reads one observation's ONSD reading. A failed scan never has a value on the
+// chart, even if the file gave it one, and a scan of another type isn't an ONSD
+// scan at all, so its quality says nothing about ONSD.
+function readOnsdScan(observation) {
+  const scan = observation?.scan?.type === 'onsd' ? observation.scan : null
+  const quality = scan?.quality?.status ?? null
+  return {
+    onsdMm: quality === 'failed' ? null : (scan?.onsd_mm ?? null),
+    quality: quality,
+  }
+}
+
+// Works out the y-axis from every astronaut's values, so the scale stays the same
+// when switching astronauts. This only sizes the axis: it rounds outward to the
+// nearest tick and is never shown or used as a reference value. It gives null if
+// the file has no values to plot.
+//   failedLane = the height for the ✕ markers, below the lowest tick, so a marker
+//                can't be read as a measurement
+function getOnsdAxis(observations) {
+  const values = observations
+    .map((observation) => readOnsdScan(observation).onsdMm)
+    .filter((value) => value !== null)
+  if (values.length === 0) return null
+
+  const lowest = Math.floor(Math.min(...values) / ONSD_TICK_STEP) * ONSD_TICK_STEP
+  const highest = Math.max(
+    Math.ceil(Math.max(...values) / ONSD_TICK_STEP) * ONSD_TICK_STEP,
+    lowest + ONSD_TICK_STEP,
+  )
+  const tickCount = Math.round((highest - lowest) / ONSD_TICK_STEP) + 1
+
+  return {
+    domain: [lowest - ONSD_TICK_STEP / 2, highest],
+    ticks: Array.from({ length: tickCount }, (_, index) => lowest + index * ONSD_TICK_STEP),
+    failedLane: lowest - ONSD_TICK_STEP / 4,
+  }
+}
+
+// One round dot on the line: solid for "ok", and hollow amber for anything else
+// that has a value, so a scan is never shown as ok unless the backend said so.
+function OnsdDot({ cx, cy, payload }) {
+  if (cy === null || cy === undefined) return null
+  const style = payload.quality === 'ok' ? 'onsd-dot-solid' : 'onsd-dot-hollow'
+  return <circle cx={cx} cy={cy} r={4} className={style} />
+}
+
+// One small ✕ for a failed scan, drawn as two crossing lines.
+function FailedMarker({ cx, cy }) {
+  if (cy === null || cy === undefined) return null
+  return (
+    <path
+      d={`M${cx - 4} ${cy - 4} L${cx + 4} ${cy + 4} M${cx - 4} ${cy + 4} L${cx + 4} ${cy - 4}`}
+      className="onsd-failed"
+    />
+  )
+}
+
+// The box that appears when hovering over or tapping a day on the chart.
+function OnsdTooltip({ active, payload }) {
+  // Both lines share the same row of data, so the first one is enough.
+  const row = payload?.[0]?.payload
+  if (!active || !row) return null
+
+  return (
+    <div className="onsd-tooltip">
+      <div>
+        <strong>Day {row.day}</strong>
+      </div>
+      <div>
+        ONSD: {row.onsdMm === null ? 'No value' : `${row.onsdMm.toFixed(2)} mm`}
+      </div>
+      <div>Quality: {row.quality === null ? 'No scan' : row.quality.replace('_', ' ')}</div>
+    </div>
+  )
+}
+
+// The key that says what each marker means.
+function OnsdLegend() {
+  return (
+    <ul className="timeline-legend onsd-legend">
+      <li>
+        <svg className="onsd-swatch" viewBox="0 0 12 12" aria-hidden="true">
+          <circle cx="6" cy="6" r="4" className="onsd-dot-solid" />
+        </svg>
+        OK
+      </li>
+      <li>
+        <svg className="onsd-swatch" viewBox="0 0 12 12" aria-hidden="true">
+          <circle cx="6" cy="6" r="4" className="onsd-dot-hollow" />
+        </svg>
+        Degraded or unknown
+      </li>
+      <li>
+        <svg className="onsd-swatch" viewBox="0 0 12 12" aria-hidden="true">
+          <path d="M2 2 L10 10 M2 10 L10 2" className="onsd-failed" />
+        </svg>
+        Failed (no value)
+      </li>
+      <li>Gap in the line: no value that day</li>
+    </ul>
+  )
+}
+
+// The ONSD chart for one astronaut. Every value comes straight from the file; we
+// calculate no baseline, average, threshold or trend.
+//   observations  = every record from the observations file, or null if not loaded
+//   loadFailed    = true if that file couldn't be loaded
+//   astronautId   = whose scans to show
+//   missionLength = how many days the x-axis covers
+//   selectedDay   = where to draw the vertical marker, which follows playback
+function OnsdChart({ observations, loadFailed, astronautId, missionLength, selectedDay }) {
+  const axis = observations && getOnsdAxis(observations)
+
+  // One row per mission day, whether or not it has a scan. A row whose value is
+  // null is what makes the gap in the line.
+  const rows = Array.from({ length: missionLength }, (_, index) => {
+    const day = index + 1
+    const observation = observations?.find(
+      (record) => record.astronaut_id === astronautId && record.day === day,
+    )
+    const { onsdMm, quality } = readOnsdScan(observation)
+    return {
+      day: day,
+      onsdMm: onsdMm,
+      quality: quality,
+      failedMarker: quality === 'failed' ? axis?.failedLane : null,
+    }
+  })
+
+  // Day 1, then every 5 days, so the labels still fit on a phone.
+  const dayTicks = [1, ...rows.map((row) => row.day).filter((day) => day % 5 === 0)]
+
+  return (
+    <section className="onsd">
+      <h2>ONSD trend</h2>
+
+      {loadFailed && <p>Could not load the ONSD scans.</p>}
+      {!loadFailed && !observations && <p>Loading ONSD scans…</p>}
+      {observations && !axis && <p>This file has no ONSD values to plot.</p>}
+
+      {axis && (
+        <>
+          <OnsdLegend />
+          <div className="onsd-chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={rows} margin={{ top: 30, right: 20, bottom: 4, left: 0 }}>
+                <CartesianGrid vertical={false} stroke="#9ca3af" strokeOpacity={0.35} />
+                <XAxis
+                  dataKey="day"
+                  type="number"
+                  domain={[1, missionLength]}
+                  ticks={dayTicks}
+                  // Keeps day 1's dot and marker from sitting on the y-axis.
+                  padding={{ left: 10, right: 10 }}
+                  height={48}
+                  stroke="#9ca3af"
+                  tick={{ fill: 'currentColor', fontSize: 12 }}
+                  tickLine={false}
+                  label={{
+                    value: 'Mission day',
+                    position: 'insideBottom',
+                    fill: 'currentColor',
+                    fontSize: 13,
+                  }}
+                />
+                <YAxis
+                  domain={axis.domain}
+                  ticks={axis.ticks}
+                  width={52}
+                  stroke="#9ca3af"
+                  tick={{ fill: 'currentColor', fontSize: 12 }}
+                  tickLine={false}
+                  tickFormatter={(value) => value.toFixed(1)}
+                  label={{
+                    value: 'ONSD (mm)',
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { textAnchor: 'middle' },
+                    fill: 'currentColor',
+                    fontSize: 13,
+                  }}
+                />
+
+                {/* filterNull={false} keeps the tooltip working on days with no value. */}
+                <Tooltip
+                  content={OnsdTooltip}
+                  filterNull={false}
+                  cursor={{ stroke: '#9ca3af' }}
+                  isAnimationActive={false}
+                />
+
+                <ReferenceLine
+                  x={selectedDay}
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  label={{
+                    value: `Day ${selectedDay}`,
+                    position: 'top',
+                    // Lifts the label clear of the y-axis's top number.
+                    offset: 12,
+                    fill: 'currentColor',
+                    fontSize: 12,
+                  }}
+                />
+
+                {/* connectNulls={false} is what leaves a gap at a null, and
+                    "linear" draws straight lines, so no curve suggests values
+                    between scans. */}
+                <Line
+                  dataKey="onsdMm"
+                  type="linear"
+                  connectNulls={false}
+                  stroke="#2563eb"
+                  strokeWidth={2}
+                  dot={OnsdDot}
+                  activeDot={false}
+                  isAnimationActive={false}
+                />
+
+                {/* The ✕ markers. This "line" is invisible and only places them. */}
+                <Line
+                  dataKey="failedMarker"
+                  stroke="none"
+                  dot={FailedMarker}
+                  activeDot={false}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </>
+      )}
+
+      <p className="hint onsd-note">
+        Simulated values. Shown against no personal baseline yet – baseline band not
+        provided by the backend.
+      </p>
+    </section>
   )
 }
 
@@ -752,6 +1009,8 @@ function App() {
   const [runManifest, setRunManifest] = useState(null) // null = none loaded
   const [runSummary, setRunSummary] = useState(null) // null = none loaded
   const [summaryFailed, setSummaryFailed] = useState(false) // did the summary fail to load?
+  const [observations, setObservations] = useState(null) // null = none loaded
+  const [observationsFailed, setObservationsFailed] = useState(false) // did they fail to load?
   const [delayMinutes, setDelayMinutes] = useState(DEFAULT_DELAY_MINUTES) // the delay slider
   const [messages, setMessages] = useState([]) // every message so far, oldest first
   const [now, setNow] = useState(0) // the current time, updated while messages travel
@@ -839,6 +1098,32 @@ function App() {
     }
   }, [fileUrl])
 
+  // Read the chosen file's scans for the ONSD chart, if it has any.
+  useEffect(() => {
+    const { observationsUrl } = DATA_FILES.find((file) => file.url === fileUrl)
+    if (!observationsUrl) return
+
+    let isCurrent = true
+
+    fetch(observationsUrl)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server responded with status ${response.status}`)
+        }
+        return response.text()
+      })
+      .then((text) => {
+        if (isCurrent) setObservations(parseJsonl(text))
+      })
+      .catch(() => {
+        if (isCurrent) setObservationsFailed(true)
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [fileUrl])
+
   // Load the chosen file. The [fileUrl] at the end means "run this when the
   // page opens, and again whenever fileUrl changes".
   useEffect(() => {
@@ -886,6 +1171,8 @@ function App() {
     setRunManifest(null)
     setRunSummary(null)
     setSummaryFailed(false)
+    setObservations(null)
+    setObservationsFailed(false)
   }
 
   // Runs when the user picks another astronaut. Their days may be different,
@@ -1269,6 +1556,18 @@ function App() {
             />
             <TimelineLegend />
           </section>
+
+          {/* Only a file with its own scans gets this chart, so one run's scans
+              are never shown against another file's records. */}
+          {selectedFile.observationsUrl && (
+            <OnsdChart
+              observations={observations}
+              loadFailed={observationsFailed}
+              astronautId={astronautId}
+              missionLength={missionLength}
+              selectedDay={selectedRecord.as_of_day}
+            />
+          )}
         </>
       )}
     </main>
