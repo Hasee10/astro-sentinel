@@ -57,6 +57,33 @@ const TIER_NAMES = ['unresolved', 'monitor', 'repeat', 'consult', 'urgent']
 // Words in the backend's names that read better in capitals, for the Run info panel.
 const ACRONYMS = ['onsd', 'hrv', 'ptt', 'sans', 'sd']
 
+// The newest backend contract this page was built for. Data from a newer one
+// gets a small warning, because its fields may have changed.
+const SUPPORTED_SCHEMA_VERSION = '0.6.0'
+
+// The measurement quality values that get the warning style on a card.
+const POOR_QUALITY_VALUES = ['degraded', 'failed', 'unknown']
+
+// Plain words for each tier_reason the backend can send. These only describe the
+// backend's reason; they never decide anything.
+const TIER_REASON_TEXT = {
+  red_flag_symptom: 'A red-flag symptom was recorded.',
+  measurement_quality: 'Set because of scan quality.',
+  insufficient_evidence_for_probability:
+    'Not enough evidence to estimate a probability. This does not mean low risk.',
+  probability_threshold:
+    'Set by comparing a simulated probability with the decision thresholds.',
+}
+
+// Plain words for why a capability in the manifest's capability_readiness list
+// isn't ready.
+const BLOCKED_STATE_TEXT = {
+  blocked_missing_parameter: 'Missing a parameter',
+  blocked_unapproved_assumption: 'Assumption not approved',
+  blocked_missing_model_rule: 'No model rule yet',
+  unsupported_scientific_use: 'Unsupported scientific use',
+}
+
 // The simulated Earth–Mars delay, for display only. To keep the demo short,
 // 1 second of real time stands for 1 mission minute.
 const DEFAULT_DELAY_MINUTES = 12
@@ -111,15 +138,56 @@ function parseJsonl(text) {
   return nonEmptyLines.map((line) => JSON.parse(line))
 }
 
-// Shows the probability exactly as the backend sent it. We never calculate one.
-function ProbabilityText({ probability }) {
+// Says why the backend gave this tier, in plain words. The tier and the reason
+// are separate fields, and a "repeat" caused by scan quality must never read as
+// a detected problem.
+function describeTierReason(tier, reason) {
+  // Older data files were written before this field existed.
+  if (reason === null || reason === undefined) {
+    return 'Reason not stated in this data file.'
+  }
+  if (tier === 'repeat' && reason === 'measurement_quality') {
+    return 'Scan quality issue – not a sign of a detected problem.'
+  }
+  return TIER_REASON_TEXT[reason] ?? `Reason: ${readableName(reason)}.`
+}
+
+// Is this version newer than the baseline? The parts are compared as numbers,
+// because compared as text, "0.10.0" would count as older than "0.6.0".
+function isNewerVersion(version, baseline) {
+  const toParts = (text) => String(text).split('.').map((part) => parseInt(part, 10) || 0)
+  const versionParts = toParts(version)
+  const baselineParts = toParts(baseline)
+
+  for (let i = 0; i < Math.max(versionParts.length, baselineParts.length); i++) {
+    const difference = (versionParts[i] ?? 0) - (baselineParts[i] ?? 0)
+    if (difference !== 0) return difference > 0
+  }
+  return false
+}
+
+// Shows the backend's probability as a percentage, always with its label right
+// next to it. Multiplying by 100 only changes how it's written; we never
+// calculate a probability ourselves.
+function ProbabilityText({ probability, label }) {
   // Check for null specifically. A shortcut like "if (!probability)" would
   // also treat a real value of 0 as missing, and we must not mix those up.
   // "undefined" is included because the schema lets the backend leave this out.
   if (probability === null || probability === undefined) {
     return <p>Unavailable. This does not mean zero risk; see the explanation below.</p>
   }
-  return <p>{probability}</p>
+
+  // A number must never appear without its label, so we hold it back instead.
+  if (!label?.trim()) {
+    return <p>A probability was sent without its required label, so it is not shown.</p>
+  }
+
+  return (
+    <p className="probability">
+      <strong>{(probability * 100).toFixed(1)}%</strong>
+      <span className="probability-label">{label}</span>
+    </p>
+  )
 }
 
 // One card for one outcome. We use this component twice, once for SANS and once
@@ -139,16 +207,23 @@ function OutcomeCard({ title, outcome }) {
           style: "urgent" uses the .tier-urgent rule in App.css, and so on. */}
       <p className={`tier-badge tier-${outcome.tier}`}>{outcome.tier}</p>
 
+      <h3>Why this tier</h3>
+      <p className="tier-reason">{describeTierReason(outcome.tier, outcome.tier_reason)}</p>
+
       {/* This section only appears when the backend gave us a quality value. */}
       {hasQuality && (
         <>
           <h3>Measurement quality</h3>
-          <p>{quality}</p>
+          <p>
+            <span className={POOR_QUALITY_VALUES.includes(quality) ? 'quality-poor' : undefined}>
+              {quality}
+            </span>
+          </p>
         </>
       )}
 
       <h3>Probability</h3>
-      <ProbabilityText probability={outcome.probability} />
+      <ProbabilityText probability={outcome.probability} label={outcome.probability_label} />
 
       <h3>Explanation</h3>
       <p>{outcome.explanation}</p>
@@ -521,6 +596,57 @@ function RunFact({ label, value }) {
   )
 }
 
+// The manifest's capability_readiness list, split into ready and blocked. Anything
+// that isn't exactly "ready" goes under Blocked, including any state added later,
+// so this list can never overstate what is ready.
+//   readiness = an object such as { onsd_scan_values: 'ready' }, or undefined in
+//               a manifest from before v0.6.0
+function CapabilityReadiness({ readiness }) {
+  if (!readiness) {
+    return (
+      <>
+        <h3>Capability readiness</h3>
+        <p>Not stated in this run's manifest.</p>
+      </>
+    )
+  }
+
+  const entries = Object.entries(readiness)
+  const ready = entries.filter(([, state]) => state === 'ready')
+  const blocked = entries.filter(([, state]) => state !== 'ready')
+
+  return (
+    <>
+      <h3>Capability readiness</h3>
+      <p className="hint">
+        These are engineering states. Ready means the simulation can generate this
+        value, not that the value is clinically validated.
+      </p>
+      <div className="run-capabilities">
+        <div>
+          <h4>Ready ({ready.length})</h4>
+          <ul className="run-reasons">
+            {ready.map(([capability]) => (
+              <li key={capability}>{readableName(capability)}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4>Blocked ({blocked.length})</h4>
+          <ul className="run-reasons">
+            {blocked.map(([capability, state]) => (
+              <li key={capability}>
+                <strong>{readableName(capability)}:</strong>{' '}
+                {BLOCKED_STATE_TEXT[state] ?? readableName(state)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // The collapsible "Run info" panel. <details> is built into the browser, and it
 // opens and closes by itself when the title is clicked, so we need no state.
 // Everything shown comes from the two files; we calculate no risk or tier.
@@ -536,7 +662,7 @@ function RunInfo({ manifest, summary }) {
 
   return (
     <details className="run-info">
-      <summary>Why most values are unavailable</summary>
+      <summary>Run info</summary>
 
       {!manifest && <p>Could not read the run information from the manifest.</p>}
 
@@ -546,10 +672,15 @@ function RunInfo({ manifest, summary }) {
             <RunFact label="Run ID" value={manifest.run_id} />
             <RunFact label="Crew size" value={manifest.crew_size} />
             <RunFact label="Mission length (days)" value={manifest.mission_duration_days} />
-            <RunFact label="Generation status" value={manifest.generation_status} />
+            <RunFact
+              label="Generation status"
+              value={manifest.generation_status && readableName(manifest.generation_status)}
+            />
           </dl>
 
-          <h3>Why physiological values were not generated</h3>
+          <CapabilityReadiness readiness={manifest.capability_readiness} />
+
+          <h3>Why these values are blocked</h3>
           {reasons.length === 0 ? (
             <p>No reasons listed.</p>
           ) : (
@@ -575,6 +706,29 @@ function RunInfo({ manifest, summary }) {
           )}
           <TierCounts title="SANS" counts={summary.sans_tier_distribution} />
           <TierCounts title="Venous" counts={summary.venous_tier_distribution} />
+
+          <h3>Days with a computed probability</h3>
+          <dl className="run-facts">
+            <RunFact label="SANS" value={summary.sans_probability_computed_count} />
+            <RunFact label="Venous" value={summary.venous_probability_computed_count} />
+          </dl>
+
+          <h3>Structural warnings</h3>
+          {!summary.structural_warnings && <p>Not stated in this summary.</p>}
+          {summary.structural_warnings?.length === 0 && <p>None reported.</p>}
+          {summary.structural_warnings?.length > 0 && (
+            <>
+              <p className="hint">
+                Data-quality flags, not errors. These days were still scored.
+              </p>
+              <ul className="run-reasons">
+                {summary.structural_warnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            </>
+          )}
+
           {summary.note && <p className="run-note">{summary.note}</p>}
         </>
       )}
@@ -749,6 +903,14 @@ function App() {
   // from the backend's file.
   const selectedFile = DATA_FILES.find((file) => file.url === fileUrl)
 
+  // Today's scored records have no metadata block, so the manifest's own
+  // schema_version is what normally gives this run's version. Records are
+  // checked too, in case they carry one.
+  const newerSchemaVersion = [
+    ...records.map((record) => record.metadata?.schema_version),
+    runManifest?.schema_version,
+  ].find((version) => version && isNewerVersion(version, SUPPORTED_SCHEMA_VERSION))
+
   // A Set keeps only one copy of each value, which gives us each astronaut once.
   // The pipeline's file isn't in astronaut order, so we sort the list to show
   // A1, A2, A3... in the dropdown.
@@ -921,6 +1083,14 @@ function App() {
       {selectedFile.isFixture && (
         <p className="fixture-warning">
           Engineering test data – not a simulation result.
+        </p>
+      )}
+
+      {newerSchemaVersion && (
+        <p className="schema-warning">
+          This data uses schema {newerSchemaVersion}, which is newer than the{' '}
+          {SUPPORTED_SCHEMA_VERSION} this page was built for. Some fields may not
+          display correctly.
         </p>
       )}
 

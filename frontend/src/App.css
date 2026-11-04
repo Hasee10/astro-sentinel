@@ -26,6 +26,16 @@
   background: #6d28d9;
 }
 
+/* A small warning that the data's schema is newer than this page. It uses the
+   same purple as the fixture warning, so nobody reads it as a tier. */
+.schema-warning {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border: 2px solid #6d28d9;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
 /* Puts the dropdowns in a row, and wraps them when the screen is narrow. */
 .controls {
   display: flex;
@@ -108,6 +118,13 @@
 
 .run-counts {
   margin-bottom: 8px;
+}
+
+/* Ready and blocked side by side, stacking when the panel is narrow. */
+.run-capabilities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 8px 16px;
 }
 
 .run-info .run-note {
@@ -339,6 +356,40 @@
   font-size: 1.75rem;
   font-weight: bold;
   text-transform: uppercase;
+}
+
+.card .tier-reason {
+  font-weight: bold;
+}
+
+/* Degraded, failed and unknown quality. An outline in the text color works in
+   light and dark mode, and can't be mistaken for a filled tier color. */
+.quality-poor {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 2px dashed currentColor;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* Keeps a probability and its label together on the card. */
+.card .probability {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 1.25rem;
+}
+
+/* The label that must always sit beside a probability. It uses the same blue as
+   the SYNTHETIC banner, because both say this is not real clinical data. */
+.probability-label {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #1e3a8a;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: bold;
 }
 
 /* The timeline strip below the cards. */

@@ -1,29 +1,44 @@
 {
-  "run_id": "run-smoke-001",
-  "created_at": "2026-11-01T00:00:00+00:00",
+  "run_id": "run-ee37dd8bee2b",
+  "created_at": "2026-11-04T18:19:41.326647+00:00",
   "random_seed": 42,
   "crew_size": 8,
   "mission_duration_days": 30,
   "scenario_counts": {
-    "healthy": 2,
-    "slow_sans": 2,
+    "healthy": 3,
+    "slow_sans": 1,
     "venous_stasis": 2,
     "both": 2
   },
-  "schema_version": "0.2.0",
-  "parameter_registry_parameter_count": 26,
+  "schema_version": "0.6.0",
+  "parameter_registry_parameter_count": 28,
   "assumption_registry_assumption_count": 14,
-  "active_assumption_ids": [],
+  "active_assumption_ids": [
+    "sans_prior_mapping",
+    "venous_probability_model",
+    "decision_tier_thresholds",
+    "onsd_baseline_sd_values",
+    "hrv_trigger_assumed_accuracy",
+    "jugular_flow_risk_mapping",
+    "fixed_schedule_interval_choice",
+    "onsd_scan_failure_rate"
+  ],
   "scenario_structure_generated": true,
   "physiological_values_generated": false,
   "physiological_generation_blocked_reasons": {
-    "personal_onsd_baseline_values": "blocked: assumption(s) not approved: ['onsd_baseline_sd_values']",
-    "daily_hrv_weak_signal": "blocked: assumption(s) not approved: ['hrv_trigger_assumed_accuracy']",
+    "daily_hrv_weak_signal": "no generation algorithm is implemented in simulation/generator.py yet - approval alone does not produce numbers",
     "daily_ptt_weak_signal": "blocked: assumption(s) not approved: ['ptt_trigger_assumed_usefulness']",
-    "onsd_scan_values": "blocked: assumption(s) not approved: ['onsd_baseline_sd_values']",
-    "jugular_scan_values": "blocked: assumption(s) not approved: ['jugular_flow_risk_mapping']",
-    "measurement_quality_failure_injection": "blocked: assumption(s) not approved: ['onsd_scan_failure_rate']",
-    "sans_venous_onset_day_assignment": "No approved convention exists for choosing which day a hidden SANS/venous onset is placed within the 30-day mission. Picking one (e.g. a fixed day, or a sampled day) requires a human-approved simulation-design rule - it is not itself a sourced scientific parameter, but assigning it without approval would silently bake in an unreviewed assumption, which this generator does not do."
+    "jugular_scan_values": "no generation algorithm is implemented in simulation/generator.py yet - approval alone does not produce numbers",
+    "sans_venous_onset_day_assignment": "design decision not approved: 'sans_venous_onset_day_assignment'"
   },
-  "generation_status": "fully_blocked"
+  "capability_readiness": {
+    "personal_onsd_baseline_values": "ready",
+    "onsd_scan_values": "ready",
+    "daily_hrv_weak_signal": "blocked_missing_model_rule",
+    "daily_ptt_weak_signal": "blocked_unapproved_assumption",
+    "jugular_scan_values": "blocked_missing_model_rule",
+    "measurement_quality_failure_injection": "ready",
+    "sans_venous_onset_day_assignment": "blocked_missing_model_rule"
+  },
+  "generation_status": "partially_blocked"
 }
