@@ -8,18 +8,35 @@ import './App.css'
 // The data files the user can choose from. Files in the "public" folder are
 // served from the root of the website, so public/data/example.jsonl is
 // available at /data/example.jsonl.
-//   label     = the text shown in the dropdown
-//   url       = where to load the file from
-//   isFixture = true for hand-made test data, which needs a warning on screen
+//   label       = the text shown in the dropdown
+//   url         = where to load the file from
+//   manifestUrl = where to read this file's mission length from
+//   summaryUrl  = where to read this file's run summary from, if it has one
+//   isFixture   = true for hand-made test data, which needs a warning on screen
+//
+// The first file in this list is the one selected when the page opens.
+//
+// ground_truth.jsonl must never be listed here or copied into public/data. It
+// holds the hidden answers used to evaluate the backend, and the handoff docs
+// say the frontend must never read or display it.
 const DATA_FILES = [
+  {
+    label: 'Pipeline run (8 astronauts)',
+    url: '/data/crew_scored.jsonl',
+    manifestUrl: '/data/simulation_manifest.json',
+    summaryUrl: '/data/scoring_summary.json',
+    isFixture: false,
+  },
   {
     label: 'Pipeline output (blocked)',
     url: '/data/example_scored_blocked.jsonl',
+    manifestUrl: '/data/example_simulation_manifest.json',
     isFixture: false,
   },
   {
     label: 'UI test fixture',
     url: '/data/example_engineering_fixture_scored.jsonl',
+    manifestUrl: '/data/example_simulation_manifest.json',
     isFixture: true,
   },
 ]
@@ -29,14 +46,16 @@ const DATA_FILES = [
 const MS_PER_DAY_AT_1X = 2000
 const PLAYBACK_SPEEDS = [1, 2, 4]
 
-// The mission length comes from this file. If we can't get it from there, we
-// use the fallback below and show a note saying so.
-const MANIFEST_URL = '/data/example_simulation_manifest.json'
+// The mission length comes from the chosen file's manifest. If we can't get it
+// from there, we use this fallback and show a note saying so.
 const FALLBACK_MISSION_LENGTH = 30
 
 // The tier names for the legend, in the order they are shown. Each name also
 // picks its color: "urgent" uses the .tier-urgent rule in App.css, and so on.
 const TIER_NAMES = ['unresolved', 'monitor', 'repeat', 'consult', 'urgent']
+
+// Words in the backend's names that read better in capitals, for the Run info panel.
+const ACRONYMS = ['onsd', 'hrv', 'ptt', 'sans', 'sd']
 
 // The simulated Earth–Mars delay, for display only. To keep the demo short,
 // 1 second of real time stands for 1 mission minute.
@@ -441,6 +460,128 @@ function MessageLog({ messages, now }) {
   )
 }
 
+// How many days the backend counted at each tier, for one outcome. We use this
+// twice, and SANS and Venous are never added together.
+//   title  = the label to show before the counts
+//   counts = an object such as { unresolved: 240 }, exactly as in the file
+function TierCounts({ title, counts }) {
+  // Object.entries turns { unresolved: 240 } into a list: [['unresolved', 240]].
+  // "?? {}" gives an empty list if the file left this part out.
+  const entries = Object.entries(counts ?? {})
+
+  return (
+    <div className="run-counts">
+      <h4>{title}</h4>
+      <ul className="timeline-legend">
+        {entries.map(([tier, count]) => (
+          <li key={tier}>
+            <span className={`legend-swatch tier-${tier}`} />
+            {tier}: {count}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// Turns a backend name such as "daily_hrv_weak_signal" into "Daily HRV weak signal".
+function readableName(name) {
+  const words = name
+    .split('_')
+    .map((word) => (ACRONYMS.includes(word) ? word.toUpperCase() : word))
+    .join(' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+// Makes one of the manifest's blocked reasons short enough to read in one line.
+// This only changes how the backend's words are shown, never what they decide.
+function readableReason(reason) {
+  // Many reasons look like: blocked: assumption(s) not approved: ['some_name']
+  // The parentheses in this pattern capture the part between the [ and ].
+  const match = reason.match(/not approved: \[(.*)\]/)
+  if (match) {
+    const names = match[1]
+      .split(',')
+      .map((name) => readableName(name.replace(/['\s]/g, ''))) // removes quotes and spaces
+    return `Assumption not approved: ${names.join(', ')}`
+  }
+
+  // Any other reason is written as sentences, so we show only the first one.
+  return reason.split('. ')[0]
+}
+
+// One label and value in the run info list. If the manifest left this value out,
+// it says so instead of leaving a blank.
+function RunFact({ label, value }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value ?? 'Not stated'}</dd>
+    </div>
+  )
+}
+
+// The collapsible "Run info" panel. <details> is built into the browser, and it
+// opens and closes by itself when the title is clicked, so we need no state.
+// Everything shown comes from the two files; we calculate no risk or tier.
+//
+// The manifest also holds fields such as scenario_counts. This panel only reads
+// the fields below, so those are never shown.
+//   manifest = the selected file's manifest, or null if it couldn't be read
+//   summary  = the selected file's scoring summary, or null if it has none
+function RunInfo({ manifest, summary }) {
+  // "?? {}" gives an empty list if the manifest left the reasons out, which the
+  // schema allows.
+  const reasons = Object.entries(manifest?.physiological_generation_blocked_reasons ?? {})
+
+  return (
+    <details className="run-info">
+      <summary>Why most values are unavailable</summary>
+
+      {!manifest && <p>Could not read the run information from the manifest.</p>}
+
+      {manifest && (
+        <>
+          <dl className="run-facts">
+            <RunFact label="Run ID" value={manifest.run_id} />
+            <RunFact label="Crew size" value={manifest.crew_size} />
+            <RunFact label="Mission length (days)" value={manifest.mission_duration_days} />
+            <RunFact label="Generation status" value={manifest.generation_status} />
+          </dl>
+
+          <h3>Why physiological values were not generated</h3>
+          {reasons.length === 0 ? (
+            <p>No reasons listed.</p>
+          ) : (
+            <ul className="run-reasons">
+              {reasons.map(([capability, reason]) => (
+                <li key={capability}>
+                  <strong>{readableName(capability)}:</strong> {readableReason(reason)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+
+      {summary && (
+        <>
+          <h3>Tier counts (all astronauts, all days)</h3>
+          <p>
+            Astronauts scored: {summary.astronauts_scored}. Days scored: {summary.days_scored}.
+          </p>
+          {summary.errors?.length > 0 && (
+            <p>Scoring errors reported: {summary.errors.length}</p>
+          )}
+          <TierCounts title="SANS" counts={summary.sans_tier_distribution} />
+          <TierCounts title="Venous" counts={summary.venous_tier_distribution} />
+          {summary.note && <p className="run-note">{summary.note}</p>}
+        </>
+      )}
+    </details>
+  )
+}
+
 // The main page. React re-runs this function whenever a state value changes.
 function App() {
   // Each useState gives us the current value and a function to change it.
@@ -454,6 +595,9 @@ function App() {
   const [speed, setSpeed] = useState(PLAYBACK_SPEEDS[0]) // playback speed: 1, 2 or 4
   const [missionLength, setMissionLength] = useState(null) // null = not known yet
   const [usedFallback, setUsedFallback] = useState(false) // did we have to use the fallback?
+  const [runManifest, setRunManifest] = useState(null) // null = none loaded
+  const [runSummary, setRunSummary] = useState(null) // null = none loaded
+  const [summaryFailed, setSummaryFailed] = useState(false) // did the summary fail to load?
   const [delayMinutes, setDelayMinutes] = useState(DEFAULT_DELAY_MINUTES) // the delay slider
   const [messages, setMessages] = useState([]) // every message so far, oldest first
   const [now, setNow] = useState(0) // the current time, updated while messages travel
@@ -473,15 +617,22 @@ function App() {
     return () => clearInterval(timer)
   }, [hasMessageInTransit])
 
-  // Read the mission length once when the page opens. The empty [] at the end
-  // means "do not run this again when the page updates".
+  // Read the chosen file's mission length. The [fileUrl] at the end means "run
+  // this when the page opens, and again whenever fileUrl changes".
   useEffect(() => {
+    // Marks this load as out of date if the user switches files, like the
+    // data file load below.
+    let isCurrent = true
+
     function applyFallbackLength() {
+      if (!isCurrent) return
       setMissionLength(FALLBACK_MISSION_LENGTH)
       setUsedFallback(true)
     }
 
-    fetch(MANIFEST_URL)
+    const { manifestUrl } = DATA_FILES.find((file) => file.url === fileUrl)
+
+    fetch(manifestUrl)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Server responded with status ${response.status}`)
@@ -489,7 +640,9 @@ function App() {
         return response.json() // the manifest is ordinary JSON, not JSONL
       })
       .then((manifest) => {
+        if (!isCurrent) return
         const length = manifest.mission_duration_days
+        setRunManifest(manifest)
         // Only accept a whole number above 0. Anything else, including a
         // missing field, can't be used as a number of days.
         if (Number.isInteger(length) && length > 0) {
@@ -500,7 +653,37 @@ function App() {
       })
       // This catches a failed download and a file that isn't valid JSON.
       .catch(applyFallbackLength)
-  }, [])
+
+    return () => {
+      isCurrent = false
+    }
+  }, [fileUrl])
+
+  // Read the chosen file's run summary, if it has one.
+  useEffect(() => {
+    const { summaryUrl } = DATA_FILES.find((file) => file.url === fileUrl)
+    if (!summaryUrl) return
+
+    let isCurrent = true
+
+    fetch(summaryUrl)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server responded with status ${response.status}`)
+        }
+        return response.json()
+      })
+      .then((summary) => {
+        if (isCurrent) setRunSummary(summary)
+      })
+      .catch(() => {
+        if (isCurrent) setSummaryFailed(true)
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [fileUrl])
 
   // Load the chosen file. The [fileUrl] at the end means "run this when the
   // page opens, and again whenever fileUrl changes".
@@ -544,6 +727,11 @@ function App() {
     setDayIndex(0)
     setIsLoading(true)
     setErrorMessage(null)
+    setMissionLength(null)
+    setUsedFallback(false)
+    setRunManifest(null)
+    setRunSummary(null)
+    setSummaryFailed(false)
   }
 
   // Runs when the user picks another astronaut. Their days may be different,
@@ -562,7 +750,9 @@ function App() {
   const selectedFile = DATA_FILES.find((file) => file.url === fileUrl)
 
   // A Set keeps only one copy of each value, which gives us each astronaut once.
-  const astronautIds = [...new Set(records.map((record) => record.astronaut_id))]
+  // The pipeline's file isn't in astronaut order, so we sort the list to show
+  // A1, A2, A3... in the dropdown.
+  const astronautIds = [...new Set(records.map((record) => record.astronaut_id))].sort()
 
   // Until the user picks someone, use the first astronaut in the file.
   const astronautId = chosenAstronaut ?? astronautIds[0]
@@ -769,6 +959,15 @@ function App() {
           using {FALLBACK_MISSION_LENGTH} days.
         </p>
       )}
+
+      {/* Wait until the manifest has been read, so the panel doesn't first say it
+          couldn't be read. The fixture is hand-made and didn't come from the run
+          the manifest describes, so it doesn't get this panel. */}
+      {missionLength !== null && !selectedFile.isFixture && (
+        <RunInfo manifest={runManifest} summary={runSummary} />
+      )}
+
+      {summaryFailed && <p className="small-note">Could not load the run summary.</p>}
 
       {/* "condition && <something>" shows the something only if the condition
           is true. Only one of these four blocks appears at a time. */}
