@@ -3,6 +3,7 @@
   "astronauts_scored": 8,
   "days_scored": 240,
   "errors": [],
+  "structural_warnings": [],
   "sans_tier_distribution": {
     "unresolved": 240
   },

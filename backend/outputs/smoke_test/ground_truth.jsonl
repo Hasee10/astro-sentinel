@@ -1,8 +1,0 @@
-{"astronaut_id":"A4","scenario_label":"healthy","sans_onset_day":null,"venous_onset_day":null,"run_id":"run-smoke-001","blocked_reasons":[]}
-{"astronaut_id":"A5","scenario_label":"slow_sans","sans_onset_day":null,"venous_onset_day":null,"run_id":"run-smoke-001","blocked_reasons":["sans_venous_onset_day_assignment"]}
-{"astronaut_id":"A7","scenario_label":"venous_stasis","sans_onset_day":null,"venous_onset_day":null,"run_id":"run-smoke-001","blocked_reasons":["sans_venous_onset_day_assignment"]}
-{"astronaut_id":"A8","scenario_label":"both","sans_onset_day":null,"venous_onset_day":null,"run_id":"run-smoke-001","blocked_reasons":["sans_venous_onset_day_assignment"]}
-{"astronaut_id":"A3","scenario_label":"healthy","sans_onset_day":null,"venous_onset_day":null,"run_id":"run-smoke-001","blocked_reasons":[]}
-{"astronaut_id":"A6","scenario_label":"slow_sans","sans_onset_day":null,"venous_onset_day":null,"run_id":"run-smoke-001","blocked_reasons":["sans_venous_onset_day_assignment"]}
-{"astronaut_id":"A1","scenario_label":"venous_stasis","sans_onset_day":null,"venous_onset_day":null,"run_id":"run-smoke-001","blocked_reasons":["sans_venous_onset_day_assignment"]}
-{"astronaut_id":"A2","scenario_label":"both","sans_onset_day":null,"venous_onset_day":null,"run_id":"run-smoke-001","blocked_reasons":["sans_venous_onset_day_assignment"]}

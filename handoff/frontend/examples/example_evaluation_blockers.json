@@ -26,7 +26,7 @@
     {
       "capability": "trigger_firing_simulation_model",
       "blocked_by": [],
-      "message": "No approved rule exists for translating an assumed trigger accuracy (e.g. 0.7) into which days a synthetic trigger actually fires. This is a simulation-design choice, not a parameter-sheet value, and needs explicit human sign-off before any sweep point can be executed."
+      "message": "No approved rule exists for translating an assumed trigger accuracy (e.g. 0.7) into which days a synthetic trigger actually fires. This is a simulation-design choice, not a parameter-sheet value, and needs explicit human sign-off (registry/design_decisions.py) plus an implemented algorithm before any sweep point can be executed."
     }
   ]
 }

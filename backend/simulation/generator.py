@@ -1,12 +1,15 @@
 """Deliverable 1: the synthetic crew generator.
 
-Every numeric generative step is gated behind a check of whether its backing
-ExperimentalAssumption is active (registry.models.ExperimentalAssumption.is_active()).
-None of the 14 assumptions in the registry are approved, so every gate is currently
-closed - this module still runs end to end and produces schema-valid, non-fabricated
-output: structurally complete records with null measurements, a precise blocker report,
-and a manifest. Approving the relevant assumption(s) later requires no code change here
-to start producing real numbers - only a registry edit by the human lead.
+Every numeric generative step is gated behind simulation.generation_models.check_readiness()
+(ultimately registry.models.ExperimentalAssumption.is_active()). As of ASTROSENTINEL
+(2026-11-04), 8 of 14 assumptions are approved and 3 generation capabilities
+(personal_onsd_baseline_values, onsd_scan_values, measurement_quality_failure_injection -
+see simulation/physiological_generation.py) are READY and used below; the rest
+(daily_hrv_weak_signal, daily_ptt_weak_signal, jugular_scan_values,
+sans_venous_onset_day_assignment) remain blocked and still produce null/absent
+values with a precise blocker report, exactly as before. Approving a remaining
+assumption still requires an implementation step here before it produces numbers -
+see simulation/generation_models.py's GENERATION_MODEL_SPECS docstring.
 """
 from __future__ import annotations
 
@@ -21,81 +24,63 @@ from contracts.models import (
     BlockerReport,
     GroundTruthRecord,
     ObservationMetadata,
+    ScenarioLabel,
     SimulationManifest,
 )
 from registry.loader import Registry, load_all
-from simulation.scenarios import assign_scenarios, scenario_counts, validate_scenario_config
+from simulation.generation_models import (
+    GENERATION_MODEL_SPECS,
+    ModelReadiness,
+    check_readiness,
+)
+from simulation.physiological_generation import SYNTHETIC_PRIOR_LABEL, generate_onsd_baseline, generate_onsd_scan
+from simulation.scenarios import (
+    assign_scenarios_with_sans_model,
+    scenario_counts,
+    validate_scenario_config,
+)
 
-# capability -> the assumption_id(s) in registry/data/assumptions.json that would
-# unblock it, or [] when the gap is a simulation-design choice with no registry entry
-GENERATIVE_CAPABILITIES: dict[str, list[str]] = {
-    "personal_onsd_baseline_values": ["onsd_baseline_sd_values"],
-    "daily_hrv_weak_signal": ["hrv_trigger_assumed_accuracy"],
-    "daily_ptt_weak_signal": ["ptt_trigger_assumed_usefulness"],
-    "onsd_scan_values": ["onsd_baseline_sd_values"],
-    "jugular_scan_values": ["jugular_flow_risk_mapping"],
-    "measurement_quality_failure_injection": ["onsd_scan_failure_rate"],
-}
-
-# Defect 2: an approved numeric value does NOT by itself mean a generation algorithm
-# exists. This set names the capabilities for which simulation/generator.py actually
-# implements a tested numerical generation method today - it is empty, because none
-# does yet. When a method is implemented and tested, add its capability name here;
-# until then, physiological_values_generated in the manifest stays False even for a
-# capability whose backing assumption has been approved.
-IMPLEMENTED_GENERATION_ALGORITHMS: frozenset[str] = frozenset()
-
-# gaps with no corresponding registry assumption at all - a simulation-engineering
-# choice (which day to place a hidden onset on) rather than a scientific parameter
-UNREGISTERED_CAPABILITIES: dict[str, str] = {
-    "sans_venous_onset_day_assignment": (
-        "No approved convention exists for choosing which day a hidden SANS/venous "
-        "onset is placed within the 30-day mission. Picking one (e.g. a fixed day, or "
-        "a sampled day) requires a human-approved simulation-design rule - it is not "
-        "itself a sourced scientific parameter, but assigning it without approval would "
-        "silently bake in an unreviewed assumption, which this generator does not do."
-    ),
-}
+# Phase 6 (Unified Prompt 6-7): the explicit per-capability dependency declarations
+# formerly hardcoded here now live in simulation/generation_models.py as
+# GENERATION_MODEL_SPECS, alongside the five-state ModelReadiness interface
+# (section 3.6) and the approval-ready technical spec for each (section 3.7). This
+# module only decides WHICH of those specs are this generator's concern -
+# "trigger_firing_simulation_model" belongs to the evaluation sweep instead (see
+# evaluation/sweep.py::sweep_blockers()), not to crew generation.
+_GENERATOR_CAPABILITIES: tuple[str, ...] = tuple(
+    c for c in GENERATION_MODEL_SPECS if c != "trigger_firing_simulation_model"
+)
 
 
 def blocked_capabilities(registry: Registry) -> dict[str, Blocker]:
     """Which generative capabilities are currently blocked, and by what."""
     blocked: dict[str, Blocker] = {}
-    for capability, assumption_ids in GENERATIVE_CAPABILITIES.items():
-        inactive = [aid for aid in assumption_ids if not registry.assumptions[aid].is_active()]
-        if inactive:
+    for capability in _GENERATOR_CAPABILITIES:
+        spec = GENERATION_MODEL_SPECS[capability]
+        result = check_readiness(spec, registry)
+        if result.state != ModelReadiness.READY:
             blocked[capability] = Blocker(
                 capability=capability,
-                blocked_by=inactive,
-                message=(
-                    f"Requires assumption(s) {inactive} to be approved with an assigned "
-                    f"value before {capability} can be generated without fabrication."
-                ),
+                blocked_by=list(spec.required_assumptions),
+                message="; ".join(result.reasons) or f"{capability} is not ready ({result.state.value}).",
             )
-    for capability, message in UNREGISTERED_CAPABILITIES.items():
-        blocked[capability] = Blocker(capability=capability, blocked_by=[], message=message)
     return blocked
 
 
 def physiological_generation_status(registry: Registry) -> tuple[bool, dict[str, str]]:
-    """Defect 2: distinguish "assumption approved" from "algorithm implemented".
+    """Defect 2: distinguish "assumption approved" from "algorithm implemented" -
+    computed via simulation.generation_models.check_readiness() for every known
+    generator capability (section 3.6's explicit readiness-state interface).
 
     Returns (all_generated, reasons) where reasons maps each capability that is NOT
-    producing real physiological values to why - either an inactive assumption or an
-    approved assumption with no implemented generation method yet.
+    producing real physiological values to why.
     """
     reasons: dict[str, str] = {}
-    for capability, assumption_ids in GENERATIVE_CAPABILITIES.items():
-        inactive = [aid for aid in assumption_ids if not registry.assumptions[aid].is_active()]
-        if inactive:
-            reasons[capability] = f"blocked: assumption(s) not approved: {inactive}"
-        elif capability not in IMPLEMENTED_GENERATION_ALGORITHMS:
-            reasons[capability] = (
-                "assumption(s) approved, but no generation algorithm is implemented in "
-                "simulation/generator.py yet - approval alone does not produce numbers"
-            )
-    for capability, message in UNREGISTERED_CAPABILITIES.items():
-        reasons[capability] = message
+    for capability in _GENERATOR_CAPABILITIES:
+        spec = GENERATION_MODEL_SPECS[capability]
+        result = check_readiness(spec, registry)
+        if result.state != ModelReadiness.READY:
+            reasons[capability] = "; ".join(result.reasons)
     return (not reasons, reasons)
 
 
@@ -122,24 +107,32 @@ def generate_crew(
     created_at = created_at or datetime.now(timezone.utc).isoformat()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    assignment = assign_scenarios(crew_size, seed)
+    assignment, sans_profiles = assign_scenarios_with_sans_model(crew_size, seed, registry)
     blockers = blocked_capabilities(registry)
     blocker_ids = sorted(blockers)
 
     active_assumption_ids = [a.assumption_id for a in registry.assumptions.values() if a.is_active()]
 
+    onsd_ready = "onsd_scan_values" not in blockers and "personal_onsd_baseline_values" not in blockers
+
     observations_path = output_dir / "crew_observations.jsonl"
     with observations_path.open("w", encoding="utf-8") as f:
         for astronaut_id, label in assignment.items():
+            baseline_mm = generate_onsd_baseline(astronaut_id, seed, registry) if onsd_ready else None
             for day in range(1, mission_duration_days + 1):
+                scan = (
+                    generate_onsd_scan(astronaut_id, day, baseline_mm, seed, registry)
+                    if onsd_ready
+                    else None
+                )
                 record = AstronautDayObservation(
                     astronaut_id=astronaut_id,
                     day=day,
-                    weak_signals=None,
-                    scan=None,
+                    weak_signals=None,  # daily_hrv_weak_signal / daily_ptt_weak_signal: still blocked
+                    scan=scan,
                     metadata=ObservationMetadata(
                         run_id=run_id,
-                        generation_blocked=True,
+                        generation_blocked=bool(blockers),
                         blocked_reasons=blocker_ids,
                         approved_assumptions_used=active_assumption_ids,
                     ),
@@ -149,17 +142,40 @@ def generate_crew(
     ground_truth_path = output_dir / "ground_truth.jsonl"
     with ground_truth_path.open("w", encoding="utf-8") as f:
         for astronaut_id, label in assignment.items():
+            profile = sans_profiles[astronaut_id]
+            needs_onset_day = profile.has_sans_event or label in (
+                ScenarioLabel.VENOUS_STASIS,
+                ScenarioLabel.BOTH,
+            )
             record = GroundTruthRecord(
                 astronaut_id=astronaut_id,
                 scenario_label=label,
-                sans_onset_day=None,
-                venous_onset_day=None,
+                sans_onset_day=None,  # sans_venous_onset_day_assignment: still blocked
+                venous_onset_day=None,  # same - no venous onset rule either
                 run_id=run_id,
-                blocked_reasons=["sans_venous_onset_day_assignment"] if label != "healthy" else [],
+                blocked_reasons=["sans_venous_onset_day_assignment"] if needs_onset_day else [],
+                is_sans_high_susceptibility=profile.is_high_susceptibility,
+                has_sans_event=profile.has_sans_event,
+                synthetic_sans_prior_label=SYNTHETIC_PRIOR_LABEL,
             )
             f.write(record.model_dump_json() + "\n")
 
     physio_generated, physio_reasons = physiological_generation_status(registry)
+    capability_readiness = {
+        capability: check_readiness(GENERATION_MODEL_SPECS[capability], registry).state.value
+        for capability in _GENERATOR_CAPABILITIES
+    }
+    # ASTROSENTINEL correction: this used to be a binary "fully_blocked"/"complete"
+    # choice, which reported "fully_blocked" even once personal_onsd_baseline_values/
+    # onsd_scan_values/measurement_quality_failure_injection were genuinely READY -
+    # a real reporting defect (Part 2 of the 2026-11-04 correction), not a rename.
+    if not blockers:
+        generation_status = "complete"
+    elif len(blockers) == len(_GENERATOR_CAPABILITIES):
+        generation_status = "fully_blocked"
+    else:
+        generation_status = "partially_blocked"
+
     manifest = SimulationManifest(
         run_id=run_id,
         created_at=created_at,
@@ -173,7 +189,8 @@ def generate_crew(
         scenario_structure_generated=True,
         physiological_values_generated=physio_generated,
         physiological_generation_blocked_reasons=physio_reasons,
-        generation_status="fully_blocked" if blockers else "complete",
+        capability_readiness=capability_readiness,
+        generation_status=generation_status,
     )
     manifest_path = output_dir / "simulation_manifest.json"
     manifest_path.write_text(manifest.model_dump_json(indent=2), encoding="utf-8")

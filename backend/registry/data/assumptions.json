@@ -2,57 +2,85 @@
   {
     "assumption_id": "sans_prior_mapping",
     "description": "A formula mapping pre-flight susceptibility inputs (baseline ONSD, optic cup size, dural sinus asymmetry) to a numeric starting SANS-progression probability (prior).",
-    "value_or_range": null,
-    "scientific_purpose": "Would initialize a per-astronaut Bayesian prior for SANS monitoring, if and when a SANS probability model is approved. The source document's own worked example uses an illustrative 5% prior and explicitly labels it 'a placeholder assumption', not a derived or validated figure.",
+    "value_or_range": {
+      "susceptibility_split_pct": {"low": 75, "high": 25},
+      "starting_synthetic_prior_pct": {"low": 5, "high": 10},
+      "time_increment_pct_points_per_day": 0.5,
+      "max_synthetic_prior_pct": 25,
+      "event_occurrence_probability_pct": {"low": 30, "high": 70},
+      "expected_overall_event_fraction_pct": 40,
+      "note": "This approves a SYNTHETIC simulation-design susceptibility/event-occurrence/time-prior scheme for the crew GENERATOR's hidden ground truth only. It is explicitly NOT an evidence-updated clinical SANS probability and must never be written to assess_history()'s probability.sans output - that remains null, since the physiological progression curve and event-onset day placement are still unapproved (registry/design_decisions.py::sans_venous_onset_day_assignment). Label any display of this synthetic prior 'HYPOTHETICAL SIMULATION ESTIMATE - NOT CLINICALLY VALIDATED'."
+    },
+    "scientific_purpose": "Drives the crew generator's per-astronaut synthetic susceptibility class, event-occurrence flag, and time-incrementing synthetic prior (ground-truth-only). Does NOT by itself produce a real monitoring-engine SANS probability - see note above.",
     "assumption_kind": "numerical",
     "related_parameters": ["onsd_healthy_baseline_range", "onsd_baseline_spread_assumption"],
-    "approval_status": "unapproved",
-    "approved_by": null,
-    "limitations": "Optic cup size and dural sinus asymmetry are named as inputs in the mission brief's prose but have no corresponding numeric entry anywhere in the Table 4 parameter sheet. No mapping formula exists in the source. Per Correction 2, the 5% illustrative figure must not be treated as a real clinical prior."
+    "approval_status": "approved",
+    "approved_by": "Rahat",
+    "limitations": "Optic cup size and dural sinus asymmetry are named as inputs in the mission brief's prose but have no corresponding numeric entry anywhere in the Table 4 parameter sheet - this approval does not supply that mapping either; it approves a self-contained synthetic susceptibility/prior scheme instead, which Rahat provided directly (not derived from Table 4). The event-onset DAY and the physiological progression CURVE for astronauts whose has_sans_event is True remain explicitly unapproved and blocked (see registry/design_decisions.py)."
   },
   {
     "assumption_id": "venous_probability_model",
     "description": "Whether and how to produce any calibrated numeric probability for venous stasis, versus keeping venous monitoring as a qualitative/insufficient-evidence state.",
-    "value_or_range": null,
-    "scientific_purpose": "Would determine whether the Venous Monitoring Engine (future phase) ever emits a probability field, or only qualitative evidence (flow class, collapsibility, days persistent).",
+    "value_or_range": "Approved: venous monitoring may emit a numeric probability via a standard Bayesian prior-odds x likelihood-ratio model, using the flow-class likelihood ratios approved under jugular_flow_risk_mapping. The update uses ONLY the single latest available flow-class observation in a case's history per assessment - sequential daily likelihood ratios must NOT be multiplied together without additional approval, since consecutive daily jugular readings on the same astronaut are plausibly correlated, not independent evidence. Every output of this model must be labeled 'Simulation placeholder - unvalidated', not presented as a clinically validated risk estimate.",
+    "scientific_purpose": "Determines that the Venous Monitoring Engine may emit a probability field (via the approved LR model), rather than staying qualitative-only forever.",
     "assumption_kind": "scope_decision",
     "related_parameters": ["jugular_stasis_prevalence_iss", "jugular_csa_by_gravity_level", "jugular_area_velocity_cutoffs", "jugular_ultrasound_measures_inflight"],
-    "approval_status": "unapproved",
-    "approved_by": null,
-    "limitations": "No sensitivity, specificity, or likelihood-ratio data exists anywhere in the parameter sheet for any jugular ultrasound measure. Per Correction 2, no venous likelihood ratio may be invented. Recommended default pending approval: venous monitoring state remains qualitative / insufficient-evidence, never a fabricated percentage."
+    "approval_status": "approved",
+    "approved_by": "Rahat",
+    "limitations": "No sensitivity, specificity, or likelihood-ratio data exists anywhere in the parameter sheet for any jugular ultrasound measure - the flow-class likelihood ratios used here are Rahat's own synthetic placeholder values for this simulation, not derived from any cited source. This approval governs the MODEL FORM only; the actual LR numbers live in jugular_flow_risk_mapping."
   },
   {
     "assumption_id": "decision_tier_thresholds",
     "description": "The numeric probability thresholds that would separate the Monitor / Repeat / Consult / Urgent tiers, for each outcome independently.",
-    "value_or_range": null,
-    "scientific_purpose": "Would gate tier assignment in the Explainable Monitoring Decision Engine (future phase). The tier states themselves are specified in the mission brief (Table 2); the numeric cutoffs between them are not.",
+    "value_or_range": {
+      "repeat_min_pct": 15,
+      "consult_min_pct": 40,
+      "urgent_min_pct": 80,
+      "sweep_pct_points": 10,
+      "applies_independently_per_outcome": true,
+      "red_flag_override": "unconditional Urgent override remains active regardless of probability (unchanged, pre-existing rule)"
+    },
+    "scientific_purpose": "Gates tier assignment in monitoring/engine.py once a probability exists for an outcome (currently: venous only, via the approved LR model - SANS stays null, see sans_prior_mapping's note). Must be swept +/-10 percentage points for sensitivity analysis, never treated as a single fixed clinical cutoff.",
     "assumption_kind": "numerical",
     "related_parameters": [],
-    "approval_status": "unapproved",
-    "approved_by": null,
-    "limitations": "No threshold values exist anywhere in the source document. Any future values must be clearly labeled as simulation-only design choices, swept in the sensitivity analysis rather than fixed, and never presented as clinical cutoffs."
+    "approval_status": "approved",
+    "approved_by": "Rahat",
+    "limitations": "No threshold values exist anywhere in the source document - these are simulation-only design choices Rahat provided directly, swept in the sensitivity analysis rather than fixed, and must never be presented as clinical cutoffs."
   },
   {
     "assumption_id": "onsd_baseline_sd_values",
     "description": "The within-person ONSD standard deviation (and/or between-astronaut spread SD) used to generate synthetic personal baselines and to judge drift from baseline.",
-    "value_or_range": null,
-    "scientific_purpose": "Needed by the Synthetic Mission Simulator and Personal Baseline Manager (future phases) to generate per-astronaut baselines and noise.",
+    "value_or_range": {
+      "between_astronaut_mean_mm": 5.35,
+      "between_astronaut_sd_mm": 0.25,
+      "clip_range_mm": [4.8, 5.9],
+      "within_person_sd_mm_base": 0.2,
+      "within_person_sd_mm_sweep": [0.1, 0.2, 0.3],
+      "note": "Between-astronaut baseline sampled from a NORMAL distribution with this mean/SD, then CLIPPED (not resampled) to clip_range_mm. Within-person SD generates daily drift around each astronaut's own baseline and is not itself clipped."
+    },
+    "scientific_purpose": "Needed by the Synthetic Mission Simulator and Personal Baseline Manager to generate per-astronaut baselines and daily noise.",
     "assumption_kind": "numerical",
     "related_parameters": ["onsd_baseline_spread_assumption", "onsd_healthy_baseline_range"],
-    "approval_status": "unapproved",
-    "approved_by": null,
-    "limitations": "The source document explicitly states no within-person SD is given anywhere, and instructs that it be 'set by lead' and swept across a range rather than fixed to one value."
+    "approval_status": "approved",
+    "approved_by": "Rahat",
+    "limitations": "The source document explicitly states no within-person SD is given in the literature - this value is Rahat's own synthetic simulation-design choice, not derived from Table 4. Only generates a flat/noisy-around-baseline trajectory; the progression curve for an astronaut whose has_sans_event is True remains blocked (see sans_prior_mapping)."
   },
   {
     "assumption_id": "hrv_trigger_assumed_accuracy",
     "description": "The assumed predictive accuracy of the HRV weak-signal trigger, used only as a swept parameter across simulation runs (e.g. the document's own illustrative example points of 50%, 60%, 70% and up).",
-    "value_or_range": null,
-    "scientific_purpose": "Drives the Adaptive Measurement Scheduler's trigger logic and the fixed-vs-adaptive sensitivity analysis (future phases). This is the project's central open research question, not a settled input.",
+    "value_or_range": {
+      "sweep": [0.5, 0.6, 0.7, 0.8, 0.9],
+      "base_false_fire_probability_per_day": 0.05,
+      "false_fire_probability_sweep": [0.02, 0.10],
+      "post_onset_window_days": 5,
+      "per_day_firing_probability_formula": "h = 1 - (1 - s) ** (1 / post_onset_window_days), where s is the swept assumed accuracy for that point"
+    },
+    "scientific_purpose": "Drives the Adaptive Measurement Scheduler's trigger logic and the fixed-vs-adaptive sensitivity analysis. 'Accuracy' here is a scheduling-detection usefulness parameter LOCAL to the trigger-firing simulation model (registry/design_decisions.py::trigger_firing_simulation_model) - it is explicitly NOT classifier sensitivity/specificity/overall diagnostic accuracy and must never be conflated with the ONSD/SANS-CNN accuracy figures elsewhere in this registry.",
     "assumption_kind": "numerical",
     "related_parameters": ["hrv_onsd_coefficient", "hrv_confounders"],
-    "approval_status": "unapproved",
-    "approved_by": null,
-    "limitations": "No coefficient relating HRV to ONSD/SANS exists in the source; the document explicitly frames this accuracy as unknown and to be swept, never as a measured or validated figure. Must never be displayed to crew or ground as a calibrated accuracy."
+    "approval_status": "approved",
+    "approved_by": "Rahat",
+    "limitations": "No coefficient relating HRV to ONSD/SANS exists in the source; this sweep and the false-fire rates are Rahat's own synthetic simulation-design choices for exercising the scheduler, not a measured or validated figure. Must never be displayed to crew or ground as a calibrated accuracy. The firing-probability formula requires registry/design_decisions.py::trigger_firing_simulation_model to also be approved before it may be implemented/used - approving this value alone does not unblock evaluation/sweep.py::sweep_blockers()."
   },
   {
     "assumption_id": "ptt_trigger_assumed_usefulness",
@@ -63,18 +91,27 @@
     "related_parameters": [],
     "approval_status": "unapproved",
     "approved_by": null,
-    "limitations": "PTT is named only in the mission brief's prose inputs list; it has no corresponding row in the Table 4 parameter sheet at all. Labeled a hypothesis in the source, same as HRV."
+    "limitations": "PTT is named only in the mission brief's prose inputs list; it has no corresponding row in the Table 4 parameter sheet at all. Labeled a hypothesis in the source, same as HRV. Not addressed by Rahat's 2026-11-04 approvals - stays out of scope until confirmed."
   },
   {
     "assumption_id": "jugular_flow_risk_mapping",
     "description": "A numeric mapping from jugular area / flow class to a venous-stasis risk flag or level, derived from jugular_csa_by_gravity_level and swept rather than asserted.",
-    "value_or_range": null,
-    "scientific_purpose": "Would let the Venous Monitoring Engine (future phase) turn a structured jugular reading into a risk-relevant signal, pending resolution of venous_probability_model.",
+    "value_or_range": {
+      "starting_synthetic_prior_pct": 5,
+      "flow_class_likelihood_ratios": {"antegrade": 0.3, "stagnant": 4, "retrograde": 10},
+      "lr_scale_sweep": [0.5, 2.0],
+      "tier_flags": {
+        "stagnant": "minimum Repeat",
+        "retrograde": "minimum Repeat, plus request another confirmatory measurement"
+      },
+      "note": "These likelihood ratios and the 5% starting prior are Rahat's own synthetic placeholder values for jugular_flow_class, not derived from jugular_csa_by_gravity_level or any other cited source - no numeric cutoff exists in any cited source for this. A jugular-area-above-baseline+2SD drift flag was also requested but stays BLOCKED: no jugular baseline SD has been approved (do not invent one)."
+    },
+    "scientific_purpose": "Supplies the actual numeric LR values for the Bayesian venous model approved under venous_probability_model, and the minimum-tier flags for stagnant/retrograde flow.",
     "assumption_kind": "numerical",
     "related_parameters": ["jugular_csa_by_gravity_level", "jugular_area_velocity_cutoffs", "jugular_ultrasound_measures_inflight"],
-    "approval_status": "unapproved",
-    "approved_by": null,
-    "limitations": "No numeric cutoff exists in any cited source, per jugular_area_velocity_cutoffs. Any future mapping is simulation-only and must be clearly labeled as such."
+    "approval_status": "approved",
+    "approved_by": "Rahat",
+    "limitations": "No numeric cutoff exists in any cited source, per jugular_area_velocity_cutoffs - this mapping is simulation-only and must be clearly labeled as such everywhere it is displayed. The jugular-area-above-baseline+2SD drift flag remains unimplemented: no jugular baseline SD value exists here or anywhere else in the registry."
   },
   {
     "assumption_id": "onsd_icu_cutoff_reuse_scope",
@@ -85,7 +122,7 @@
     "related_parameters": ["onsd_icu_icp_cutoff", "onsd_healthy_baseline_range"],
     "approval_status": "unapproved",
     "approved_by": null,
-    "limitations": "The source document itself labels this cutoff 'Established for ICU ICP; Assumption when applied to SANS' - the reuse itself is the open question, independent of the cutoff value."
+    "limitations": "The source document itself labels this cutoff 'Established for ICU ICP; Assumption when applied to SANS' - the reuse itself is the open question, independent of the cutoff value. Not addressed by Rahat's 2026-11-04 approvals."
   },
   {
     "assumption_id": "onsd_interobserver_noise_magnitude",
@@ -96,18 +133,22 @@
     "related_parameters": ["onsd_interobserver_variability"],
     "approval_status": "unapproved",
     "approved_by": null,
-    "limitations": "Source gives direction/existence only (Ballantyne et al. 2002), no numeric magnitude."
+    "limitations": "Source gives direction/existence only (Ballantyne et al. 2002), no numeric magnitude. Not addressed by Rahat's 2026-11-04 approvals - within-person drift noise now comes from onsd_baseline_sd_values instead, which is a distinct concept (natural day-to-day physiological/measurement drift) from inter-observer (different-observer-same-scan) variability."
   },
   {
     "assumption_id": "fixed_schedule_interval_choice",
     "description": "The fixed measurement interval used as the comparator policy against adaptive scheduling in the evaluation (the mission brief gives 'one measurement every 7 days' only as an example, not a chosen value).",
-    "value_or_range": null,
-    "scientific_purpose": "Baseline policy for the Experimental Evaluation Engine (future phase). The source document instructs that 'the team picks the fixed schedule and states it.'",
+    "value_or_range": {
+      "primary_interval_days": 7,
+      "comparator_sweep_days": [3, 7, 14],
+      "note": "Day-one-anchored per evaluation/policies.py's existing convention: a 7-day interval produces scan days 1, 8, 15, 22, 29."
+    },
+    "scientific_purpose": "Baseline policy for the Experimental Evaluation Engine.",
     "assumption_kind": "numerical",
     "related_parameters": [],
-    "approval_status": "unapproved",
-    "approved_by": null,
-    "limitations": "Must be an explicit, declared team decision, not a value inferred or defaulted silently by implementation."
+    "approval_status": "approved",
+    "approved_by": "Rahat",
+    "limitations": "Must be an explicit, declared team decision, not a value inferred or defaulted silently by implementation - this is that declared decision."
   },
   {
     "assumption_id": "sans_cnn_reuse_scope",
@@ -118,7 +159,7 @@
     "related_parameters": ["sans_cnn_sensitivity", "sans_cnn_specificity", "sans_cnn_accuracy_f1"],
     "approval_status": "unapproved",
     "approved_by": null,
-    "limitations": "The mission brief does not spell out this mapping directly; it is this project's own proposed interpretation and requires explicit sign-off before use, per Correction 2's instruction to preserve reported performance figures in their original study context."
+    "limitations": "The mission brief does not spell out this mapping directly; it is this project's own proposed interpretation and requires explicit sign-off before use, per Correction 2's instruction to preserve reported performance figures in their original study context. Not addressed by Rahat's 2026-11-04 approvals."
   },
   {
     "assumption_id": "evidence_atlas_lr_reliance",
@@ -129,7 +170,7 @@
     "related_parameters": ["onsd_pooled_lr_evidence_atlas"],
     "approval_status": "unapproved",
     "approved_by": null,
-    "limitations": "Source document itself labels this 'Established (weak source)' and instructs the team to find the original meta-analysis."
+    "limitations": "Source document itself labels this 'Established (weak source)' and instructs the team to find the original meta-analysis. Not addressed by Rahat's 2026-11-04 approvals."
   },
   {
     "assumption_id": "communication_delay_exact_value",
@@ -140,17 +181,28 @@
     "related_parameters": ["communication_delay_one_way"],
     "approval_status": "unapproved",
     "approved_by": null,
-    "limitations": "Source document status for this range is literally 'Confirm' - not yet confirmed by the team."
+    "limitations": "Source document status for this range is literally 'Confirm' - not yet confirmed by the team. Not relevant to this backend milestone's scope; not addressed by Rahat's 2026-11-04 approvals."
   },
   {
     "assumption_id": "onsd_scan_failure_rate",
     "description": "A numeric rate at which synthetic ONSD scans should be generated as degraded or failed (off-axis, artifact-affected, etc.).",
-    "value_or_range": null,
-    "scientific_purpose": "Would parameterize failure injection in the Synthetic Mission Simulator and drive repeat-measurement behavior (future phases).",
+    "value_or_range": {
+      "base_failure_rate_pct": 10,
+      "sweep_pct": [5, 10, 20],
+      "failure_type_split_pct": {"off_axis": 50, "air_under_dressing": 50},
+      "off_axis_positive_bias_mm": {
+        "range": [0.3, 0.5],
+        "operational_value_in_use": 0.4,
+        "operational_value_status": "PENDING - an engineering realization choice (the range's midpoint), not itself separately approved by Rahat. No distribution was invented within the range, per explicit instruction, and this is the currently-running value, but the specific choice of midpoint (vs. e.g. the low end, the high end, or a swept set) has not been confirmed. See handoff/research_lead/DECISIONS_NEEDED_NOW.md item 8."
+      },
+      "off_axis_quality": "degraded (on_axis=False; derived automatically by the existing monitoring/measurement_quality.py::derive_onsd_quality - no new quality logic needed for this branch)",
+      "air_under_dressing_quality": "failed; no usable onsd_mm value produced for that day's scan"
+    },
+    "scientific_purpose": "Parameterizes failure injection in the Synthetic Mission Simulator and drives Repeat-tier behavior realistically.",
     "assumption_kind": "numerical",
     "related_parameters": ["onsd_technical_artifacts", "onsd_measurement_protocol"],
-    "approval_status": "unapproved",
-    "approved_by": null,
-    "limitations": "Source document explicitly states the failure rate is not sourced - only the qualitative artifact types are documented."
+    "approval_status": "approved",
+    "approved_by": "Rahat",
+    "limitations": "Source document explicitly states the failure rate is not sourced - these rates and the failure-type split are Rahat's own synthetic simulation-design choices, not derived from Table 4. Approval covers the RATE (10%, sweep 5/10/20%), the failure-type SPLIT (50/50), and the bias RANGE ([0.3, 0.5]mm) - it does NOT separately cover the specific choice of 0.4mm (the midpoint) as the operational realization within that range; see off_axis_positive_bias_mm.operational_value_status above. Kept as the running value (not deactivated) because it stays within the approved range and invents no distribution, but it is a pending engineering choice, not a confirmed scientific value at the same confidence as the rest of this assumption."
   }
 ]

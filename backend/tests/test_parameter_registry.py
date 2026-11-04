@@ -44,6 +44,10 @@ EXPECTED_PARAMETER_IDS = {
     "hrv_confounders",
     "onsd_baseline_spread_assumption",
     "personal_baseline_protocol",
+    # ASTROSENTINEL (2026-11-04): versioned revisions, additive - see each original
+    # entry's "SUPERSEDED FIGURE AVAILABLE" limitations note. Both old and new kept.
+    "onsd_accuracy_koziarz_2019_rev1",
+    "onsd_accuracy_ohle_2015_rev1",
 }
 
 
@@ -52,8 +56,8 @@ def params() -> dict[str, ScientificParameter]:
     return load_parameters()
 
 
-def test_all_26_parameters_present(params):
-    assert len(params) == 26
+def test_all_28_parameters_present(params):
+    assert len(params) == 28
     assert set(params) == EXPECTED_PARAMETER_IDS
 
 
@@ -213,6 +217,8 @@ EXPECTED_EVIDENCE = {
     "hrv_confounders": "established",
     "onsd_baseline_spread_assumption": "assumption",
     "personal_baseline_protocol": "design",
+    "onsd_accuracy_koziarz_2019_rev1": "established",
+    "onsd_accuracy_ohle_2015_rev1": "established",
 }
 
 
@@ -239,9 +245,22 @@ def test_established_does_not_imply_verified(params):
 
 # ---- source metadata present for every entry ----
 
+_REVISED_PARAMETER_IDS = {"onsd_accuracy_koziarz_2019_rev1", "onsd_accuracy_ohle_2015_rev1"}
+
+
 def test_source_metadata_present_for_every_entry(params):
     for pid, p in params.items():
         assert p.source_name.strip(), pid
+        if pid in _REVISED_PARAMETER_IDS:
+            # ASTROSENTINEL correction: Mission_NASA(1).docx was found and inspected
+            # 2026-11-04 - source_document now cites it directly as the primary
+            # source (mentioning the original filename as context is fine; claiming
+            # it AS the source document is not).
+            assert p.source_document != "Mission_NASA_updated.docx", pid
+            assert p.source_document.startswith("Mission_NASA(1).docx"), pid
+            assert "inspected" in p.source_document, pid
+            assert "Table 4" in p.source_location, pid
+            continue
         assert p.source_document == "Mission_NASA_updated.docx", pid
         assert "Table 4" in p.source_location, pid
         assert p.original_study_context.strip(), pid
@@ -373,10 +392,10 @@ def test_registry_loads_reliably_and_deterministically():
     }
 
 
-def test_raw_json_is_a_list_of_26_objects():
+def test_raw_json_is_a_list_of_28_objects():
     raw = json.loads(PARAMETERS_PATH.read_text(encoding="utf-8"))
     assert isinstance(raw, list)
-    assert len(raw) == 26
+    assert len(raw) == 28
 
 
 # ---- strict validation: deliberately broken fixtures must be rejected ----
@@ -527,4 +546,4 @@ def test_nested_event_count_within_sample_accepted():
 def test_all_real_parameters_pass_nested_validation(params):
     """The full loaded registry already passing (see the `params` fixture) is itself
     the strongest proof here - this just makes the intent explicit."""
-    assert len(params) == 26
+    assert len(params) == 28

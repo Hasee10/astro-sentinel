@@ -38,4 +38,4 @@ python -m pytest -q
 
 Expected result as of this handoff: step 3 prints `Evaluation BLOCKED` and writes
 `evaluation_blockers.json` (no CSV/PNG — this is correct, not a failure); step 5
-prints `142 passed`.
+prints `184 passed`.

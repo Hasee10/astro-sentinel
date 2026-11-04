@@ -19,11 +19,16 @@ whether the JSON is genuine.
 ## Engineering fixtures — NOT simulation output, for UI-building only
 
 - `example_engineering_fixture_observations.jsonl` /
-  `example_engineering_fixture_scored.jsonl` — two hand-constructed observations
-  (`astronaut_id` starts with `FIXTURE-`) that exercise the two rule-based tiers the
-  engine can produce *today*: a red-flag symptom (→ `urgent`) and a failed-quality
-  scan (→ `repeat`). These exist only so the frontend developer has non-`unresolved`
+  `example_engineering_fixture_scored.jsonl` — three hand-constructed observations
+  (`astronaut_id` starts with `FIXTURE-`) that exercise the rule-based tiers the
+  engine can produce *today*: a red-flag symptom (→ `urgent`), a scan explicitly
+  marked `failed` quality (→ `repeat`), and an ONSD scan whose on-axis acquisition
+  metadata was never recorded, so the engine itself derives an `"unknown"` quality
+  status (→ also `repeat` — a quality-indeterminate scan is treated the same as a
+  poor one). These exist only so the frontend developer has non-`unresolved`
   tier examples to build the Urgent/Repeat UI states against before real
-  physiological simulation is unblocked.
+  physiological simulation is unblocked. Each scored record's `tier_reason`
+  field (v0.4.0+) shows exactly why — `red_flag_symptom` for the Urgent example,
+  `measurement_quality` for both Repeat examples.
   **Never present these `FIXTURE-*` astronaut ids or their data as a real mission
   result in a demo.**

@@ -18,6 +18,7 @@ from pathlib import Path
 
 from contracts.models import AstronautDayObservation
 from monitoring.engine import AssessmentResult, HistoryError, assess_history
+from monitoring.measurement_quality import validate_observation_structure
 from registry.loader import load_all
 
 
@@ -47,9 +48,11 @@ def score_crew(input_path: Path, output_dir: Path) -> dict[str, Path]:
     scored_path = output_dir / "crew_scored.jsonl"
 
     tier_counts: dict[str, dict[str, int]] = {"sans": defaultdict(int), "venous": defaultdict(int)}
+    probability_counts: dict[str, int] = {"sans": 0, "venous": 0}
     astronauts_scored = 0
     days_scored = 0
     errors: list[str] = []
+    structural_warnings: list[str] = []
 
     with scored_path.open("w", encoding="utf-8") as out:
         for astronaut_id, records in by_astronaut.items():
@@ -57,6 +60,11 @@ def score_crew(input_path: Path, output_dir: Path) -> dict[str, Path]:
             astronauts_scored += 1
             for i in range(len(records_sorted)):
                 history_so_far = records_sorted[: i + 1]  # no look-ahead: only day <= current
+                # Phase 7 structural validation (section 4.1) - non-fatal: a flagged
+                # record is still scored, so reviewers see both the issue and the
+                # resulting assessment rather than a silently skipped day.
+                for issue in validate_observation_structure(records_sorted[i]):
+                    structural_warnings.append(f"{astronaut_id} day {records_sorted[i].day}: {issue}")
                 try:
                     result: AssessmentResult = assess_history(history_so_far, registry)
                 except HistoryError as exc:
@@ -66,19 +74,34 @@ def score_crew(input_path: Path, output_dir: Path) -> dict[str, Path]:
                 days_scored += 1
                 tier_counts["sans"][result.sans.tier.value] += 1
                 tier_counts["venous"][result.venous.tier.value] += 1
+                if result.sans.probability is not None:
+                    probability_counts["sans"] += 1
+                if result.venous.probability is not None:
+                    probability_counts["venous"] += 1
 
     summary = {
         "input": str(input_path),
         "astronauts_scored": astronauts_scored,
         "days_scored": days_scored,
         "errors": errors,
+        "structural_warnings": structural_warnings,
         "sans_tier_distribution": dict(tier_counts["sans"]),
         "venous_tier_distribution": dict(tier_counts["venous"]),
+        "sans_probability_computed_count": probability_counts["sans"],
+        "venous_probability_computed_count": probability_counts["venous"],
         "note": (
-            "Every probability in crew_scored.jsonl is null: no approved assumption "
-            "currently authorizes a SANS or venous probability calculation. Tiers "
-            "reflect only rule-based logic (red-flag -> urgent, poor quality -> "
-            "repeat) or the explicit 'unresolved' insufficient-evidence state."
+            # Computed from the actual results above, not hardcoded, so this can
+            # never silently go stale as approvals/algorithms change over time.
+            f"SANS probability was computed for {probability_counts['sans']}/{days_scored} "
+            f"scored days (always 0 today: no monitoring-layer SANS formula exists yet, "
+            f"regardless of approvals - see monitoring/engine.py). Venous probability was "
+            f"computed for {probability_counts['venous']}/{days_scored} scored days via the "
+            f"approved Bayesian flow-class model (0 here because generated data carries no "
+            f"jugular scans yet - jugular_scan_values generation remains unimplemented). "
+            f"Every non-null venous probability carries probability_label='Simulation "
+            f"placeholder - unvalidated'. Remaining tiers reflect only rule-based logic "
+            f"(red-flag -> urgent, poor quality -> repeat) or the explicit 'unresolved' "
+            f"insufficient-evidence state."
         ),
     }
     summary_path = output_dir / "scoring_summary.json"

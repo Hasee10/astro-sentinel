@@ -30,6 +30,9 @@
         "tier": {
           "$ref": "#/$defs/TierValue"
         },
+        "tier_reason": {
+          "$ref": "#/$defs/TierReason"
+        },
         "measurement_quality": {
           "anyOf": [
             {
@@ -62,19 +65,33 @@
       },
       "required": [
         "tier",
+        "tier_reason",
         "explanation"
       ],
       "title": "OutcomeAssessment",
       "type": "object"
     },
     "QualityStatus": {
+      "description": "Schema v0.3.0 adds UNKNOWN (additive, non-breaking - OK/DEGRADED/FAILED/\nNOT_TAKEN are unchanged): a scan whose documented protocol metadata (e.g.\non-axis acquisition) was never recorded, so quality cannot be established\neither way - distinct from NOT_TAKEN (no scan attempted at all). See\nmonitoring/measurement_quality.py for the one sourced rule that can derive\nthis automatically.",
       "enum": [
         "ok",
         "degraded",
         "failed",
-        "not_taken"
+        "not_taken",
+        "unknown"
       ],
       "title": "QualityStatus",
+      "type": "string"
+    },
+    "TierReason": {
+      "description": "Schema v0.4.0 (additive): WHY a tier was assigned, kept structurally\nseparate from the tier itself (section 4, Unified Prompt 8-9) - a\nmeasurement-quality Repeat is not evidence a physiological event was\ndetected, and must never be read as one just because the tier is Repeat.",
+      "enum": [
+        "red_flag_symptom",
+        "measurement_quality",
+        "insufficient_evidence_for_probability",
+        "probability_threshold"
+      ],
+      "title": "TierReason",
       "type": "string"
     },
     "TierValue": {

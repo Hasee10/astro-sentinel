@@ -30,7 +30,7 @@
       "type": "object"
     },
     "schema_version": {
-      "default": "0.2.0",
+      "default": "0.6.0",
       "title": "Schema Version",
       "type": "string"
     },
@@ -64,6 +64,13 @@
         "type": "string"
       },
       "title": "Physiological Generation Blocked Reasons",
+      "type": "object"
+    },
+    "capability_readiness": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Capability Readiness",
       "type": "object"
     },
     "generation_status": {

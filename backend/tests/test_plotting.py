@@ -3,13 +3,17 @@ as such on the rendered chart - never a scientific finding."""
 from __future__ import annotations
 
 from evaluation.plotting import extract_series, plot_metric
-from evaluation.sweep import OutcomeMetrics, PolicyRunResult
+from evaluation.sweep import OutcomeMetrics, PolicyRunResult, ScanAccounting
 
 
 def _result(policy, scans_by_case):
     per_case = {
         case_id: {
-            "sans": OutcomeMetrics(scans_used=scans, detection_delay=None, missed_event=False, false_escalations=0, falsely_escalated=False)
+            "sans": OutcomeMetrics(
+                scans_used=scans,
+                scan_accounting=ScanAccounting(requested=scans, data_available=0, valid=0, degraded_or_unknown=0, unavailable=scans),
+                detection_delay=None, missed_event=False, false_escalations=0, falsely_escalated=False,
+            )
         }
         for case_id, scans in scans_by_case.items()
     }

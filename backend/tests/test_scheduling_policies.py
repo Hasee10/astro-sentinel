@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from evaluation.policies import AdaptiveSchedulePolicy, FixedSchedulePolicy
+from evaluation.policies import AdaptiveReplacementSchedulePolicy, AdaptiveSchedulePolicy, FixedSchedulePolicy
 
 
 @pytest.mark.parametrize(
@@ -53,3 +53,134 @@ def test_rejects_non_positive_interval(bad_interval):
         FixedSchedulePolicy(interval_days=bad_interval)
     with pytest.raises(ValueError):
         AdaptiveSchedulePolicy(interval_days=bad_interval)
+
+
+# ---- Issue B (Unified Prompt 8-9): adaptive is "fixed backstop + triggered scans" ----
+# It can only ADD scans relative to fixed, never remove or defer them. These tests
+# pin that semantic down so it can never silently become Option B/C (see
+# AdaptiveSchedulePolicy's docstring and handoff/research_lead/DECISIONS_NEEDED_NOW.md)
+# without the tests themselves being deliberately changed.
+
+
+@pytest.mark.parametrize("interval_days,mission_days", [(7, 30), (5, 20), (1, 5), (10, 25)])
+def test_adaptive_scan_set_is_always_a_superset_of_fixed(interval_days, mission_days):
+    fixed = FixedSchedulePolicy(interval_days=interval_days)
+    adaptive = AdaptiveSchedulePolicy(interval_days=interval_days)
+    fixed_days = {d for d in range(1, mission_days + 1) if fixed.is_scan_due(d)}
+    # Trigger fires on an arbitrary subset of non-fixed days - still must only ADD.
+    adaptive_days = {
+        d for d in range(1, mission_days + 1)
+        if adaptive.is_scan_due(d, trigger_fired_today=(d % 4 == 0))
+    }
+    assert fixed_days <= adaptive_days
+
+
+def test_adaptive_can_never_schedule_fewer_scans_than_fixed_for_any_trigger_pattern():
+    """However the trigger fires, adaptive_scan_count >= fixed_scan_count for the
+    same interval and mission length - this is this policy's design ceiling, not
+    an incidental property of one example."""
+    import itertools
+
+    interval_days, mission_days = 7, 30
+    fixed = FixedSchedulePolicy(interval_days=interval_days)
+    adaptive = AdaptiveSchedulePolicy(interval_days=interval_days)
+    fixed_count = sum(1 for d in range(1, mission_days + 1) if fixed.is_scan_due(d))
+
+    for trigger_days in itertools.combinations(range(1, mission_days + 1), 3):
+        adaptive_count = sum(
+            1 for d in range(1, mission_days + 1)
+            if adaptive.is_scan_due(d, trigger_fired_today=(d in trigger_days))
+        )
+        assert adaptive_count >= fixed_count
+
+
+def test_adaptive_scan_count_equals_fixed_when_trigger_never_fires():
+    """The floor case: zero extra triggers means adaptive degenerates to exactly
+    the fixed schedule - confirming "backstop" is the correct word, not "subset"."""
+    interval_days, mission_days = 7, 30
+    fixed = FixedSchedulePolicy(interval_days=interval_days)
+    adaptive = AdaptiveSchedulePolicy(interval_days=interval_days)
+    fixed_days = [d for d in range(1, mission_days + 1) if fixed.is_scan_due(d)]
+    adaptive_days = [d for d in range(1, mission_days + 1) if adaptive.is_scan_due(d, trigger_fired_today=False)]
+    assert fixed_days == adaptive_days
+
+
+# ---- ASTROSENTINEL: AdaptiveReplacementSchedulePolicy (Option B) - built and
+# tested per Part 4's instruction, but deliberately NOT wired into
+# evaluate_policies.py's real run - adaptive_scheduling_policy_semantics is
+# approved only "in principle" (see registry/design_decisions.py), missing its
+# max-gap parameter. test_approval_checkpoint.py separately confirms it is not
+# importable from evaluate_policies.py's namespace.
+
+
+def test_replacement_policy_requires_max_gap_with_no_default():
+    with pytest.raises(TypeError):
+        AdaptiveReplacementSchedulePolicy(interval_days=7, defer_lookback_days=3)  # type: ignore[call-arg]
+
+
+def test_replacement_policy_requires_lookback_with_no_default():
+    """ASTROSENTINEL correction (2026-11-04), Part 3B: this used to silently
+    default to 3 days, which Rahat never approved any more than max_gap_days -
+    now exactly as mandatory as it."""
+    with pytest.raises(TypeError):
+        AdaptiveReplacementSchedulePolicy(interval_days=7, max_gap_days=14)  # type: ignore[call-arg]
+
+
+def test_replacement_policy_requires_both_with_no_defaults():
+    with pytest.raises(TypeError):
+        AdaptiveReplacementSchedulePolicy(interval_days=7)  # type: ignore[call-arg]
+
+
+def test_replacement_policy_rejects_max_gap_below_interval():
+    with pytest.raises(ValueError):
+        AdaptiveReplacementSchedulePolicy(interval_days=7, max_gap_days=5, defer_lookback_days=3)
+
+
+def test_replacement_policy_rejects_negative_lookback():
+    with pytest.raises(ValueError):
+        AdaptiveReplacementSchedulePolicy(interval_days=7, max_gap_days=10, defer_lookback_days=-1)
+
+
+def test_replacement_policy_defers_an_anchor_day_with_fresh_trigger_evidence():
+    policy = AdaptiveReplacementSchedulePolicy(interval_days=7, max_gap_days=14, defer_lookback_days=3)
+    # day 8 is an anchor; a trigger fired on day 6 (within the 3-day lookback)
+    assert policy.is_scan_due(8, trigger_fired_today=False, recent_trigger_days=[6], last_scan_day=1) is False
+
+
+def test_replacement_policy_keeps_an_anchor_day_without_fresh_evidence():
+    policy = AdaptiveReplacementSchedulePolicy(interval_days=7, max_gap_days=14, defer_lookback_days=3)
+    assert policy.is_scan_due(8, trigger_fired_today=False, recent_trigger_days=[], last_scan_day=1) is True
+
+
+def test_replacement_policy_trigger_today_always_scans():
+    policy = AdaptiveReplacementSchedulePolicy(interval_days=7, max_gap_days=14, defer_lookback_days=3)
+    # day 4 is not an anchor and has no recent evidence, but the trigger fires today
+    assert policy.is_scan_due(4, trigger_fired_today=True, recent_trigger_days=[], last_scan_day=1) is True
+
+
+def test_replacement_policy_safety_floor_forces_scan_at_max_gap():
+    """However much deferral evidence exists, the gap since the last real scan may
+    never exceed max_gap_days - this is the one hard safety rule Part 4 approved."""
+    policy = AdaptiveReplacementSchedulePolicy(interval_days=7, max_gap_days=10, defer_lookback_days=3)
+    # last scan was day 1; day 11 would make the gap 10 (== max) even with fresh
+    # trigger evidence that would otherwise defer an anchor day
+    assert policy.is_scan_due(11, trigger_fired_today=False, recent_trigger_days=[9], last_scan_day=1) is True
+
+
+def test_replacement_policy_never_defers_past_max_gap_across_a_full_mission():
+    policy = AdaptiveReplacementSchedulePolicy(interval_days=7, max_gap_days=12, defer_lookback_days=5)
+    last_scan_day = None
+    recent_triggers: list[int] = []
+    for day in range(1, 31):
+        # pretend a trigger fires every day (always "fresh" evidence) to stress
+        # the deferral path as hard as possible
+        due = policy.is_scan_due(
+            day, trigger_fired_today=False, recent_trigger_days=recent_triggers, last_scan_day=last_scan_day
+        )
+        if due:
+            gap = day - last_scan_day if last_scan_day is not None else day
+            assert gap <= policy.max_gap_days
+            last_scan_day = day
+        recent_triggers.append(day)
+        recent_triggers = [d for d in recent_triggers if day - d <= policy.defer_lookback_days]
+    assert last_scan_day is not None  # at least one scan happened over the mission
