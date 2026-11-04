@@ -11,7 +11,7 @@ import './App.css'
 //   isFixture = true for hand-made test data, which needs a warning on screen
 const DATA_FILES = [
   {
-    label: 'Real output (blocked)',
+    label: 'Pipeline output (blocked)',
     url: '/data/example_scored_blocked.jsonl',
     isFixture: false,
   },
@@ -21,6 +21,11 @@ const DATA_FILES = [
     isFixture: true,
   },
 ]
+
+// Mission playback: at 1× speed, each day stays on screen for 2000 milliseconds
+// (2 seconds). At 2× it stays half as long, and at 4× a quarter as long.
+const MS_PER_DAY_AT_1X = 2000
+const PLAYBACK_SPEEDS = [1, 2, 4]
 
 // JSONL means "one JSON object on each line". The file as a whole is not valid
 // JSON, so we split it into lines and parse each line separately.
@@ -99,6 +104,8 @@ function App() {
   const [dayIndex, setDayIndex] = useState(0) // position on the slider (see below)
   const [isLoading, setIsLoading] = useState(true) // is the file still loading?
   const [errorMessage, setErrorMessage] = useState(null) // what went wrong, if anything
+  const [isPlaying, setIsPlaying] = useState(false) // is playback running?
+  const [speed, setSpeed] = useState(PLAYBACK_SPEEDS[0]) // playback speed: 1, 2 or 4
 
   // Load the chosen file. The [fileUrl] at the end means "run this when the
   // page opens, and again whenever fileUrl changes".
@@ -133,6 +140,7 @@ function App() {
   // Runs when the user picks another file. The old file's records, astronaut
   // and day don't apply to the new file, so we clear them all.
   function handleFileChange(event) {
+    setIsPlaying(false)
     setFileUrl(event.target.value)
     setRecords([])
     setChosenAstronaut(null)
@@ -144,6 +152,7 @@ function App() {
   // Runs when the user picks another astronaut. Their days may be different,
   // so we go back to their first available day.
   function handleAstronautChange(event) {
+    setIsPlaying(false)
     setChosenAstronaut(event.target.value)
     setDayIndex(0)
   }
@@ -168,6 +177,48 @@ function App() {
   // than day numbers. That way it can only land on days that really exist,
   // even when there are gaps between them.
   const selectedRecord = astronautRecords[dayIndex]
+
+  // The slider position of this astronaut's last day. Lists count from 0, so
+  // with 30 days, the last position is 29.
+  const lastDayIndex = astronautRecords.length - 1
+  const hasOnlyOneDay = astronautRecords.length === 1
+
+  // While playing, wait, then move to the next day. Moving changes dayIndex,
+  // which is listed at the end of this useEffect, so React runs it again and
+  // starts the wait for the following day.
+  useEffect(() => {
+    if (!isPlaying) return
+
+    const timer = setTimeout(() => {
+      const nextDayIndex = dayIndex + 1
+      setDayIndex(nextDayIndex)
+      // Stop as soon as we arrive at the last day.
+      if (nextDayIndex >= lastDayIndex) setIsPlaying(false)
+    }, MS_PER_DAY_AT_1X / speed)
+
+    // React runs this cleanup before the next run, and it cancels the pending
+    // wait. This is how pausing stops the next step from happening.
+    return () => clearTimeout(timer)
+  }, [isPlaying, dayIndex, lastDayIndex, speed])
+
+  // Runs when the user clicks the Play/Pause button.
+  function handlePlayPause() {
+    if (isPlaying) {
+      setIsPlaying(false)
+      return
+    }
+    // Pressing Play on the last day starts again from the first day.
+    if (dayIndex === lastDayIndex) setDayIndex(0)
+    setIsPlaying(true)
+  }
+
+  // Runs when the slider's value changes, by dragging or with the arrow keys.
+  function handleSliderChange(event) {
+    setIsPlaying(false)
+    // A slider's value is always text, like "7", so we convert it to a number
+    // before using it as a position in the list.
+    setDayIndex(Number(event.target.value))
+  }
 
   return (
     <main className="page">
@@ -218,24 +269,55 @@ function App() {
 
       {selectedRecord && (
         <>
-          <label className="day-picker">
+          {/* htmlFor connects this label to the slider with the matching id. */}
+          <label className="day-label" htmlFor="day-slider">
             Mission day: <strong>{selectedRecord.as_of_day}</strong>
-            {astronautRecords.length === 1 && ' (the only day on record for this astronaut)'}
+            {hasOnlyOneDay && ' (the only day on record for this astronaut)'}
+          </label>
+
+          <div className="playback">
+            <button type="button" onClick={handlePlayPause} disabled={hasOnlyOneDay}>
+              {isPlaying ? 'Pause' : 'Play'}
+            </button>
+
             <input
+              id="day-slider"
               type="range"
               min={0}
-              max={astronautRecords.length - 1}
+              max={lastDayIndex}
               value={dayIndex}
               // With only one day, there is nowhere for the slider to go.
-              disabled={astronautRecords.length === 1}
+              disabled={hasOnlyOneDay}
               // The slider's value is a position, so this tells screen readers
               // the actual day number to announce.
               aria-valuetext={`Day ${selectedRecord.as_of_day}`}
-              // A slider's value is always text, like "7", so we convert it to
-              // a number before using it as a position in the list.
-              onChange={(event) => setDayIndex(Number(event.target.value))}
+              // Pause as soon as the user presses the slider, so the day
+              // doesn't keep moving while they are holding it.
+              onPointerDown={() => setIsPlaying(false)}
+              onChange={handleSliderChange}
             />
-          </label>
+
+            {/* Restart goes back to the first day. It doesn't change whether
+                playback is running. */}
+            <button type="button" onClick={() => setDayIndex(0)} disabled={hasOnlyOneDay}>
+              Restart
+            </button>
+
+            <label>
+              Speed{' '}
+              <select
+                value={speed}
+                // A dropdown's value is also text, so we convert it to a number.
+                onChange={(event) => setSpeed(Number(event.target.value))}
+              >
+                {PLAYBACK_SPEEDS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}×
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
           <div className="cards">
             <OutcomeCard title="SANS" outcome={selectedRecord.sans} />

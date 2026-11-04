@@ -43,16 +43,38 @@
   max-width: 100%;
 }
 
-/* Puts the label text above the slider. */
-.day-picker {
+/* Puts the label text on its own line above the slider. */
+.day-label {
   display: block;
+  margin-bottom: 4px;
+}
+
+/* Puts the playback controls in a row, and wraps them when the screen is
+   narrow. */
+.playback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
   margin-bottom: 16px;
 }
 
-/* Makes the slider as wide as the page. */
-.day-picker input {
-  display: block;
-  width: 100%;
+/* Lets the slider take all the space left over in the row. */
+.playback input {
+  flex: 1 1 200px;
+  margin: 0;
+}
+
+.playback button,
+.playback select {
+  padding: 4px 12px;
+  font: inherit;
+}
+
+/* Keeps the button the same width when its text changes between Play and
+   Pause, so the slider doesn't shift. */
+.playback button:first-child {
+  min-width: 5em;
 }
 
 /* Puts the cards side by side, and stacks them when the screen is too narrow
