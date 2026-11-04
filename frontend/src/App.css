@@ -43,6 +43,12 @@
   max-width: 100%;
 }
 
+/* A small line of extra information, such as the mission length fallback. */
+.small-note {
+  margin: 0 0 16px;
+  font-size: 0.875rem;
+}
+
 /* Puts the label text on its own line above the slider. */
 .day-label {
   display: block;
@@ -136,12 +142,13 @@
   font-size: 1rem;
 }
 
-/* Fits all 30 boxes on one line by sharing out the available width equally.
-   minmax(0, 1fr) lets the boxes shrink as far as a phone screen needs, so the
-   page never has to scroll sideways. */
+/* Shares out the available width equally between the boxes, however many days
+   the mission has. Each box is at least 7px wide and stretches to fill the
+   line. If a very long mission can't fit on one line, the boxes wrap onto more
+   lines, so the page never has to scroll sideways. */
 .timeline-boxes {
   display: grid;
-  grid-template-columns: repeat(30, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(7px, 1fr));
   gap: 2px;
 }
 

@@ -27,8 +27,10 @@ const DATA_FILES = [
 const MS_PER_DAY_AT_1X = 2000
 const PLAYBACK_SPEEDS = [1, 2, 4]
 
-// The timeline shows every mission day, 1 to 30, whether or not it has a record.
-const MISSION_DAYS = Array.from({ length: 30 }, (_, index) => index + 1)
+// The mission length comes from this file. If we can't get it from there, we
+// use the fallback below and show a note saying so.
+const MANIFEST_URL = '/data/example_simulation_manifest.json'
+const FALLBACK_MISSION_LENGTH = 30
 
 // The tier names for the legend, in the order they are shown. Each name also
 // picks its color: "urgent" uses the .tier-urgent rule in App.css, and so on.
@@ -108,14 +110,19 @@ function OutcomeCard({ title, outcome }) {
 //   title            = the label to show above the row
 //   outcomeKey       = which part of each record to read: "sans" or "venous"
 //   astronautRecords = the selected astronaut's records, earliest day first
+//   missionLength    = how many days the mission has, so how many boxes to show
 //   selectedDay      = the day to highlight
 //   onJump           = the function to call when the user clicks a box
-function TimelineRow({ title, outcomeKey, astronautRecords, selectedDay, onJump }) {
+function TimelineRow({ title, outcomeKey, astronautRecords, missionLength, selectedDay, onJump }) {
+  // Build the list of days: 1, 2, 3... up to the mission length. Every day gets
+  // a box, whether or not it has a record.
+  const missionDays = Array.from({ length: missionLength }, (_, index) => index + 1)
+
   return (
     <div className="timeline-row">
       <h3>{title}</h3>
       <div className="timeline-boxes">
-        {MISSION_DAYS.map((day) => {
+        {missionDays.map((day) => {
           // Find this day's position in the list. findIndex gives -1 if the
           // astronaut has no record for this day.
           const recordIndex = astronautRecords.findIndex(
@@ -190,6 +197,37 @@ function App() {
   const [errorMessage, setErrorMessage] = useState(null) // what went wrong, if anything
   const [isPlaying, setIsPlaying] = useState(false) // is playback running?
   const [speed, setSpeed] = useState(PLAYBACK_SPEEDS[0]) // playback speed: 1, 2 or 4
+  const [missionLength, setMissionLength] = useState(null) // null = not known yet
+  const [usedFallback, setUsedFallback] = useState(false) // did we have to use the fallback?
+
+  // Read the mission length once when the page opens. The empty [] at the end
+  // means "do not run this again when the page updates".
+  useEffect(() => {
+    function applyFallbackLength() {
+      setMissionLength(FALLBACK_MISSION_LENGTH)
+      setUsedFallback(true)
+    }
+
+    fetch(MANIFEST_URL)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Server responded with status ${response.status}`)
+        }
+        return response.json() // the manifest is ordinary JSON, not JSONL
+      })
+      .then((manifest) => {
+        const length = manifest.mission_duration_days
+        // Only accept a whole number above 0. Anything else, including a
+        // missing field, can't be used as a number of days.
+        if (Number.isInteger(length) && length > 0) {
+          setMissionLength(length)
+        } else {
+          applyFallbackLength()
+        }
+      })
+      // This catches a failed download and a file that isn't valid JSON.
+      .catch(applyFallbackLength)
+  }, [])
 
   // Load the chosen file. The [fileUrl] at the end means "run this when the
   // page opens, and again whenever fileUrl changes".
@@ -252,15 +290,21 @@ function App() {
   // Until the user picks someone, use the first astronaut in the file.
   const astronautId = chosenAstronaut ?? astronautIds[0]
 
-  // This astronaut's records, from the earliest day to the latest.
+  // The page isn't ready until both the data file and the manifest have loaded.
+  const isStillLoading = isLoading || missionLength === null
+
+  // This astronaut's records within the mission length, from the earliest day
+  // to the latest. The slider and the timeline both use this list, so they
+  // always cover the same days.
   const astronautRecords = records
     .filter((record) => record.astronaut_id === astronautId)
+    .filter((record) => record.as_of_day <= missionLength)
     .sort((a, b) => a.as_of_day - b.as_of_day)
 
   // The slider moves through positions in astronautRecords (0, 1, 2...) rather
   // than day numbers. That way it can only land on days that really exist,
   // even when there are gaps between them.
-  const selectedRecord = astronautRecords[dayIndex]
+  const selectedRecord = isStillLoading ? undefined : astronautRecords[dayIndex]
 
   // The slider position of this astronaut's last day. Lists count from 0, so
   // with 30 days, the last position is 29.
@@ -352,11 +396,22 @@ function App() {
         )}
       </div>
 
+      {usedFallback && (
+        <p className="small-note">
+          Could not read the mission length from the manifest, so this page is
+          using {FALLBACK_MISSION_LENGTH} days.
+        </p>
+      )}
+
       {/* "condition && <something>" shows the something only if the condition
-          is true. Only one of these three blocks appears at a time. */}
-      {isLoading && <p>Loading data…</p>}
+          is true. Only one of these four blocks appears at a time. */}
+      {isStillLoading && <p>Loading data…</p>}
 
       {errorMessage && <p>Could not load the data: {errorMessage}</p>}
+
+      {!isStillLoading && !errorMessage && !selectedRecord && (
+        <p>No records to show within the {missionLength}-day mission.</p>
+      )}
 
       {selectedRecord && (
         <>
@@ -421,6 +476,7 @@ function App() {
               title="SANS"
               outcomeKey="sans"
               astronautRecords={astronautRecords}
+              missionLength={missionLength}
               selectedDay={selectedRecord.as_of_day}
               onJump={handleTimelineJump}
             />
@@ -428,6 +484,7 @@ function App() {
               title="Venous"
               outcomeKey="venous"
               astronautRecords={astronautRecords}
+              missionLength={missionLength}
               selectedDay={selectedRecord.as_of_day}
               onJump={handleTimelineJump}
             />
