@@ -10,3 +10,22 @@
 body {
   margin: 0;
 }
+
+/* The button in the debug view that goes back to the presentation view. */
+.mode-switch {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 50;
+  padding: 8px 14px;
+  border: 1px solid #2a3a5a;
+  border-radius: 8px;
+  background: #131f35;
+  color: #e7ecf6;
+  font: inherit;
+  cursor: pointer;
+}
+.mode-switch:focus-visible {
+  outline: 2px solid #7db4ff;
+  outline-offset: 2px;
+}
