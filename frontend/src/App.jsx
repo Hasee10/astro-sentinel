@@ -1,15 +1,26 @@
 // useState lets a component remember a value between screen updates.
-// useEffect lets a component run code after it first appears on screen.
+// useEffect lets a component run code after it appears on screen.
 import { useEffect, useState } from 'react'
 import './App.css'
 
-// Files in the "public" folder are served from the root of the website,
-// so public/data/example.jsonl is available at /data/example.jsonl.
-const DATA_URL = '/data/example_scored_blocked.jsonl'
-
-// The mission lasts 30 days, so the slider goes from 1 to 30.
-const FIRST_DAY = 1
-const LAST_DAY = 30
+// The data files the user can choose from. Files in the "public" folder are
+// served from the root of the website, so public/data/example.jsonl is
+// available at /data/example.jsonl.
+//   label     = the text shown in the dropdown
+//   url       = where to load the file from
+//   isFixture = true for hand-made test data, which needs a warning on screen
+const DATA_FILES = [
+  {
+    label: 'Real output (blocked)',
+    url: '/data/example_scored_blocked.jsonl',
+    isFixture: false,
+  },
+  {
+    label: 'UI test fixture',
+    url: '/data/example_engineering_fixture_scored.jsonl',
+    isFixture: true,
+  },
+]
 
 // JSONL means "one JSON object on each line". The file as a whole is not valid
 // JSON, so we split it into lines and parse each line separately.
@@ -38,12 +49,24 @@ function ProbabilityText({ probability }) {
 //   title   = the heading to show on the card
 //   outcome = the "sans" or "venous" object from the selected day's record
 function OutcomeCard({ title, outcome }) {
+  const quality = outcome.measurement_quality
+  const hasQuality = quality !== null && quality !== undefined
+
   return (
     <section className="card">
       <h2>{title}</h2>
 
-      <h3>Tier</h3>
-      <p className="tier">{outcome.tier}</p>
+      {/* The tier comes straight from the backend. Its name also picks the
+          style: "urgent" uses the .tier-urgent rule in App.css, and so on. */}
+      <p className={`tier-badge tier-${outcome.tier}`}>{outcome.tier}</p>
+
+      {/* This section only appears when the backend gave us a quality value. */}
+      {hasQuality && (
+        <>
+          <h3>Measurement quality</h3>
+          <p>{quality}</p>
+        </>
+      )}
 
       <h3>Probability</h3>
       <ProbabilityText probability={outcome.probability} />
@@ -70,29 +93,81 @@ function OutcomeCard({ title, outcome }) {
 // The main page. React re-runs this function whenever a state value changes.
 function App() {
   // Each useState gives us the current value and a function to change it.
-  const [records, setRecords] = useState([]) // all records from the file
-  const [day, setDay] = useState(FIRST_DAY) // the day chosen on the slider
+  const [fileUrl, setFileUrl] = useState(DATA_FILES[0].url) // the chosen file
+  const [records, setRecords] = useState([]) // all records from that file
+  const [chosenAstronaut, setChosenAstronaut] = useState(null) // null = nobody picked yet
+  const [dayIndex, setDayIndex] = useState(0) // position on the slider (see below)
   const [isLoading, setIsLoading] = useState(true) // is the file still loading?
   const [errorMessage, setErrorMessage] = useState(null) // what went wrong, if anything
 
-  // Load the file once when the page opens. The empty [] at the end of
-  // useEffect means "do not run this again when the page updates".
+  // Load the chosen file. The [fileUrl] at the end means "run this when the
+  // page opens, and again whenever fileUrl changes".
   useEffect(() => {
-    fetch(DATA_URL)
+    // If the user switches files while one is still loading, the older file
+    // could finish last and replace the newer one. The cleanup function below
+    // marks the older load as out of date, so its result is ignored.
+    let isCurrent = true
+
+    fetch(fileUrl)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Server responded with status ${response.status}`)
         }
         return response.text() // read the file as plain text
       })
-      .then((text) => setRecords(parseJsonl(text)))
-      .catch((error) => setErrorMessage(error.message))
-      .finally(() => setIsLoading(false))
-  }, [])
+      .then((text) => {
+        if (isCurrent) setRecords(parseJsonl(text))
+      })
+      .catch((error) => {
+        if (isCurrent) setErrorMessage(error.message)
+      })
+      .finally(() => {
+        if (isCurrent) setIsLoading(false)
+      })
 
-  // Find the record for the selected day. This only looks the record up; all
-  // tiers and text come straight from the backend's file.
-  const selectedRecord = records.find((record) => record.as_of_day === day)
+    return () => {
+      isCurrent = false
+    }
+  }, [fileUrl])
+
+  // Runs when the user picks another file. The old file's records, astronaut
+  // and day don't apply to the new file, so we clear them all.
+  function handleFileChange(event) {
+    setFileUrl(event.target.value)
+    setRecords([])
+    setChosenAstronaut(null)
+    setDayIndex(0)
+    setIsLoading(true)
+    setErrorMessage(null)
+  }
+
+  // Runs when the user picks another astronaut. Their days may be different,
+  // so we go back to their first available day.
+  function handleAstronautChange(event) {
+    setChosenAstronaut(event.target.value)
+    setDayIndex(0)
+  }
+
+  // The values below are worked out fresh from the state each time the page
+  // updates. They only look records up; every tier and text comes straight
+  // from the backend's file.
+  const selectedFile = DATA_FILES.find((file) => file.url === fileUrl)
+
+  // A Set keeps only one copy of each value, which gives us each astronaut once.
+  const astronautIds = [...new Set(records.map((record) => record.astronaut_id))]
+
+  // Until the user picks someone, use the first astronaut in the file.
+  const astronautId = chosenAstronaut ?? astronautIds[0]
+
+  // This astronaut's records, from the earliest day to the latest.
+  const astronautRecords = records
+    .filter((record) => record.astronaut_id === astronautId)
+    .sort((a, b) => a.as_of_day - b.as_of_day)
+
+  // The slider moves through positions in astronautRecords (0, 1, 2...) rather
+  // than day numbers. That way it can only land on days that really exist,
+  // even when there are gaps between them.
+  const selectedRecord = astronautRecords[dayIndex]
 
   return (
     <main className="page">
@@ -100,34 +175,68 @@ function App() {
           so it sits outside the conditions below and always appears. */}
       <p className="banner">SYNTHETIC – NOT REAL ASTRONAUT DATA</p>
 
+      {selectedFile.isFixture && (
+        <p className="fixture-warning">
+          Engineering test data – not a simulation result.
+        </p>
+      )}
+
       <h1>Fluid-Shift Monitoring</h1>
 
-      <label className="day-picker">
-        Mission day: <strong>{day}</strong>
-        <input
-          type="range"
-          min={FIRST_DAY}
-          max={LAST_DAY}
-          value={day}
-          // A slider's value is always text, like "7", so we convert it to a
-          // number. Otherwise it would never match as_of_day above.
-          onChange={(event) => setDay(Number(event.target.value))}
-        />
-      </label>
+      <div className="controls">
+        <label>
+          Data file
+          <select value={fileUrl} onChange={handleFileChange}>
+            {DATA_FILES.map((file) => (
+              <option key={file.url} value={file.url}>
+                {file.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* Only show this once there are astronauts to choose from. */}
+        {astronautIds.length > 0 && (
+          <label>
+            Astronaut
+            <select value={astronautId} onChange={handleAstronautChange}>
+              {astronautIds.map((id) => (
+                <option key={id} value={id}>
+                  {id}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
 
       {/* "condition && <something>" shows the something only if the condition
-          is true. Exactly one of these four blocks appears at a time. */}
+          is true. Only one of these three blocks appears at a time. */}
       {isLoading && <p>Loading data…</p>}
 
       {errorMessage && <p>Could not load the data: {errorMessage}</p>}
 
-      {!isLoading && !errorMessage && !selectedRecord && (
-        <p>No record found for day {day}.</p>
-      )}
-
       {selectedRecord && (
         <>
-          <p>Astronaut: {selectedRecord.astronaut_id}</p>
+          <label className="day-picker">
+            Mission day: <strong>{selectedRecord.as_of_day}</strong>
+            {astronautRecords.length === 1 && ' (the only day on record for this astronaut)'}
+            <input
+              type="range"
+              min={0}
+              max={astronautRecords.length - 1}
+              value={dayIndex}
+              // With only one day, there is nowhere for the slider to go.
+              disabled={astronautRecords.length === 1}
+              // The slider's value is a position, so this tells screen readers
+              // the actual day number to announce.
+              aria-valuetext={`Day ${selectedRecord.as_of_day}`}
+              // A slider's value is always text, like "7", so we convert it to
+              // a number before using it as a position in the list.
+              onChange={(event) => setDayIndex(Number(event.target.value))}
+            />
+          </label>
+
           <div className="cards">
             <OutcomeCard title="SANS" outcome={selectedRecord.sans} />
             <OutcomeCard title="Venous" outcome={selectedRecord.venous} />

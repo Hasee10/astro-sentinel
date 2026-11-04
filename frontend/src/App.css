@@ -5,15 +5,42 @@
   padding: 16px;
 }
 
-/* The synthetic data warning. It is colored to be noticed, and the color does
-   not carry any medical meaning. */
-.banner {
+/* The two notices at the top share a shape. Their blue and purple are chosen
+   to look different from every tier color below, so nobody reads them as a
+   tier. */
+.banner,
+.fixture-warning {
   margin: 0;
   padding: 12px;
-  background: #b45309;
   color: #ffffff;
   font-weight: bold;
   text-align: center;
+}
+
+.banner {
+  background: #1e3a8a;
+}
+
+.fixture-warning {
+  margin-top: 8px;
+  background: #6d28d9;
+}
+
+/* Puts the dropdowns in a row, and wraps them when the screen is narrow. */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Puts each dropdown below its label text. */
+.controls select {
+  display: block;
+  padding: 4px;
+  font: inherit;
+  /* Long astronaut ids can't push the dropdown wider than a phone screen. */
+  max-width: 100%;
 }
 
 /* Puts the label text above the slider. */
@@ -58,8 +85,40 @@
   overflow-wrap: anywhere;
 }
 
-.tier {
-  font-size: 1.25rem;
+/* The large badge on each card. The rules after this one add its colors. */
+.card .tier-badge {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 1.75rem;
   font-weight: bold;
   text-transform: uppercase;
+}
+
+/* One color per tier. Amber is a light color, so it gets dark text; the others
+   get white text. These colors are for display only and decide nothing. */
+.tier-unresolved {
+  background: #4b5563; /* neutral grey */
+  color: #ffffff;
+}
+
+.tier-monitor {
+  background: #15803d; /* green */
+  color: #ffffff;
+}
+
+.tier-repeat {
+  background: #fbbf24; /* amber */
+  color: #1f2937;
+}
+
+.tier-consult {
+  background: #c2410c; /* orange */
+  color: #ffffff;
+}
+
+.tier-urgent {
+  background: #b91c1c; /* red */
+  color: #ffffff;
 }
