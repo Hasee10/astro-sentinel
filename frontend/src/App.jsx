@@ -67,6 +67,22 @@ const FALLBACK_MISSION_LENGTH = 30
 // picks its color: "urgent" uses the .tier-urgent rule in App.css, and so on.
 const TIER_NAMES = ['unresolved', 'monitor', 'repeat', 'consult', 'urgent']
 
+// The action shown under each tier's badge, chosen only from the backend's tier.
+// The first four are word for word from the mission brief's tier table. The brief
+// has no "unresolved" row, so that wording carries a tag until it is confirmed.
+//   text = the action
+//   tag  = a small note beside the action, if it needs one
+const TIER_ACTIONS = {
+  monitor: { text: 'Continue schedule' },
+  repeat: { text: 'Repeat or add a measurement' },
+  consult: { text: 'Flag for Earth review, queued for send' },
+  urgent: { text: 'Immediate flag to the crew medical officer and ground' },
+  unresolved: {
+    text: 'No action determined – insufficient evidence',
+    tag: 'wording pending clinical lead',
+  },
+}
+
 // The gap between the numbers on the ONSD chart's y-axis, in mm.
 const ONSD_TICK_STEP = 0.5
 
@@ -214,6 +230,7 @@ function ProbabilityText({ probability, label }) {
 function OutcomeCard({ title, outcome }) {
   const quality = outcome.measurement_quality
   const hasQuality = quality !== null && quality !== undefined
+  const action = TIER_ACTIONS[outcome.tier]
 
   return (
     <section className="card">
@@ -222,6 +239,13 @@ function OutcomeCard({ title, outcome }) {
       {/* The tier comes straight from the backend. Its name also picks the
           style: "urgent" uses the .tier-urgent rule in App.css, and so on. */}
       <p className={`tier-badge tier-${outcome.tier}`}>{outcome.tier}</p>
+
+      {action && (
+        <p className="tier-action">
+          {action.text}
+          {action.tag && <span className="tier-action-tag">{action.tag}</span>}
+        </p>
+      )}
 
       <h3>Why this tier</h3>
       <p className="tier-reason">{describeTierReason(outcome.tier, outcome.tier_reason)}</p>

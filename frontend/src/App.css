@@ -358,6 +358,25 @@
   text-transform: uppercase;
 }
 
+/* The action for this tier, directly under the badge. */
+.card .tier-action {
+  margin-bottom: 8px;
+  font-size: 1.125rem;
+  font-weight: bold;
+}
+
+/* A small grey outline, so it reads as a note and not as another tier. */
+.tier-action-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  border: 1px solid #9ca3af;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: normal;
+  vertical-align: middle;
+}
+
 .card .tier-reason {
   font-weight: bold;
 }
