@@ -1,0 +1,65 @@
+/* Keeps the content centered and stops it getting too wide on big screens. */
+.page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* The synthetic data warning. It is colored to be noticed, and the color does
+   not carry any medical meaning. */
+.banner {
+  margin: 0;
+  padding: 12px;
+  background: #b45309;
+  color: #ffffff;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Puts the label text above the slider. */
+.day-picker {
+  display: block;
+  margin-bottom: 16px;
+}
+
+/* Makes the slider as wide as the page. */
+.day-picker input {
+  display: block;
+  width: 100%;
+}
+
+/* Puts the cards side by side, and stacks them when the screen is too narrow
+   to fit two cards of at least 280px. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  padding: 16px;
+  border: 1px solid #9ca3af;
+  border-radius: 8px;
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+.card h3 {
+  margin-bottom: 4px;
+  font-size: 1rem;
+}
+
+.card p,
+.card ul {
+  margin-top: 0;
+  /* Long words in the backend's text wrap instead of overflowing the card. */
+  overflow-wrap: anywhere;
+}
+
+.tier {
+  font-size: 1.25rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
