@@ -69,7 +69,17 @@ REQUIRED_FOR_SWEEP = {
 #      that contract, not merely happens to satisfy it.
 #   5. Dedicated, deterministic, passing tests exist proving (3) and (4), not
 #      just that `sweep_blockers()` returns an empty list.
-TRIGGER_FIRING_MODEL_IMPLEMENTED: bool = False
+TRIGGER_FIRING_MODEL_IMPLEMENTED: bool = True
+# ASTROSENTINEL (2026-11-04): flipped alongside evaluation/trigger_model.py.
+# Checking the 5-point claim above: (1) approved - design_decisions.py
+# ["trigger_firing_simulation_model"].is_approved() is True. (2) approved -
+# hrv_trigger_assumed_accuracy is active. (3) implemented -
+# evaluation/trigger_model.py's build_trigger_schedules()/make_precomputed_trigger_fn().
+# (4) signature - make_precomputed_trigger_fn() returns exactly
+# Callable[[PolicyDayView, float], bool], written against that contract directly (it
+# takes a PolicyDayView parameter by name and only ever reads .case_id/.day from it).
+# (5) tests - tests/test_trigger_model.py (firing-probability formula, window
+# boundaries, no-onset-day-access-at-call-time, determinism).
 
 
 def sweep_blockers(registry: Registry) -> list[Blocker]:
@@ -257,11 +267,20 @@ def _build_policy_day_view(
 @dataclass(frozen=True)
 class HiddenGroundTruth:
     """Evaluation-only. Never passed to a scheduling policy or a tier_fn - only read
-    inside `_run_policy` after scheduling/tier decisions already exist."""
+    inside `_run_policy` after scheduling/tier decisions already exist.
+
+    `has_sans_event` (ASTROSENTINEL correction, 2026-11-04): carrying the onset day
+    alone was not enough - a case can have `has_sans_event=True` with
+    `sans_onset_day=None` (today's actual state for every SANS-event case, since
+    onset-day assignment is unapproved). Treating that as indistinguishable from
+    "no event" silently turned "unknown" into "confirmed zero" in missed-event/
+    false-escalation accounting - see evaluation/experiment_readiness.py, which
+    this field exists to make checkable before any metric is computed."""
 
     case_id: str
     sans_onset_day: Optional[int] = None
     venous_onset_day: Optional[int] = None
+    has_sans_event: Optional[bool] = None
 
     def onset_day(self, outcome: str) -> Optional[int]:
         return self.sans_onset_day if outcome == "sans" else self.venous_onset_day

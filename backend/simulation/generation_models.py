@@ -149,7 +149,25 @@ def check_readiness(spec: GenerationModelSpec, registry: Registry) -> ReadinessR
 # between "approved" and a falsely-reported READY.
 # ---------------------------------------------------------------------------
 
-IMPLEMENTED_GENERATION_ALGORITHMS: frozenset[str] = frozenset()
+IMPLEMENTED_GENERATION_ALGORITHMS: frozenset[str] = frozenset(
+    {
+        # ASTROSENTINEL (2026-11-04): simulation/physiological_generation.py now
+        # implements these three, tested in tests/test_physiological_generation.py.
+        # Each produces only a flat/noisy-around-baseline trajectory (no progression
+        # signal for any astronaut, event-flagged or not) - see that module's
+        # docstring for exactly why, and what remains blocked.
+        "personal_onsd_baseline_values",
+        "onsd_scan_values",
+        "measurement_quality_failure_injection",
+    }
+)
+# NOTE: the two unregistered-gap capabilities below (sans_venous_onset_day_assignment,
+# trigger_firing_simulation_model) do NOT read this frozenset - their
+# has_implemented_rule is set directly on each GenerationModelSpec, by design, since
+# each also carries its own design_decision_id gate and deserves an explicit, separate,
+# by-hand flip rather than one more name added to a shared set. See
+# trigger_firing_simulation_model's spec entry below and
+# evaluation.sweep.TRIGGER_FIRING_MODEL_IMPLEMENTED, which is flipped alongside it.
 
 GENERATION_MODEL_SPECS: dict[str, GenerationModelSpec] = {
     "personal_onsd_baseline_values": GenerationModelSpec(
@@ -328,7 +346,11 @@ GENERATION_MODEL_SPECS: dict[str, GenerationModelSpec] = {
         required_input_fields=("astronaut_id", "day", "assumed_trigger_accuracy", "hidden_onset_day"),
         required_parameters=(),
         required_assumptions=(),  # no registry slot exists - see docstring
-        has_implemented_rule=False,
+        # ASTROSENTINEL (2026-11-04): evaluation/trigger_model.py implements this,
+        # tested in tests/test_trigger_model.py - flipped by hand alongside
+        # evaluation.sweep.TRIGGER_FIRING_MODEL_IMPLEMENTED (see that flag's own
+        # 5-point comment for exactly what this claims).
+        has_implemented_rule=True,
         design_decision_id="trigger_firing_simulation_model",
         output_fields=("whether the adaptive scheduler's trigger fires on a given day",),
         output_units="boolean",

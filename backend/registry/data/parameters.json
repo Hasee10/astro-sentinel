@@ -184,7 +184,24 @@
     "verification_status": "open_paper",
     "permitted_use": "Established as ONSD-vs-elevated-ICP diagnostic accuracy. ICP diagnostic evidence is not validated SANS-progression evidence. The source document proposes this as the base-case likelihood-ratio pair IF a SANS Bayesian probability model is approved in a future phase. Per explicit project direction, this is NOT YET a validated SANS-progression likelihood ratio and must not be used in any probability calculation until that approval occurs.",
     "authorized_operations": [],
-    "limitations": "ICP reference standard, not SANS progression. Sensitivity and specificity are as reported by the source study; LR+ and LR- are stated in the document as \"Computed\" (derived from sensitivity/specificity via the standard formula), not directly reported by Koziarz et al. themselves. One of three differing ONSD accuracy estimates in this sheet (see onsd_accuracy_ohle_2015, onsd_accuracy_maissan_2015); the three disagree on LR+ (7.2 vs 13.7 vs 47), underscoring none is a settled figure yet."
+    "limitations": "ICP reference standard, not SANS progression. Sensitivity and specificity are as reported by the source study; LR+ and LR- are stated in the document as \"Computed\" (derived from sensitivity/specificity via the standard formula), not directly reported by Koziarz et al. themselves. One of three differing ONSD accuracy estimates in this sheet (see onsd_accuracy_ohle_2015, onsd_accuracy_maissan_2015); the three disagree on LR+ (7.2 vs 13.7 vs 47), underscoring none is a settled figure yet. SUPERSEDED FIGURE AVAILABLE: see onsd_accuracy_koziarz_2019_rev1 for revised sensitivity/specificity/LR figures provided 2026-11-04 - this original entry is preserved unchanged for traceability, not replaced."
+  },
+  {
+    "parameter_id": "onsd_accuracy_koziarz_2019_rev1",
+    "name": "ONSD accuracy: Koziarz 2019 meta-analysis (cutoff 5.0 mm) - revised figures",
+    "value": {"cutoff_mm": 5.0, "sensitivity_pct": 97, "specificity_pct": 86, "lr_positive": 6.93, "lr_negative": 0.04},
+    "unit": null,
+    "source_name": "Koziarz et al., Ann Intern Med 2019 (revised transcription)",
+    "source_document": "Mission_NASA(1).docx (found and inspected 2026-11-04 - supplied via the user's Downloads folder, copied into the project root unchanged alongside, not over, Mission_NASA_updated.docx)",
+    "source_location": "Table 4 (Parameter sheet) of Mission_NASA(1).docx, row \"ONSD accuracy: Koziarz 2019 meta-analysis (cutoff 5.0 mm)\". A full diff against Mission_NASA_updated.docx confirmed this is the ONLY content change in this row (besides the matching Ohle row) - every other row, table, and section is byte-for-byte identical between the two documents. Supersedes-in-content (does not replace) onsd_accuracy_koziarz_2019, the original document's own entry.",
+    "original_study_context": "Same underlying study as onsd_accuracy_koziarz_2019 (meta-analysis of ONSD ultrasound accuracy for detecting elevated intracranial pressure at a 5.0mm cutoff); only the transcribed sensitivity/specificity/LR figures differ between the two entries.",
+    "original_study_endpoint": "ONSD vs. invasively/clinically confirmed intracranial pressure (ICP) - not SANS progression. Identical endpoint restriction to onsd_accuracy_koziarz_2019.",
+    "target_measurement": "sans",
+    "evidence_classification": "established",
+    "verification_status": "find_primary_source",
+    "permitted_use": "Established as ONSD-vs-elevated-ICP diagnostic accuracy, same as onsd_accuracy_koziarz_2019. ICP diagnostic evidence is not validated SANS-progression evidence. This is NOT YET a validated SANS-progression likelihood ratio and must not be used in any SANS probability calculation - the project's monitoring engine does not and will not treat this as a SANS likelihood ratio.",
+    "authorized_operations": [],
+    "limitations": "The document itself still only carries 'Open paper' verification status for this row (same as the original) - finding the updated document confirms the TRANSCRIPTION is accurate, it does not independently verify the figures against the primary Koziarz et al. 2019 paper itself, which remains unopened by this team. The original document (Mission_NASA_updated.docx) is unchanged and remains available; see onsd_accuracy_koziarz_2019 for the figures it contains (94% / 87% / LR+7.2 / LR-0.07). Both entries are kept, not merged, so neither transcription is silently lost."
   },
   {
     "parameter_id": "onsd_accuracy_ohle_2015",
@@ -201,7 +218,24 @@
     "verification_status": "open_paper",
     "permitted_use": "Source document proposes using this alongside onsd_accuracy_koziarz_2019 to define a sweep range, if a SANS probability model is approved in a future phase. ICP/CT diagnostic evidence is not validated SANS-progression evidence; not independently validated for SANS progression.",
     "authorized_operations": [],
-    "limitations": "Different reference standard (head CT) from Koziarz (clinical ICP correlate) and Maissan (invasive catheter) - the three studies do not measure identically defined endpoints. Sensitivity and specificity are as reported by the source study; LR+ and LR- are stated in the document as \"Computed\" from them, not directly reported by Ohle et al. themselves."
+    "limitations": "Different reference standard (head CT) from Koziarz (clinical ICP correlate) and Maissan (invasive catheter) - the three studies do not measure identically defined endpoints. Sensitivity and specificity are as reported by the source study; LR+ and LR- are stated in the document as \"Computed\" from them, not directly reported by Ohle et al. themselves. SUPERSEDED FIGURE AVAILABLE: see onsd_accuracy_ohle_2015_rev1 for revised figures provided 2026-11-04 - this original entry is preserved unchanged for traceability, not replaced."
+  },
+  {
+    "parameter_id": "onsd_accuracy_ohle_2015_rev1",
+    "name": "ONSD accuracy: Ohle 2015 meta-analysis (vs head CT) - revised figures",
+    "value": {"sensitivity_pct": 96, "specificity_pct": 92.3, "lr_positive": 12.5, "lr_negative": 0.05},
+    "unit": null,
+    "source_name": "Ohle et al., J Ultrasound Med 2015 (revised transcription)",
+    "source_document": "Mission_NASA(1).docx (found and inspected 2026-11-04 - supplied via the user's Downloads folder, copied into the project root unchanged alongside, not over, Mission_NASA_updated.docx)",
+    "source_location": "Table 4 (Parameter sheet) of Mission_NASA(1).docx, row \"ONSD accuracy: Ohle 2015 meta-analysis (vs head CT)\". A full diff against Mission_NASA_updated.docx confirmed this is the ONLY content change in this row (besides the matching Koziarz row) - every other row, table, and section is byte-for-byte identical between the two documents. Supersedes-in-content (does not replace) onsd_accuracy_ohle_2015, the original document's own entry.",
+    "original_study_context": "Same underlying study as onsd_accuracy_ohle_2015 (meta-analysis of ONSD ultrasound vs. head CT findings suggestive of raised ICP); only the transcribed sensitivity/specificity/LR figures differ between the two entries.",
+    "original_study_endpoint": "ONSD vs. head CT findings suggestive of raised ICP - not SANS progression. Identical endpoint restriction to onsd_accuracy_ohle_2015.",
+    "target_measurement": "sans",
+    "evidence_classification": "established",
+    "verification_status": "find_primary_source",
+    "permitted_use": "Same restriction as onsd_accuracy_ohle_2015: ICP/CT diagnostic evidence is not validated SANS-progression evidence; not independently validated for SANS progression and never to be used as one.",
+    "authorized_operations": [],
+    "limitations": "The document itself writes this sensitivity figure as \"96%\" plainly (the earlier \"approximately 96%\" hedge was this project's own transcription caution before the document was found, not something the document itself states) - confirmed exactly 96 on inspection. Document still only carries 'Open paper' verification status for this row - finding it confirms the TRANSCRIPTION is accurate, it does not independently verify the figures against the primary Ohle et al. 2015 paper itself, which remains unopened by this team. See onsd_accuracy_ohle_2015 for the original entry's figures (96% / 93% / LR+13.7 / LR-0.04); both are kept, not merged."
   },
   {
     "parameter_id": "onsd_accuracy_maissan_2015",

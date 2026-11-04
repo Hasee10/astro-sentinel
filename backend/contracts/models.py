@@ -14,7 +14,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-SCHEMA_VERSION = "0.4.0"
+SCHEMA_VERSION = "0.6.0"
 SYNTHETIC_LABEL = "SYNTHETIC - NOT REAL ASTRONAUT DATA"
 
 
@@ -65,6 +65,11 @@ class TierReason(str, Enum):
     RED_FLAG_SYMPTOM = "red_flag_symptom"
     MEASUREMENT_QUALITY = "measurement_quality"
     INSUFFICIENT_EVIDENCE_FOR_PROBABILITY = "insufficient_evidence_for_probability"
+    # Schema v0.5.0 (additive, ASTROSENTINEL): a tier derived from an actual computed
+    # probability against decision_tier_thresholds - always paired with
+    # OutcomeAssessment.probability_label to keep "hypothetical simulation estimate"
+    # visibly attached, never presented as a validated clinical tier.
+    PROBABILITY_THRESHOLD = "probability_threshold"
 
 
 class WeakSignals(BaseModel):
@@ -156,7 +161,16 @@ class AstronautDayObservation(BaseModel):
 
 
 class GroundTruthRecord(BaseModel):
-    """Hidden evaluation-only label. The monitoring pipeline must never read this."""
+    """Hidden evaluation-only label. The monitoring pipeline must never read this.
+
+    Schema v0.5.0 (additive, ASTROSENTINEL): adds the SANS synthetic susceptibility
+    profile now that sans_prior_mapping is approved. `is_sans_high_susceptibility`
+    and `has_sans_event` are ground-truth bookkeeping for the GENERATOR only - neither
+    is, or ever becomes, assess_history()'s probability.sans output, which stays null
+    (see sans_prior_mapping's note: the event-onset day and progression curve remain
+    separately unapproved). `synthetic_sans_prior_label` is carried alongside as a
+    constant reminder of that distinction wherever this record is inspected.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -166,6 +180,9 @@ class GroundTruthRecord(BaseModel):
     venous_onset_day: Optional[int] = None
     run_id: str
     blocked_reasons: list[str] = Field(default_factory=list)
+    is_sans_high_susceptibility: Optional[bool] = None
+    has_sans_event: Optional[bool] = None
+    synthetic_sans_prior_label: Optional[str] = None
 
 
 class Blocker(BaseModel):
@@ -215,5 +232,14 @@ class SimulationManifest(BaseModel):
     # Capability name -> why physiological values are unavailable for it right now.
     # Empty only when physiological_values_generated is True.
     physiological_generation_blocked_reasons: dict[str, str] = Field(default_factory=dict)
+
+    # ASTROSENTINEL correction (2026-11-04): generation_status below was a binary
+    # "fully_blocked"/"complete" string in practice despite this docstring already
+    # naming "partially_blocked" as a valid value - a real reporting defect, since
+    # 3/7 generator capabilities were genuinely READY while the whole run still read
+    # "fully_blocked". Fixed to actually use all three states, and this field adds
+    # the full per-capability picture (one of simulation.generation_models.ModelReadiness's
+    # five values each) so "partially_blocked" is never the only signal available.
+    capability_readiness: dict[str, str] = Field(default_factory=dict)
 
     generation_status: str  # "fully_blocked" | "partially_blocked" | "complete"

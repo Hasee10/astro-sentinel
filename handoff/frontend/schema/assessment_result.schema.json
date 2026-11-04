@@ -88,7 +88,8 @@
       "enum": [
         "red_flag_symptom",
         "measurement_quality",
-        "insufficient_evidence_for_probability"
+        "insufficient_evidence_for_probability",
+        "probability_threshold"
       ],
       "title": "TierReason",
       "type": "string"

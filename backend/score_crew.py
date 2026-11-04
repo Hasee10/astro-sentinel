@@ -48,6 +48,7 @@ def score_crew(input_path: Path, output_dir: Path) -> dict[str, Path]:
     scored_path = output_dir / "crew_scored.jsonl"
 
     tier_counts: dict[str, dict[str, int]] = {"sans": defaultdict(int), "venous": defaultdict(int)}
+    probability_counts: dict[str, int] = {"sans": 0, "venous": 0}
     astronauts_scored = 0
     days_scored = 0
     errors: list[str] = []
@@ -73,6 +74,10 @@ def score_crew(input_path: Path, output_dir: Path) -> dict[str, Path]:
                 days_scored += 1
                 tier_counts["sans"][result.sans.tier.value] += 1
                 tier_counts["venous"][result.venous.tier.value] += 1
+                if result.sans.probability is not None:
+                    probability_counts["sans"] += 1
+                if result.venous.probability is not None:
+                    probability_counts["venous"] += 1
 
     summary = {
         "input": str(input_path),
@@ -82,11 +87,21 @@ def score_crew(input_path: Path, output_dir: Path) -> dict[str, Path]:
         "structural_warnings": structural_warnings,
         "sans_tier_distribution": dict(tier_counts["sans"]),
         "venous_tier_distribution": dict(tier_counts["venous"]),
+        "sans_probability_computed_count": probability_counts["sans"],
+        "venous_probability_computed_count": probability_counts["venous"],
         "note": (
-            "Every probability in crew_scored.jsonl is null: no approved assumption "
-            "currently authorizes a SANS or venous probability calculation. Tiers "
-            "reflect only rule-based logic (red-flag -> urgent, poor quality -> "
-            "repeat) or the explicit 'unresolved' insufficient-evidence state."
+            # Computed from the actual results above, not hardcoded, so this can
+            # never silently go stale as approvals/algorithms change over time.
+            f"SANS probability was computed for {probability_counts['sans']}/{days_scored} "
+            f"scored days (always 0 today: no monitoring-layer SANS formula exists yet, "
+            f"regardless of approvals - see monitoring/engine.py). Venous probability was "
+            f"computed for {probability_counts['venous']}/{days_scored} scored days via the "
+            f"approved Bayesian flow-class model (0 here because generated data carries no "
+            f"jugular scans yet - jugular_scan_values generation remains unimplemented). "
+            f"Every non-null venous probability carries probability_label='Simulation "
+            f"placeholder - unvalidated'. Remaining tiers reflect only rule-based logic "
+            f"(red-flag -> urgent, poor quality -> repeat) or the explicit 'unresolved' "
+            f"insufficient-evidence state."
         ),
     }
     summary_path = output_dir / "scoring_summary.json"

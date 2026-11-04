@@ -61,6 +61,31 @@ DESIGN_DECISIONS: dict[str, DesignDecision] = {
             "approved AND implemented - see handoff/research_lead/"
             "BLOCKER_QUESTIONS.md items 8-9 for the candidate methods."
         ),
+        approved=True,
+        decision_text=(
+            "Approved (ASTROSENTINEL, 2026-11-04): a windowed sensitivity model. "
+            "For a case WITH a hidden onset for the relevant outcome, the trigger "
+            "fires independently each day within the 5-day window "
+            "[onset_day, onset_day+4] with per-day probability "
+            "h = 1 - (1 - s) ** (1/5), where s is the swept assumed trigger "
+            "accuracy (hrv_trigger_assumed_accuracy) for that sweep point - chosen "
+            "so the cumulative probability of firing at least once across the "
+            "5 independent daily draws equals s. Outside that window (including "
+            "every day for a case with no onset for that outcome), the trigger "
+            "fires independently each day at the approved base false-fire rate "
+            "(onsd_baseline... see hrv_trigger_assumed_accuracy's "
+            "base_false_fire_probability_per_day, swept per "
+            "false_fire_probability_sweep). 'Accuracy' (s) here is explicitly NOT "
+            "classifier sensitivity/specificity/overall diagnostic accuracy - it is "
+            "a scheduling-detection usefulness parameter local to this trigger "
+            "model only, and must never be conflated with the ONSD/SANS-CNN "
+            "diagnostic-accuracy figures elsewhere in the registry. The firing "
+            "model may read the hidden onset day ONLY inside the generator-side/"
+            "evaluation-only trigger-signal construction step - the scheduling "
+            "POLICY itself (AdaptiveSchedulePolicy, PolicyDayView-based) must "
+            "never receive the onset day, only the resulting boolean flag."
+        ),
+        approved_by="Rahat",
     ),
     "adaptive_scheduling_policy_semantics": DesignDecision(
         decision_id="adaptive_scheduling_policy_semantics",
@@ -72,5 +97,22 @@ DESIGN_DECISIONS: dict[str, DesignDecision] = {
             "days). See evaluation/policies.py::AdaptiveSchedulePolicy's "
             "docstring and handoff/research_lead/DECISIONS_NEEDED_NOW.md."
         ),
+        approved=False,
+        decision_text=(
+            "PARTIAL, NOT a completed approval (ASTROSENTINEL, 2026-11-04): Rahat "
+            "approved Option B (defer/replace fixed scans) IN PRINCIPLE as the "
+            "direction for a future adaptive-replacement experiment, explicitly "
+            "confirming Option A's limitation (cannot show scan savings) is why a "
+            "replacement/deferment capability is wanted. NOT fully approved: the "
+            "maximum permitted gap (days) between scans, and the rescheduling/"
+            "safety rule for when deferral is disallowed, are both still "
+            "unspecified and must not be invented. `approved` stays False until "
+            "both numbers exist - an implemented, tested "
+            "AdaptiveReplacementSchedulePolicy exists (evaluation/policies.py) "
+            "taking a required `max_gap_days` as an explicit constructor argument "
+            "with no default, but it is NOT wired into evaluate_policies.py's real "
+            "run and must not be until this decision is fully approved."
+        ),
+        approved_by=None,
     ),
 }

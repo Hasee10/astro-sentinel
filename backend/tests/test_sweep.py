@@ -295,14 +295,34 @@ def test_run_sweep_requires_tier_fn_or_registry():
         run_sweep(accuracy_values=[0.5], cohort=cohort, trigger_fired_fn=lambda *a: False, fixed_interval_days=7)
 
 
-def test_sweep_blockers_against_real_registry_lists_all_known_gaps(registry):
-    blockers = sweep_blockers(registry)
+def test_sweep_blockers_against_real_registry_is_now_empty():
+    """ASTROSENTINEL (2026-11-04): the real registry has all 3 required assumptions
+    approved plus the trigger-firing design decision approved AND implemented -
+    sweep_blockers() against the real registry must report nothing blocking."""
+    from registry.loader import load_all
+
+    assert sweep_blockers(load_all()) == []
+
+
+def test_sweep_blockers_against_unapproved_fixture_lists_assumption_gaps(registry):
+    """General property, independent of today's real state: when the 3 required
+    experimental assumptions are not approved, that's listed as a blocker. The
+    trigger-firing design decision (registry/design_decisions.py) is a SEPARATE
+    record from assumptions.json, so resetting only the assumptions here does not
+    affect it - its own unapproved/approved states are covered directly in
+    tests/test_design_decisions.py, including the unregistered-gap case."""
+    from registry.loader import Registry
+    from registry.models import ApprovalStatus
+
+    unapproved = {
+        aid: a.model_copy(update={"approval_status": ApprovalStatus.UNAPPROVED, "approved_by": None, "value_or_range": None})
+        for aid, a in registry.assumptions.items()
+    }
+    fixture_registry = Registry(parameters=registry.parameters, assumptions=unapproved)
+
+    blockers = sweep_blockers(fixture_registry)
     blocked_ids = {b.capability for b in blockers}
     assert "adaptive_vs_fixed_comparison" in blocked_ids
-    assert "trigger_firing_simulation_model" in blocked_ids
-    # the unregistered trigger-firing model has no backing assumption id at all
-    trigger_blocker = next(b for b in blockers if b.capability == "trigger_firing_simulation_model")
-    assert trigger_blocker.blocked_by == []
 
 
 def test_find_crossover_detects_a_real_crossing():

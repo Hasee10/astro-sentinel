@@ -1,193 +1,200 @@
 # Decisions Needed Now
 
-A short, prioritized list of the minimum decisions needed to unblock a
-scientifically executable crossover experiment. You should be able to answer
-every question here without reading any backend source code. Full detail and
-justification for each is in `BLOCKER_QUESTIONS.md` (same folder); technical
-specs for the generation-layer items are in `GENERATION_MODEL_SPECS.md` — this
-file does not repeat their content, only summarizes what's still needed and in
-what order.
+Rewritten 2026-11-04 (ASTROSENTINEL correction, Part 6) after your 8 assumption
+approvals + the trigger-firing decision unblocked `sweep_blockers()` - but a
+follow-up correction found that an **open ground truth gap** (not an approval gap)
+still blocks every real run: see item 1. This file is now organized around the 8
+items you asked for specifically. Full technical detail for the generation-layer
+items lives in `GENERATION_MODEL_SPECS.md`; the complete history of every question
+(including the ones already resolved) is in `BLOCKER_QUESTIONS.md`.
 
-**Schedule context:** frontend data handoff was due Nov 3 (done — see
-`handoff/frontend/`). Integrated build is due Nov 6. Experimental results are
-expected Nov 10-11.
+**Already resolved, not repeated below:** trigger-firing method and swept values,
+fixed-schedule interval (7 days), decision-tier thresholds (15/40/80%), ONSD
+baseline/within-person SD, scan failure rate (10%, 50/50 split), the venous
+Bayesian LR model and its flow-class likelihood ratios, SANS susceptibility/event
+rates (75/25, 30/70). All eight are active in `registry/data/assumptions.json`
+with `approved_by: "Rahat"`.
 
-**Important:** approving a decision is necessary but not sufficient. Every item
-below marked "Algorithm still missing: yes" also needs a backend implementation
-step after your approval before it does anything — approving a value does not
-by itself make a number appear (see the dependency chain at the bottom).
-
----
-
-## 1. The trigger-firing simulation method (blocks EVERYTHING in deliverable 3)
-
-- **Exact missing input/rule:** a method translating an assumed trigger
-  accuracy/usefulness value (e.g. 0.7) into which specific days a synthetic
-  trigger fires for a given case.
-- **Parameter-sheet row:** none — simulation-design choice, no Table 4 entry.
-- **Why the experiment requires it:** this is the one gap that blocks the
-  crossover regardless of what else gets approved (checked unconditionally in
-  `evaluation/sweep.py::sweep_blockers()`).
-- **Available design choices:**
-  1. Sensitivity/specificity model — trigger fires probabilistically based on a
-     (sensitivity, specificity) pair against the hidden onset day.
-  2. Fixed lead-time model — trigger always fires exactly N days before onset
-     (N derived from the accuracy value), plus an independent false-positive rate.
-  3. Your own alternative.
-- **Expected effect on outputs:** determines how early/often adaptive scans
-  relative to fixed across the swept accuracy axis — directly shapes the
-  crossover curve's shape.
-- **Approval type:** design decision (`registry/design_decisions.py`) for the
-  *method*, **plus** experimental assumption (`hrv_trigger_assumed_accuracy`)
-  for the swept *values*.
-- **Algorithm still missing:** **yes.** Even after you approve a method, it
-  must still be implemented to match the restricted `PolicyDayView` input
-  contract (Phase 10) and pass dedicated tests before
-  `TRIGGER_FIRING_MODEL_IMPLEMENTED` may be set to `True`.
-
-## 2. Adaptive scheduling policy semantics (changes what the experiment can claim)
-
-- **Exact missing input/rule:** whether the adaptive policy may ever use
-  *fewer* scans than fixed, or only ever add extras.
-- **Parameter-sheet row:** none — engineering/experimental-design choice.
-- **Why the experiment requires it:** the currently-implemented policy is
-  "fixed backstop + triggered extras" — it cannot, by construction, show a scan
-  *saving*, only earlier detection for more scans. If your research question
-  includes scan savings, this policy cannot answer it.
-- **Available design choices:**
-  - **A (already built):** fixed backstop + triggered extra scans.
-  - **B:** defer/replace fixed scans based on evidence — can reduce scans, but
-    needs you to also specify a maximum allowed gap between scans and a safety
-    rule for when deferral isn't allowed.
-  - **C:** a fixed scan budget reallocated to more informative days.
-- **Expected effect on outputs:** changes whether "scans used" can ever favor
-  adaptive in the comparison table — Option A structurally cannot; B/C could.
-- **Approval type:** design decision.
-- **Algorithm still missing:** no for Option A (already implemented and
-  tested); **yes** for B or C.
-
-## 3. Fixed-schedule interval
-
-- **Exact missing input/rule:** the comparator interval in days.
-- **Parameter-sheet row:** none — your brief's "every 7 days" is explicitly an
-  example, not a chosen value.
-- **Why the experiment requires it:** `evaluate_policies.py` cannot run
-  without a declared comparator interval.
-- **Available design choices:** any positive integer number of days.
-- **Expected effect on outputs:** sets the fixed policy's baseline scan count
-  and detection-delay floor that adaptive is compared against.
-- **Approval type:** experimental assumption (`fixed_schedule_interval_choice`, numerical).
-- **Algorithm still missing:** no — `FixedSchedulePolicy`/`AdaptiveSchedulePolicy`
-  already implement the day-one-anchored interval correctly; this only needs a number.
-
-## 4. Decision-tier probability thresholds
-
-- **Exact missing input/rule:** the probability cutoffs separating
-  Monitor/Repeat/Consult/Urgent, per outcome.
-- **Parameter-sheet row:** none — Table 2 names the tiers, not numeric cutoffs.
-- **Why the experiment requires it:** needed to turn any future probability
-  into a tier at all; also one of the three assumptions `sweep_blockers()`
-  unconditionally requires.
-- **Available design choices:** threshold value(s) per outcome; may be swept
-  like the HRV accuracy values rather than fixed.
-- **Expected effect on outputs:** directly determines detection delay/missed
-  events/false escalations once a real probability model exists.
-- **Approval type:** experimental assumption (`decision_tier_thresholds`, numerical).
-- **Algorithm still missing:** not applicable yet — this is only usable once a
-  probability model (item not on this list; see `BLOCKER_QUESTIONS.md` items
-  3-4) exists to threshold in the first place.
-
-## 5. Sticky-Urgent / red-flag clearance rule
-
-- **Exact missing input/rule:** whether/how an Urgent tier ever clears once a
-  red flag has occurred.
-- **Parameter-sheet row:** none — clinical-process design decision.
-- **Why the experiment requires it:** today, once any red flag appears, that
-  outcome stays Urgent for the rest of the mission — this will make every
-  affected synthetic astronaut look "stuck" in any demo or evaluation table,
-  and could distort missed-event/detection-delay metrics once real event data exists.
-- **Available design choices:** never clear automatically (today's default) /
-  clear after N consecutive clean scans (specify N) / clear only via an
-  explicit synthetic "resolved" flag (specify how it's set) / your own rule.
-- **Expected effect on outputs:** changes long-run tier distributions and any
-  "percent of mission spent Urgent" style reporting.
-- **Approval type:** design decision.
-- **Algorithm still missing:** yes, if you want anything other than the
-  current sticky default (which is already implemented).
-
-## 6. Simultaneous SANS + venous measurement on one day — schema question (new)
-
-- **Exact missing input/rule:** the shared contract currently allows exactly
-  ONE structured `scan` per astronaut-day, with one `type` (ONSD/jugular/etc.).
-  We verified the evaluator does NOT cross-count a scan into the wrong
-  outcome's accounting (a venous/jugular scan is never counted as a SANS
-  measurement or vice versa) — that was checked and is correct. But the
-  schema itself cannot represent "both an ONSD scan AND a jugular scan on the
-  same day" without a contract change.
-- **Parameter-sheet row:** not applicable — this is a data-contract design
-  question, not a scientific value.
-- **Why the experiment requires it:** only if your research design assumes
-  astronauts get simultaneous SANS and venous confirmatory measurements on the
-  same day. If same-day measurements of both types are never required, there
-  is nothing to change.
-- **Available design choices:** keep one scan per day (current, no change) /
-  add a second optional scan field for the other outcome / model multiple
-  scans per day as a list.
-- **Expected effect on outputs:** a schema change here is the ONE item in this
-  document that would require touching the frontend-facing contract
-  (`handoff/frontend/CONTRACT_CHANGELOG.md`) — we have not made this change
-  and will not without your answer.
-- **Approval type:** design decision (not scientific).
-- **Algorithm still missing:** not applicable until you decide whether a
-  change is even wanted.
+**Schedule context unchanged:** integrated build due Nov 6, experimental results
+expected Nov 10-11. Every item below is now genuinely on the critical path - the
+crossover experiment is correctly blocked by every one of them simultaneously,
+confirmed by `evaluate_policies.py`'s own real output (run today: immediate
+`evaluation_blockers.json`, zero CSV/PNG).
 
 ---
 
-## Implementation dependency chain
+## 1. Event-onset timing distribution (highest priority - blocks everything else)
 
-Which approvals unlock which backend components, in order:
+- **Exact missing rule:** which day within the 30-day mission a hidden SANS event
+  (already flagged via the approved `has_sans_event`) actually starts.
+- **Why necessary:** `has_sans_event=True` with `sans_onset_day=None` is the data
+  state for every SANS-event astronaut today. A follow-up correction found
+  `evaluate_policies.py` was silently scoring this as "0 missed events" - now
+  fixed to refuse instead (`evaluation/experiment_readiness.py`), but that means
+  **no real result can be produced until this is approved**, not just a less
+  thorough one.
+- **Blocks:** `evaluate_policies.py` entirely (both outcomes), via the new
+  preflight readiness gate - confirmed blocking on every real run as of this
+  correction.
+- **What you must approve:** a concrete convention - e.g. a fixed day, or a day
+  sampled from a declared range - via `registry/design_decisions.py::
+  sans_venous_onset_day_assignment`. Still needs an implementation step after
+  approval (see `GENERATION_MODEL_SPECS.md` item 7).
+
+## 2. SANS physiological progression model
+
+- **Exact missing rule:** how ONSD (and any other SANS-relevant measurement)
+  actually changes, day by day, for an astronaut once their event has started.
+- **Why necessary:** even once item 1 is resolved, every generated ONSD reading
+  today is flat/noisy regardless of `has_sans_event` - there is no superimposed
+  signal to detect. Resolving onset-day alone would let the experiment *run*; it
+  would not let it *detect anything real*.
+- **Blocks:** `simulation/physiological_generation.py::generate_onsd_scan()` for
+  any non-healthy trajectory; meaningfully non-trivial detection-delay results.
+- **What you must approve:** a progression shape (e.g. linear ramp over N days to
+  a target magnitude) and its parameters. None proposed by this team - genuinely
+  open.
+
+## 3. Venous event prevalence, progression, and flow
+
+- **Exact missing rule:** three things, all absent: (a) what fraction of
+  astronauts actually get a venous event at all, (b) when, (c) how their jugular
+  flow class/area changes once it starts.
+- **Why necessary:** unlike SANS, there is **no approved event-occurrence model
+  for venous at all** - today's `scenario_label` venous assignment is this
+  project's own unprincipled 50/50 structural placeholder, not a scientific claim,
+  and is never read as ground truth by the evaluator
+  (`evaluation/experiment_readiness.py::venous_ground_truth_status` returns
+  "undetermined" unconditionally). The venous Bayesian LR model you approved
+  computes a correct probability *from a flow-class observation when one exists*
+  - it says nothing about when or how often one should exist.
+  - **Why this is three questions, not one:** approving a prevalence rate alone
+    (mirroring SANS's 75/25 + 30/70) would still leave timing and progression
+    open, exactly like SANS items 1-2.
+- **Blocks:** `jugular_scan_values` generation entirely; all venous detection
+  metrics, unconditionally, regardless of any other approval.
+- **What you must approve:** an event-occurrence rate (or rates, by some
+  analogous susceptibility split if you want one), an onset-timing rule, and a
+  flow-class progression rule. None proposed - genuinely open, and the largest
+  single gap remaining.
+
+## 4. Maximum adaptive scan gap and deferral rules
+
+- **Exact missing rule:** for the Option B replacement policy
+  (`evaluation.policies.AdaptiveReplacementSchedulePolicy`, approved in principle
+  only), the full set is: maximum permitted gap between scans, the lookback
+  window for "fresh" trigger evidence (previously silently defaulted to 3 days -
+  removed, now exactly as mandatory as the gap), mandatory-scan conditions (not
+  implemented), failed-scan retry behavior (not implemented), and whether
+  SANS/venous acquisition should be accounted separately (not implemented - also
+  tangled with item 6 below).
+- **Why necessary:** without these, this class cannot be instantiated at all
+  (both `max_gap_days` and `defer_lookback_days` are required constructor
+  arguments with no default) - and it must not be, since
+  `adaptive_scheduling_policy_semantics` stays unapproved
+  (`registry/design_decisions.py`).
+- **Blocks:** any experiment claiming scan *savings* (Option A structurally
+  cannot show this - see `DECISIONS_NEEDED_NOW.md`'s predecessor and
+  `evaluation/policies.py::AdaptiveSchedulePolicy`'s docstring).
+- **What you must approve:** concrete numbers/rules for all five sub-items above,
+  together, as one design-decision sign-off.
+
+## 5. Measurement acquisition and retry rules
+
+- **Exact missing rule:** whether a scan that comes back degraded/failed (per the
+  approved 10% failure rate) should trigger an earlier mandatory re-scan, and on
+  what schedule; and whether SANS (ONSD) and venous (jugular) measurements may be
+  acquired on the same day at all - the shared contract currently allows only one
+  structured `scan` per astronaut-day.
+- **Why necessary:** without a retry rule, a failed scan simply waits for the
+  next anchor day, which may materially affect detection delay once items 1-2
+  are resolved. The same-day question is a schema change, not a scientific
+  value, and the only item in this document that would touch
+  `handoff/frontend/CONTRACT_CHANGELOG.md`.
+- **Blocks:** nothing today (both are currently moot while items 1-3 block
+  everything), but will block a scientifically complete result once they're
+  resolved.
+- **What you must approve:** a retry rule (or confirm none is wanted), and a
+  same-day-acquisition decision (keep one scan/day / add a second field / model
+  scans as a list) - the first is a design decision, the second is a design
+  decision with a schema-change consequence.
+
+## 6. SANS evidence-to-posterior model (monitoring-layer, separate from item 2)
+
+- **Exact missing rule:** a formula turning a real SANS measurement (once item 2
+  exists) into an updated probability - the monitoring-layer counterpart to the
+  venous Bayesian LR model you already approved.
+- **Why this is NOT the same as `sans_prior_mapping`:** that approval authorizes
+  the crew **generator's** synthetic susceptibility/event/time-prior scheme only
+  (ground truth bookkeeping) - `monitoring/engine.py`'s
+  `MONITORING_PROBABILITY_IMPLEMENTED = {"venous"}` deliberately does not include
+  "sans", so `probability.sans` stays null unconditionally regardless of any
+  approval touching generation. An earlier version of this correction batch
+  briefly got this distinction wrong in code (not just documentation) before a
+  test caught it.
+- **Why necessary:** without this, SANS can never produce a real probability no
+  matter what else is resolved.
+- **Blocks:** `monitoring/engine.py`'s SANS branch, permanently, until approved.
+- **What you must approve:** a prior/likelihood-ratio mapping and confirmation of
+  which ONSD evidence feeds it. **Do not approve reusing the ICP likelihood
+  ratios** (Koziarz/Ohle, original or revised) **for this** without a separately
+  stated scientific justification - they remain explicitly scoped to ICP
+  diagnosis only throughout the registry (see `onsd_accuracy_koziarz_2019` /
+  `_rev1` and siblings).
+
+## 7. HRV numerical values, if required for display
+
+- **Exact missing rule:** actual HRV baseline/measurement values (not the
+  trigger-firing model, which is separate and already approved and implemented).
+- **Why necessary:** `daily_hrv_weak_signal` generation is explicitly forbidden
+  from inventing a distribution (per your own instruction, preserved from the
+  original correction), so `weak_signals.hrv_hf_power`/`hrv_lf_hf` stay null even
+  though the trigger that conceptually stands in for HRV already works.
+- **Blocks:** only a frontend/demo *display* of a numeric HRV value - the trigger
+  mechanism itself does not need this and already works without it.
+- **What you must approve:** confirm whether this is even wanted for the demo at
+  all (a reasonable answer is "no" - the trigger flag can be shown instead), and
+  if so, a sourced generation model.
+
+## 8. Off-axis bias realization method
+
+- **Exact missing rule:** you approved the off-axis positive-bias **range**
+  (0.3-0.5mm); this project's own engineering choice of 0.4mm (the midpoint) as
+  the deterministic operational value was never separately confirmed.
+- **Why necessary:** a corrective review flagged that this specific sub-choice
+  was being treated with the same confidence as the clearly-approved numbers
+  around it (the 10% rate, the 50/50 split, the range itself). It has NOT been
+  deactivated - it is the running value, stays within your approved range, and
+  invents no distribution - but it now reads as explicitly pending in
+  `registry/data/assumptions.json::onsd_scan_failure_rate.value_or_range
+  .off_axis_positive_bias_mm.operational_value_status`.
+- **Blocks:** nothing today (ONSD generation keeps running with this value) -
+  this is a confidence-labeling fix, not a new block.
+- **What you must approve:** confirm the midpoint (0.4mm), or specify the low
+  end, high end, or a swept set instead.
+
+---
+
+## Dependency chain (unchanged mechanism, updated content)
 
 ```
-hrv_trigger_assumed_accuracy (values)  ┐
-trigger-firing method (decision)        ├──► trigger algorithm implemented ──► TRIGGER_FIRING_MODEL_IMPLEMENTED=True
-                                         ┘         │
-fixed_schedule_interval_choice ─────────────────────┤
-decision_tier_thresholds ───────────────────────────┤
-                                                     ▼
-                                    evaluation/sweep.py::sweep_blockers() returns []
-                                                     │
-                                                     ▼
-                              evaluate_policies.py produces a REAL adaptive_vs_fixed.csv/.json
-                                          and trigger_accuracy_crossover_*.png
+item 1 (onset timing)  ──────────────┬──► evaluate_policies.py unblocks for SANS scan-count/trigger metrics only
+item 2 (SANS progression) ───────────┤        (detection-delay/missed-events still need item 2 too, to have a
+                                      │         real signal to detect, not just a schedulable day)
+item 6 (SANS posterior model) ───────┴──► probability.sans ever non-null
+
+item 3 (venous prevalence+timing+flow) ──► venous unblocks for ANY metric (currently blocked unconditionally)
+
+item 4 (adaptive replacement rules) ─────► Option B usable; a scan-savings claim becomes possible
+
+item 5 (retry / same-day acquisition) ───► refines items 1-3's results once they exist; blocks nothing by itself today
+
+item 7 (HRV values) ──────────────────────► display only, blocks nothing mechanical
+
+item 8 (off-axis bias method) ───────────► confidence/labeling only, blocks nothing
 ```
 
-Separately, and NOT required for the above to run (the experiment can execute
-with every probability still `null`):
-
-```
-sans_prior_mapping + venous_probability_model + onsd_baseline_sd_values + ...
-          (see BLOCKER_QUESTIONS.md items 2-4, GENERATION_MODEL_SPECS.md)
-                                   │
-                                   ▼
-          real (non-null) physiological values and probabilities
-```
-
-In other words: **items 1, 3, and 4 above are the minimum for
-`evaluate_policies.py` to execute at all and produce a genuine (non-fabricated)
-CSV/JSON/PNG instead of a blocker report.** Be aware this alone would still be
-a scientifically thin result: with physiological generation and event-onset
-assignment both still blocked (see `BLOCKER_QUESTIONS.md`), every synthetic
-astronaut's scan and onset data stays null, so detection delay and missed
-events would have nothing real to measure - the plot would show scan-count
-differences between the two policies, honestly computed, but not yet a
-clinically meaningful detection comparison. Item 2 decides which policy that
-plot represents. Item 5 affects long-run tier reporting. Item 6 only matters
-if you want same-day dual measurements. A scientifically substantive crossover
-additionally needs the physiological-generation and onset-assignment items in
-`BLOCKER_QUESTIONS.md`/`GENERATION_MODEL_SPECS.md`.
-
-Everything else (SANS prior, venous probability model, personal ONSD
-baselines, HRV/PTT weak-signal generation, jugular measurements, scan failure
-rate) still matters for a scientifically complete result, but is not on this
-milestone's critical path — see `BLOCKER_QUESTIONS.md` for the complete
-prioritized list.
+**The single highest-priority item remains item 1** - it is the one gap that, by
+itself, keeps `evaluate_policies.py` fully blocked today regardless of everything
+else already approved. Item 3 is the second-highest: venous is blocked
+*unconditionally*, with no partial credit for any amount of SANS progress.

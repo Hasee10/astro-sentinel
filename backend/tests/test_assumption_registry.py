@@ -47,25 +47,53 @@ def test_all_14_assumptions_present(assumptions):
     assert set(assumptions) == EXPECTED_ASSUMPTION_IDS
 
 
-def test_every_assumption_is_unapproved(assumptions):
-    """Initially, all unresolved experimental assumptions must remain unapproved -
-    this is a direct, literal requirement, not just a default."""
-    for aid, a in assumptions.items():
+# ASTROSENTINEL (2026-11-04): Rahat approved exactly these 8 of 14, each with a
+# recorded value/decision and approver - "Do not approve all 14 assumptions
+# automatically" is honored by this remaining-6 set staying untouched.
+APPROVED_ASSUMPTION_IDS = {
+    "sans_prior_mapping",
+    "venous_probability_model",
+    "decision_tier_thresholds",
+    "onsd_baseline_sd_values",
+    "hrv_trigger_assumed_accuracy",
+    "jugular_flow_risk_mapping",
+    "fixed_schedule_interval_choice",
+    "onsd_scan_failure_rate",
+}
+UNAPPROVED_ASSUMPTION_IDS = {
+    "ptt_trigger_assumed_usefulness",
+    "onsd_icu_cutoff_reuse_scope",
+    "onsd_interobserver_noise_magnitude",
+    "sans_cnn_reuse_scope",
+    "evidence_atlas_lr_reliance",
+    "communication_delay_exact_value",
+}
+
+
+def test_approved_and_unapproved_sets_partition_all_14(assumptions):
+    assert set(assumptions) == APPROVED_ASSUMPTION_IDS | UNAPPROVED_ASSUMPTION_IDS
+    assert APPROVED_ASSUMPTION_IDS & UNAPPROVED_ASSUMPTION_IDS == set()
+
+
+def test_approved_assumptions_are_active_with_recorded_approver(assumptions):
+    for aid in APPROVED_ASSUMPTION_IDS:
+        a = assumptions[aid]
+        assert a.approval_status == ApprovalStatus.APPROVED, aid
+        assert a.approved_by == "Rahat", aid
+        assert a.is_active() is True, aid
+        assert a.value_or_range is not None, aid
+
+
+def test_remaining_assumptions_stay_unapproved(assumptions):
+    """Do not approve all 14 assumptions automatically - this is the explicit,
+    literal check that the 6 not addressed by Rahat's 2026-11-04 approvals are
+    untouched."""
+    for aid in UNAPPROVED_ASSUMPTION_IDS:
+        a = assumptions[aid]
         assert a.approval_status == ApprovalStatus.UNAPPROVED, aid
         assert a.approved_by is None, aid
-
-
-def test_no_assumption_is_active(assumptions):
-    """No assumption should automatically become active simply because it exists
-    in the registry."""
-    for aid, a in assumptions.items():
         assert a.is_active() is False, aid
-
-
-def test_no_numerical_values_assigned(assumptions):
-    """Phase 0 may seed assumption *slots* but must not assign new numerical values."""
-    for aid, a in assumptions.items():
-        assert a.value_or_range is None, f"{aid} has a value_or_range but none should be assigned yet"
+        assert a.value_or_range is None, aid
 
 
 def test_every_assumption_has_required_narrative_fields(assumptions):
@@ -88,15 +116,19 @@ def test_high_priority_blockers_are_represented(assumptions):
     venous_text = " ".join([
         assumptions["venous_probability_model"].description,
         assumptions["venous_probability_model"].limitations,
+        str(assumptions["venous_probability_model"].value_or_range),
     ]).lower()
     assert "likelihood-ratio" in venous_text or "likelihood ratio" in venous_text
+    assert "unvalidated" in venous_text or "simulation placeholder" in venous_text
 
     prior_text = " ".join([
         assumptions["sans_prior_mapping"].description,
         assumptions["sans_prior_mapping"].scientific_purpose,
         assumptions["sans_prior_mapping"].limitations,
+        str(assumptions["sans_prior_mapping"].value_or_range),
     ]).lower()
-    assert "placeholder assumption" in prior_text
+    assert "synthetic" in prior_text
+    assert "not a real clinical prior" in prior_text or "not clinically validated" in prior_text
 
 
 # ---- strict validation: unauthorized activation must be rejected ----

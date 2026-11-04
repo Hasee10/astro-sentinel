@@ -1,15 +1,25 @@
 """Deliverable 2: the one authoritative monitoring function, assess_history().
 
-What this can legitimately compute right now, and why:
-- Measurement quality (ok/degraded/failed) IS sourced: onsd_measurement_protocol and
-  onsd_technical_artifacts are established acquisition rules, not invented.
+What this can legitimately compute, and why:
+- Measurement quality (ok/degraded/failed/unknown) IS sourced: onsd_measurement_protocol
+  and onsd_technical_artifacts are established acquisition rules, not invented.
 - The Urgent-on-red-flag-symptom and Repeat-on-poor-quality tiers ARE sourced: Table 2
   of the mission brief states both rules directly, independent of any probability
   threshold.
-- A numeric SANS or venous probability is NOT currently computable: no prior, no
-  likelihood ratio, and no decision-tier threshold is an active (approved) assumption.
-  Every probability this function returns is therefore None, with an explanation naming
-  the exact assumption(s) that would need to be approved to change that.
+- A VENOUS probability (ASTROSENTINEL, 2026-11-04): now computable, because
+  venous_probability_model (scope) and jugular_flow_risk_mapping (the LR values) are
+  both approved - see _compute_venous_probability below. This is a Rahat-provided
+  SIMULATION PLACEHOLDER model, not derived from any cited source (no jugular
+  sensitivity/specificity/LR data exists in the parameter sheet) - every probability
+  it produces carries probability_label="Simulation placeholder - unvalidated" and
+  must never be shown as a validated clinical estimate. Uses ONLY the single latest
+  available flow-class observation per assessment - sequential daily likelihood
+  ratios are never multiplied together (per the approval's own explicit condition).
+- A SANS probability is still NOT computable: sans_prior_mapping's 2026-11-04 approval
+  authorizes a synthetic GENERATION-layer susceptibility/event/time-prior scheme (see
+  simulation/physiological_generation.py) for ground truth only - it does not supply
+  an evidence-updated MONITORING-layer formula, so probability.sans stays None here,
+  with an explanation naming what is still missing.
 
 SANS and venous are assessed by two independent nested functions that never share state
 or read each other's scan/signal evidence - there is no code path that could produce a
@@ -33,9 +43,32 @@ VENOUS_SCAN_TYPES = {ScanType.JUGULAR}
 # capability -> blocking assumption_id(s), mirrors simulation/generator.py's pattern
 PROBABILITY_BLOCKERS = {
     "sans": ["sans_prior_mapping"],
-    "venous": ["venous_probability_model"],
+    "venous": ["venous_probability_model", "jugular_flow_risk_mapping"],
 }
 TIER_THRESHOLD_BLOCKERS = ["decision_tier_thresholds"]
+
+# Which outcomes have an actual implemented MONITORING-layer probability formula.
+# sans_prior_mapping being active is deliberately NOT enough on its own to put
+# "sans" in this set: that approval authorizes simulation/physiological_generation.py's
+# generation-layer ground-truth scheme only (see its value_or_range note) - it does
+# not supply (and was never asked to supply) an evidence-updated monitoring formula.
+# Without this explicit set, `inactive` below would read as empty for sans the
+# moment sans_prior_mapping and decision_tier_thresholds are both active, wrongly
+# implying a monitoring model exists when none does.
+MONITORING_PROBABILITY_IMPLEMENTED = {"venous"}
+
+SIMULATION_PLACEHOLDER_LABEL = "Simulation placeholder - unvalidated"
+
+# Monitor/Unresolved rank below Repeat below Consult below Urgent - used to combine a
+# probability-threshold tier with a flow-class minimum-tier floor by taking the more
+# severe of the two, never by overwriting one with the other.
+_TIER_RANK = {
+    TierValue.MONITOR: 0,
+    TierValue.UNRESOLVED: 0,
+    TierValue.REPEAT: 1,
+    TierValue.CONSULT: 2,
+    TierValue.URGENT: 3,
+}
 
 
 class OutcomeAssessment(BaseModel):
@@ -95,6 +128,64 @@ def _any_red_flag(history: list[AstronautDayObservation], scan_types: set[ScanTy
     )
 
 
+def _compute_venous_probability(
+    history: list[AstronautDayObservation], registry: Registry
+) -> tuple[float | None, str | None]:
+    """Prior-odds x LR using ONLY the single latest available flow-class observation -
+    never a running/multiplied posterior across multiple days (per
+    venous_probability_model's approval condition). Returns (probability, flow_class)
+    or (None, None) if the model isn't fully approved or no usable evidence exists.
+    An unreliable reading (quality recorded as anything other than OK) is never used
+    as evidence, the same discipline applied to ONSD elsewhere in this module."""
+    if not (
+        registry.assumptions["venous_probability_model"].is_active()
+        and registry.assumptions["jugular_flow_risk_mapping"].is_active()
+    ):
+        return None, None
+
+    latest = _latest_scan_of(history, VENOUS_SCAN_TYPES)
+    if latest is None or latest.jugular_flow_class is None:
+        return None, None
+    if latest.quality is not None and latest.quality.status != QualityStatus.OK:
+        return None, None
+
+    config = registry.assumptions["jugular_flow_risk_mapping"].value_or_range
+    lr_map = config["flow_class_likelihood_ratios"]
+    flow_class = latest.jugular_flow_class
+    if flow_class not in lr_map:
+        return None, None
+
+    prior = config["starting_synthetic_prior_pct"] / 100.0
+    prior_odds = prior / (1 - prior)
+    posterior_odds = prior_odds * lr_map[flow_class]
+    posterior_probability = posterior_odds / (1 + posterior_odds)
+    return posterior_probability, flow_class
+
+
+def _tier_from_probability_pct(probability_pct: float, registry: Registry) -> TierValue:
+    config = registry.assumptions["decision_tier_thresholds"].value_or_range
+    if probability_pct >= config["urgent_min_pct"]:
+        return TierValue.URGENT
+    if probability_pct >= config["consult_min_pct"]:
+        return TierValue.CONSULT
+    if probability_pct >= config["repeat_min_pct"]:
+        return TierValue.REPEAT
+    return TierValue.MONITOR
+
+
+def _minimum_tier_for_flow_class(flow_class: str | None, registry: Registry) -> TierValue | None:
+    """Part 3's explicit floor: stagnant/retrograde flow are never allowed to read
+    below Repeat, regardless of what the probability threshold alone would say -
+    implemented as an explicit floor (not left to "the numbers happen to work out"),
+    so it stays correct even if decision_tier_thresholds is later swept."""
+    if flow_class is None or not registry.assumptions["jugular_flow_risk_mapping"].is_active():
+        return None
+    config = registry.assumptions["jugular_flow_risk_mapping"].value_or_range
+    if flow_class in config.get("tier_flags", {}):
+        return TierValue.REPEAT
+    return None
+
+
 def _assess_outcome(
     history: list[AstronautDayObservation],
     outcome: str,
@@ -145,7 +236,9 @@ def _assess_outcome(
             tier_reason=TierReason.MEASUREMENT_QUALITY,
             measurement_quality=quality,
             evidence_references=evidence_references,
-            limitations=[f"No approved probability model ({inactive})."],
+            limitations=[f"No approved probability model applies to this reading ({inactive})."]
+            if inactive
+            else ["The latest relevant reading's quality is unreliable; it is not used as probability evidence."],
             explanation=(
                 f"The latest relevant scan quality is '{quality.value}'. Per the mission "
                 "brief, a failed, poor, or quality-indeterminate scan should barely move "
@@ -157,22 +250,84 @@ def _assess_outcome(
             ),
         )
 
+    probability: float | None = None
+    flow_class_used: str | None = None
+    if outcome == "venous":
+        probability, flow_class_used = _compute_venous_probability(history, registry)
+
+    if probability is not None:
+        tier = _tier_from_probability_pct(probability * 100.0, registry)
+        floor = _minimum_tier_for_flow_class(flow_class_used, registry)
+        if floor is not None and _TIER_RANK[floor] > _TIER_RANK[tier]:
+            tier = floor
+        return OutcomeAssessment(
+            probability=probability,
+            probability_label=SIMULATION_PLACEHOLDER_LABEL,
+            tier=tier,
+            tier_reason=TierReason.PROBABILITY_THRESHOLD,
+            measurement_quality=quality,
+            evidence_references=evidence_references + ["jugular_flow_risk_mapping", "decision_tier_thresholds"],
+            limitations=[
+                "HYPOTHETICAL/SYNTHETIC: computed from a simulation-placeholder Bayesian "
+                "model (prior-odds x likelihood-ratio for the single latest flow-class "
+                "observation), not derived from any cited source and not a validated "
+                "clinical estimate. Sequential daily likelihood ratios are never "
+                "multiplied together."
+            ],
+            explanation=(
+                f"Venous probability computed as prior-odds x LR using the latest "
+                f"observed flow class ('{flow_class_used}'), per the approved "
+                f"jugular_flow_risk_mapping values, thresholded per "
+                f"decision_tier_thresholds. Labeled '{SIMULATION_PLACEHOLDER_LABEL}' - "
+                "this is a hackathon demonstration model, not a clinically validated "
+                "risk estimate, and must never be presented as one."
+            ),
+        )
+
+    if outcome not in MONITORING_PROBABILITY_IMPLEMENTED:
+        scope_note = (
+            "sans_prior_mapping is approved, but only for the generation-layer "
+            "synthetic ground-truth scheme in simulation/physiological_generation.py "
+            "- not a monitoring-layer formula."
+            if not inactive
+            else f"Also unapproved: {inactive}."
+        )
+        limitation = f"No monitoring-layer {outcome} probability formula is implemented here. {scope_note}"
+        explanation = (
+            f"No numeric {outcome} probability can be computed: no evidence-updated "
+            f"monitoring formula exists for it in this module, independent of which "
+            f"assumptions are approved for other purposes. Returning an explicit "
+            f"unresolved state rather than a fabricated estimate."
+        )
+    elif inactive:
+        limitation = f"No active (approved) assumption authorizes a {outcome} probability calculation: {inactive}."
+        explanation = (
+            f"No numeric {outcome} probability can be computed: the parameter sheet "
+            f"does not currently provide a validated prior/likelihood-ratio mapping or "
+            f"decision-tier threshold for it, and none of {inactive} is approved. "
+            "Returning an explicit unresolved state rather than a fabricated estimate."
+        )
+    else:
+        limitation = (
+            f"A {outcome} probability model is approved, but no usable evidence "
+            "(a valid, good-quality flow-class observation) is available in this "
+            "astronaut's history yet."
+        )
+        explanation = (
+            f"No numeric {outcome} probability can be computed yet: the approved model "
+            "needs a valid flow-class observation of acceptable quality, and none is "
+            "present in this astronaut's history. Returning an explicit unresolved "
+            "state rather than a fabricated estimate."
+        )
+
     return OutcomeAssessment(
         probability=None,
         tier=TierValue.UNRESOLVED,
         tier_reason=TierReason.INSUFFICIENT_EVIDENCE_FOR_PROBABILITY,
         measurement_quality=quality,
         evidence_references=evidence_references,
-        limitations=[
-            f"No active (approved) assumption authorizes a {outcome} probability "
-            f"calculation: {inactive}."
-        ],
-        explanation=(
-            f"No numeric {outcome} probability can be computed: the parameter sheet "
-            f"does not currently provide a validated prior/likelihood-ratio mapping or "
-            f"decision-tier threshold for it, and none of {inactive} is approved. "
-            "Returning an explicit unresolved state rather than a fabricated estimate."
-        ),
+        limitations=[limitation],
+        explanation=explanation,
     )
 
 

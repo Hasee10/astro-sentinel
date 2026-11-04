@@ -22,15 +22,23 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 
 def test_score_crew_runs_end_to_end_on_generator_output(tmp_path):
+    """ASTROSENTINEL: ONSD generation is real now, so a 'repeat' tier legitimately
+    appears (quality-driven, from the approved ~10% scan-failure injection) - no
+    SANS tier ever reaches consult/urgent, since no SANS probability model exists.
+    Venous stays 100% unresolved: no jugular data is generated at all."""
     gen_paths = generate_crew(crew_size=8, seed=20, mission_duration_days=30, output_dir=tmp_path, run_id="run-score-test")
     out_paths = score_crew(gen_paths["crew_observations"], tmp_path)
     summary = json.loads(out_paths["summary"].read_text(encoding="utf-8"))
     assert summary["astronauts_scored"] == 8
     assert summary["days_scored"] == 8 * 30
     assert summary["errors"] == []
-    assert summary["structural_warnings"] == []  # clean blocked-generation output
-    # physiological generation remains blocked, so every tier should be unresolved
-    assert summary["sans_tier_distribution"] == {"unresolved": 240}
+    assert summary["structural_warnings"] == []  # every generated scan carries quality metadata
+
+    sans_dist = summary["sans_tier_distribution"]
+    assert set(sans_dist) <= {"unresolved", "repeat"}
+    assert sum(sans_dist.values()) == 240
+    assert sans_dist.get("repeat", 0) > 0  # the approved failure rate must actually fire sometimes
+
     assert summary["venous_tier_distribution"] == {"unresolved": 240}
 
 

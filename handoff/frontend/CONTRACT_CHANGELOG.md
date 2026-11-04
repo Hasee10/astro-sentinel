@@ -1,6 +1,69 @@
 # Contract Changelog
 
-## v0.4.0 (this handoff, Unified Prompt 8-9) — additive, non-breaking
+## v0.6.0 (ASTROSENTINEL correction, 2026-11-04 cont'd) — additive, non-breaking
+
+A corrective pass found that `evaluate_policies.py` was producing CSV/PNG output
+from ground truth with an unresolved gap (`has_sans_event=True` with
+`sans_onset_day=None`), silently reading as "0 missed events" instead of "unknown".
+**No `AstronautDayObservation` or `AssessmentResult` field changed** - the fix lives
+entirely in the evaluation layer and the manifest. Frontend code that only reads
+`crew_observations.jsonl`/`crew_scored.jsonl` is unaffected; code that reads
+`evaluate_policies.py`'s output or `simulation_manifest.json` should note:
+
+- **`evaluate_policies.py` now writes `evaluation_blockers.json` far more often** -
+  in practice, every run against current real data, because `has_sans_event=True`
+  astronauts always have `sans_onset_day=None` today (onset-day assignment is
+  unapproved) and no venous event-occurrence model exists at all yet. **This is
+  correct, not a regression** - the prior behavior (producing CSV/PNG output from
+  this data) was the defect. See `evaluation/experiment_readiness.py`.
+- **Added** `evaluation_blockers.json`-adjacent `experiment_readiness_summary.json`
+  on a blocked run - a per-outcome ground-truth status-count breakdown
+  (`confirmed_none` / `confirmed_with_onset` / `event_unknown_onset` /
+  `undetermined`), for debugging why a run was blocked beyond the blocker message text.
+- **Added** `SimulationManifest.capability_readiness` - one of
+  `simulation.generation_models.ModelReadiness`'s five states per generator
+  capability, for the full picture `physiological_generation_blocked_reasons`
+  alone didn't give (which only lists the blocked ones, not the ready ones).
+- **Fixed** `SimulationManifest.generation_status`: previously read `"fully_blocked"`
+  even when 3/7 generator capabilities were genuinely producing real values - now
+  correctly reports `"partially_blocked"` in that case. `"fully_blocked"` and
+  `"complete"` keep their original meanings exactly.
+- `metadata.schema_version` on new records now reads `"0.6.0"`.
+
+## v0.5.0 (ASTROSENTINEL, 2026-11-04) — additive, non-breaking
+
+This is the milestone the "Not yet changed" note at the bottom of this file was
+waiting for: Rahat approved 8/14 assumptions + the trigger-firing design decision,
+and `probability.venous` now genuinely goes non-null in real output.
+
+- **`probability.venous` is now sometimes non-null** in `crew_scored.jsonl`, via an
+  approved Bayesian prior-odds x likelihood-ratio model keyed on the latest
+  `scan.jugular_flow_class` observation. **Always check
+  `AssessmentResult.venous.probability_label`** — it reads exactly
+  `"Simulation placeholder - unvalidated"` whenever `probability` is set, and the
+  frontend must display that label prominently alongside any shown number, never
+  the bare percentage alone. `probability.sans` is still always null — approving
+  `sans_prior_mapping` authorized a generation-layer synthetic scheme only, not a
+  monitoring-layer formula (see `GroundTruthRecord` changes below).
+- **Added** `TierReason.PROBABILITY_THRESHOLD` — a tier derived from an actual
+  computed probability against `decision_tier_thresholds`, always paired with the
+  `probability_label` above. Existing frontend code that switches on `TierReason`
+  should add a case for this value rather than falling through to a default.
+- **Added** three fields to `GroundTruthRecord` (`ground_truth.jsonl` — evaluation-
+  only, same as `scenario_label`/`sans_onset_day`; **never send this file or its
+  contents to any UI the crew or ground would see**): `is_sans_high_susceptibility`
+  (bool), `has_sans_event` (bool), `synthetic_sans_prior_label` (str, always
+  `"HYPOTHETICAL SIMULATION ESTIMATE - NOT CLINICALLY VALIDATED"` when present).
+  These back the crew generator's own synthetic ground-truth bookkeeping only; they
+  are not, and must never be treated as, a real SANS probability or diagnosis.
+- **`scan.onsd_mm` is now sometimes non-null** in `crew_observations.jsonl` (ONSD
+  baseline + daily drift + ~10% synthetic failure injection are approved and
+  implemented). `scan.quality` is always populated alongside it. No jugular/OCT/
+  visual-acuity scan is generated yet - `weak_signals` is still always null.
+- **No field was removed or renamed.** `metadata.schema_version` on new records
+  now reads `"0.5.0"`.
+
+## v0.4.0 (Unified Prompt 8-9) — additive, non-breaking
 
 - **Added** `TierReason` enum (`red_flag_symptom` / `measurement_quality` /
   `insufficient_evidence_for_probability`) and a new required field
