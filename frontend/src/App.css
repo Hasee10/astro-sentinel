@@ -66,6 +66,23 @@
   max-width: 100%;
 }
 
+/* The "Reveal all days" debug checkbox, level with the dropdowns. */
+.reveal-all {
+  align-self: flex-end;
+  font-size: 0.875rem;
+}
+
+/* The note shown while that checkbox is ticked. */
+.reveal-note {
+  margin: 0 0 16px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: #fbbf24;
+  color: #1f2937;
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
 /* A small line of extra information, such as the mission length fallback. */
 .small-note {
   margin: 0 0 16px;
@@ -92,6 +109,13 @@
 .run-info h3 {
   margin: 16px 0 4px;
   font-size: 1rem;
+}
+
+/* Marks where the whole-run numbers start, with a rule above them. */
+.run-info .run-whole-label {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 2px solid #9ca3af;
 }
 
 .run-info h4 {
@@ -476,6 +500,13 @@ button.timeline-box {
 /* An outlined box with no fill, for a day with no record. */
 .timeline-empty {
   border: 1px solid #6b7280;
+}
+
+/* A dim dashed box with no fill, for a day that hasn't been reached. */
+.timeline-future {
+  border: 1px dashed #6b7280;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* The selected day gets a ring in the page's main text color, which shows up in

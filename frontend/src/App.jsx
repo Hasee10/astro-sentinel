@@ -314,9 +314,10 @@ function OutcomeCard({ title, outcome }) {
 //   outcomeKey       = which part of each record to read: "sans" or "venous"
 //   astronautRecords = the selected astronaut's records, earliest day first
 //   missionLength    = how many days the mission has, so how many boxes to show
-//   selectedDay      = the day to highlight
+//   selectedDay      = the day to highlight. Later days stay empty
+//   revealAll        = true if the "Reveal all days" debug checkbox is ticked
 //   onJump           = the function to call when the user clicks a box
-function TimelineRow({ title, outcomeKey, astronautRecords, missionLength, selectedDay, onJump }) {
+function TimelineRow({ title, outcomeKey, astronautRecords, missionLength, selectedDay, revealAll, onJump }) {
   // Build the list of days: 1, 2, 3... up to the mission length. Every day gets
   // a box, whether or not it has a record.
   const missionDays = Array.from({ length: missionLength }, (_, index) => index + 1)
@@ -326,6 +327,21 @@ function TimelineRow({ title, outcomeKey, astronautRecords, missionLength, selec
       <h3>{title}</h3>
       <div className="timeline-boxes">
         {missionDays.map((day) => {
+          // A day that hasn't been reached says nothing about its record, not even
+          // whether it has one. It is not a button, so it can't be clicked.
+          if (!revealAll && day > selectedDay) {
+            const text = `Day ${day}: not yet reached`
+            return (
+              <span
+                key={day}
+                className="timeline-box timeline-future"
+                role="img"
+                title={text}
+                aria-label={`${title}, ${text}`}
+              />
+            )
+          }
+
           // Find this day's position in the list. findIndex gives -1 if the
           // astronaut has no record for this day.
           const recordIndex = astronautRecords.findIndex(
@@ -384,6 +400,10 @@ function TimelineLegend() {
       <li>
         <span className="legend-swatch timeline-empty" />
         no record
+      </li>
+      <li>
+        <span className="legend-swatch timeline-future" />
+        not yet reached
       </li>
     </ul>
   )
@@ -509,7 +529,7 @@ function OnsdTable({ rows }) {
 }
 
 // The key that says what each marker means.
-function OnsdLegend() {
+function OnsdLegend({ revealAll }) {
   return (
     <ul className="timeline-legend onsd-legend">
       <li>
@@ -531,7 +551,7 @@ function OnsdLegend() {
         Failed (no value)
       </li>
       <li>Gap in the line: no value that day</li>
-      <li>Days after the selected day stay hidden</li>
+      {!revealAll && <li>Days after the selected day stay hidden</li>}
     </ul>
   )
 }
@@ -544,7 +564,8 @@ function OnsdLegend() {
 //   missionLength = how many days the x-axis covers
 //   selectedDay   = where to draw the vertical marker, which follows playback. No
 //                   scan after this day is shown, because it hasn't happened yet
-function OnsdChart({ observations, loadFailed, astronautId, missionLength, selectedDay }) {
+//   revealAll     = true if the "Reveal all days" debug checkbox is ticked
+function OnsdChart({ observations, loadFailed, astronautId, missionLength, selectedDay, revealAll }) {
   const axis = observations && getOnsdAxis(observations)
 
   // One row per mission day, whether or not it has a scan. A row whose value is
@@ -552,7 +573,7 @@ function OnsdChart({ observations, loadFailed, astronautId, missionLength, selec
   // the rows hold nothing about them.
   const rows = Array.from({ length: missionLength }, (_, index) => {
     const day = index + 1
-    const isFuture = day > selectedDay
+    const isFuture = !revealAll && day > selectedDay
     const observation = isFuture
       ? undefined
       : observations?.find(
@@ -581,7 +602,7 @@ function OnsdChart({ observations, loadFailed, astronautId, missionLength, selec
 
       {axis && (
         <>
-          <OnsdLegend />
+          <OnsdLegend revealAll={revealAll} />
           <div className="onsd-chart">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={rows} margin={{ top: 30, right: 20, bottom: 4, left: 0 }}>
@@ -765,13 +786,13 @@ function DataToday({ observation }) {
 // The left panel: what the crew sees now, plus the button to send it to Earth.
 //   record           = the record for the selected day
 //   observation      = that astronaut's observation for the same day, if any
-//   messages         = every message sent so far, in both directions
+//   messages         = the messages to show, in both directions
+//   hasMessageInTransit = is any message on its way, even one that's hidden for now?
 //   now              = the current time, used to work out each message's status
 //   onSend           = the function to call when the user presses the button
 //   autoSend         = is "Auto-send on tier change" ticked?
 //   onAutoSendChange = the function to call when the user changes the checkbox
-function CrewPanel({ record, observation, messages, now, onSend, autoSend, onAutoSendChange }) {
-  const hasMessageInTransit = messages.some((message) => !isDelivered(message, now))
+function CrewPanel({ record, observation, messages, hasMessageInTransit, now, onSend, autoSend, onAutoSendChange }) {
   const replies = messages.filter((message) => message.direction === GROUND_TO_CREW)
   const repliesInTransit = replies.filter((reply) => !isDelivered(reply, now))
   const repliesDelivered = replies.filter((reply) => isDelivered(reply, now))
@@ -1135,7 +1156,8 @@ function CapabilityReadiness({ readiness }) {
 // the fields below, so those are never shown.
 //   manifest = the selected file's manifest, or null if it couldn't be read
 //   summary  = the selected file's scoring summary, or null if it has none
-function RunInfo({ manifest, summary }) {
+//   missionLength = how many days the mission has, for the summary's heading
+function RunInfo({ manifest, summary, missionLength }) {
   // "?? {}" gives an empty list if the manifest left the reasons out, which the
   // schema allows.
   const reasons = Object.entries(manifest?.physiological_generation_blocked_reasons ?? {})
@@ -1175,8 +1197,13 @@ function RunInfo({ manifest, summary }) {
         </>
       )}
 
+      {/* Everything in this part covers the whole run, including later days. */}
       {summary && (
         <>
+          <h3 className="run-whole-label">
+            Whole-run summary (all {missionLength} days) – for review, not visible to the
+            crew during the mission
+          </h3>
           <h3>Tier counts (all astronauts, all days)</h3>
           <p>
             Astronauts scored: {summary.astronauts_scored}. Days scored: {summary.days_scored}.
@@ -1234,6 +1261,7 @@ function App() {
   const [summaryFailed, setSummaryFailed] = useState(false) // did the summary fail to load?
   const [observations, setObservations] = useState(null) // null = none loaded
   const [observationsFailed, setObservationsFailed] = useState(false) // did they fail to load?
+  const [revealAll, setRevealAll] = useState(false) // the "Reveal all days" debug checkbox
   const [resultsReport, setResultsReport] = useState(null) // null = not loaded
   const [resultsFailed, setResultsFailed] = useState(false) // did the report fail to load?
   const [delayMinutes, setDelayMinutes] = useState(DEFAULT_DELAY_MINUTES) // the delay slider
@@ -1470,6 +1498,15 @@ function App() {
   // even when there are gaps between them.
   const selectedRecord = isStillLoading ? undefined : astronautRecords[dayIndex]
 
+  // The messages to show. Sending only ever uses the day just reached, but going
+  // back to an earlier day keeps the later messages, and an onboard system wouldn't
+  // know about those yet. Only the display is filtered: the full list still decides
+  // what is in transit and what has been sent, so a hidden message comes back,
+  // without being sent twice, when its day is reached again.
+  const visibleMessages = revealAll
+    ? messages
+    : messages.filter((message) => message.day <= selectedRecord?.as_of_day)
+
   const syntheticLabel = getSyntheticLabel(observations)
 
   // The same astronaut's observation for the same day. This stays undefined if
@@ -1676,7 +1713,18 @@ function App() {
             </select>
           </label>
         )}
+
+        <label className="reveal-all">
+          <input
+            type="checkbox"
+            checked={revealAll}
+            onChange={(event) => setRevealAll(event.target.checked)}
+          />{' '}
+          Reveal all days
+        </label>
       </div>
+
+      {revealAll && <p className="reveal-note">Showing future days – debug only</p>}
 
       {usedFallback && (
         <p className="small-note">
@@ -1689,7 +1737,7 @@ function App() {
           couldn't be read. The fixture is hand-made and didn't come from the run
           the manifest describes, so it doesn't get this panel. */}
       {missionLength !== null && !selectedFile.isFixture && (
-        <RunInfo manifest={runManifest} summary={runSummary} />
+        <RunInfo manifest={runManifest} summary={runSummary} missionLength={missionLength} />
       )}
 
       {summaryFailed && <p className="small-note">Could not load the run summary.</p>}
@@ -1789,14 +1837,15 @@ function App() {
             <CrewPanel
               record={selectedRecord}
               observation={selectedObservation}
-              messages={messages}
+              messages={visibleMessages}
+              hasMessageInTransit={hasMessageInTransit}
               now={now}
               onSend={() => sendUpdate(selectedRecord, 'Manual')}
               autoSend={autoSend}
               onAutoSendChange={setAutoSend}
             />
             <GroundPanel
-              messages={messages}
+              messages={visibleMessages}
               now={now}
               isFixture={selectedFile.isFixture}
               syntheticLabel={syntheticLabel}
@@ -1804,7 +1853,7 @@ function App() {
             />
           </div>
 
-          <MessageLog messages={messages} now={now} />
+          <MessageLog messages={visibleMessages} now={now} />
 
           <section className="timeline">
             <h2>Timeline</h2>
@@ -1814,6 +1863,7 @@ function App() {
               astronautRecords={astronautRecords}
               missionLength={missionLength}
               selectedDay={selectedRecord.as_of_day}
+              revealAll={revealAll}
               onJump={handleTimelineJump}
             />
             <TimelineRow
@@ -1822,6 +1872,7 @@ function App() {
               astronautRecords={astronautRecords}
               missionLength={missionLength}
               selectedDay={selectedRecord.as_of_day}
+              revealAll={revealAll}
               onJump={handleTimelineJump}
             />
             <TimelineLegend />
@@ -1836,6 +1887,7 @@ function App() {
               astronautId={astronautId}
               missionLength={missionLength}
               selectedDay={selectedRecord.as_of_day}
+              revealAll={revealAll}
             />
           )}
         </>
