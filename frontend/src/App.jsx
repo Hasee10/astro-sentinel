@@ -124,6 +124,7 @@ const BLOCKED_STATE_TEXT = {
 // The simulated Earth–Mars delay, for display only. To keep the demo short,
 // 1 second of real time stands for 1 mission minute.
 const DEFAULT_DELAY_MINUTES = 12
+const MIN_DELAY_MINUTES = 0
 const MAX_DELAY_MINUTES = 20
 const MS_PER_MISSION_MINUTE = 1000
 
@@ -219,7 +220,12 @@ function ProbabilityText({ probability, label }) {
   // also treat a real value of 0 as missing, and we must not mix those up.
   // "undefined" is included because the schema lets the backend leave this out.
   if (probability === null || probability === undefined) {
-    return <p>Unavailable. This does not mean zero risk; see the explanation below.</p>
+    return (
+      <>
+        <p className="probability-none">No estimate – unavailable</p>
+        <p className="hint">This does not mean zero risk; see the explanation below.</p>
+      </>
+    )
   }
 
   // A number must never appear without its label, so we hold it back instead.
@@ -273,17 +279,16 @@ function OutcomeCard({ title, outcome }) {
         </p>
       )}
 
-      {/* This section only appears when the backend gave us a quality value. */}
-      {hasQuality && (
-        <>
-          <h3>Measurement quality</h3>
-          <p>
-            <span className={POOR_QUALITY_VALUES.includes(quality) ? 'quality-poor' : undefined}>
-              {quality}
-            </span>
-          </p>
-        </>
-      )}
+      <h3>Measurement quality</h3>
+      <p>
+        {hasQuality ? (
+          <span className={POOR_QUALITY_VALUES.includes(quality) ? 'quality-poor' : undefined}>
+            {quality}
+          </span>
+        ) : (
+          'Unavailable'
+        )}
+      </p>
 
       <h3>Probability</h3>
       <ProbabilityText probability={outcome.probability} label={outcome.probability_label} />
@@ -292,7 +297,8 @@ function OutcomeCard({ title, outcome }) {
       <p>{outcome.explanation}</p>
 
       <h3>Limitations</h3>
-      {outcome.limitations.length === 0 ? (
+      {/* The schema allows this field to be left out, so "?." guards against that. */}
+      {!outcome.limitations?.length ? (
         <p>None listed for this day.</p>
       ) : (
         <ul>
@@ -469,7 +475,7 @@ function FailedMarker({ cx, cy }) {
 // The words for one row's value and quality. The tooltip and the table both use
 // these, so they always say the same thing.
 function onsdValueText(row) {
-  return row.onsdMm === null ? 'No value' : `${row.onsdMm.toFixed(2)} mm`
+  return row.onsdMm === null ? 'Unavailable' : `${row.onsdMm.toFixed(2)} mm`
 }
 
 function onsdQualityText(row) {
@@ -719,16 +725,26 @@ function hasValue(value) {
   return value !== null && value !== undefined
 }
 
+// Does this scan hold any jugular values? A real value of false counts as one.
+function hasJugularValues(scan) {
+  return [scan?.jugular_area_mm2, scan?.jugular_flow_class, scan?.jugular_collapsibility_lost].some(hasValue)
+}
+
 // Describes one scan, such as "ONSD scan: ok (5.62 mm)". A failed scan shows no
-// value, the same as on the chart.
+// value, the same as on the chart. A scan whose value is null says "Unavailable".
 function describeScan(scan) {
   const name = hasValue(scan.type) ? `${readableName(scan.type)} scan` : 'Scan'
   const status = scan.quality?.status
 
-  if (status === 'failed') return `${name}: failed quality check`
+  if (status === 'failed') return `${name}: failed quality check (Unavailable)`
   if (!hasValue(status)) return `${name}: quality not stated`
 
-  const value = scan.type === 'onsd' && hasValue(scan.onsd_mm) ? ` (${scan.onsd_mm.toFixed(2)} mm)` : ''
+  let value = ''
+  if (scan.type === 'onsd') {
+    value = hasValue(scan.onsd_mm) ? ` (${scan.onsd_mm.toFixed(2)} mm)` : ' (Unavailable)'
+  } else if (scan.type === 'jugular' && !hasJugularValues(scan)) {
+    value = ' (Unavailable)'
+  }
   return `${name}: ${status.replace('_', ' ')}${value}`
 }
 
@@ -746,7 +762,7 @@ function listDataToday(observation) {
   items.push(
     hasSignals
       ? { text: 'Daily signals (HRV, pulse transit): available – hypothesis signals', isMissing: false }
-      : { text: 'Daily signals (HRV, pulse transit): not available', isMissing: true },
+      : { text: 'Daily signals (HRV, pulse transit): Unavailable', isMissing: true },
   )
 
   items.push(
@@ -755,13 +771,9 @@ function listDataToday(observation) {
       : { text: 'Scan: none today', isMissing: true },
   )
 
-  // A jugular scan already has its own line above, so "not available" would
-  // contradict it, even if that scan holds no values.
-  const hasJugularValues =
-    hasValue(scan) &&
-    [scan.jugular_area_mm2, scan.jugular_flow_class, scan.jugular_collapsibility_lost].some(hasValue)
-  if (!hasJugularValues && scan?.type !== 'jugular') {
-    items.push({ text: 'Jugular scan: not available', isMissing: true })
+  // A jugular scan already has its own line above, so this would repeat it.
+  if (!hasJugularValues(scan) && scan?.type !== 'jugular') {
+    items.push({ text: 'Jugular scan: Unavailable', isMissing: true })
   }
 
   return items
@@ -906,6 +918,8 @@ function GroundPanel({ messages, now, isFixture, syntheticLabel, onAcknowledge }
           Engineering test data – not a simulation result.
         </p>
       )}
+
+      <p className="hint">Simulated communication delay (demo)</p>
 
       {inTransit.map((update) => (
         <IncomingMessage
@@ -1810,13 +1824,13 @@ function App() {
 
           <div className="delay-control">
             <label htmlFor="delay-slider">
-              One-way delay: <strong>{delayMinutes}</strong>{' '}
-              {delayMinutes === 1 ? 'minute' : 'minutes'}
+              Simulated communication delay (demo). One-way delay:{' '}
+              <strong>{delayMinutes}</strong> {delayMinutes === 1 ? 'minute' : 'minutes'}
             </label>
             <input
               id="delay-slider"
               type="range"
-              min={0}
+              min={MIN_DELAY_MINUTES}
               max={MAX_DELAY_MINUTES}
               value={delayMinutes}
               onChange={(event) => setDelayMinutes(Number(event.target.value))}

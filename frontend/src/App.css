@@ -418,6 +418,12 @@
   font-weight: bold;
 }
 
+/* Sits directly above its small note about zero risk. */
+.card .probability-none {
+  margin-bottom: 2px;
+  font-weight: bold;
+}
+
 /* Muted by fading the text color, which works in light and dark mode. */
 .card .evidence-references {
   font-size: 0.8125rem;
