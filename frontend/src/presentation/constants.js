@@ -1,13 +1,14 @@
 // Fixed settings and wording for the presentation view.
 // Everything here only describes what the backend sends. Nothing decides risk.
 
-// The presentation view only ever shows the pipeline run. The engineering
-// fixtures stay in the debug view, and ground_truth.jsonl is never loaded.
+// The presentation view only ever shows the pipeline run, from data/pipeline. The
+// files in data/fixtures stay in the debug view, and ground_truth.jsonl is never
+// loaded.
 export const DATA = {
-  scored: '/data/crew_scored.jsonl',
-  observations: '/data/crew_observations.jsonl',
-  manifest: '/data/simulation_manifest.json',
-  evaluation: '/data/evaluation_blockers.json',
+  scored: '/data/pipeline/crew_scored.jsonl',
+  observations: '/data/pipeline/crew_observations.jsonl',
+  manifest: '/data/pipeline/simulation_manifest.json',
+  evaluation: '/data/pipeline/evaluation_blockers.json',
 }
 
 // The backend contract this view was built for.

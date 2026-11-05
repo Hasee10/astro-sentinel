@@ -59,7 +59,7 @@ export default function PresentationView({ onOpenDebug }) {
       <div className="pv pv-center">
         <div>
           <p>The mission data could not be loaded: {data.message}</p>
-          <p className="pv-muted">Check that the pipeline run files are in frontend/public/data, then reload.</p>
+          <p className="pv-muted">Check that the pipeline run files are in frontend/public/data/pipeline, then reload.</p>
           <button type="button" className="pv-btn" onClick={onOpenDebug}>Open debug view</button>
         </div>
       </div>
