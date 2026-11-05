@@ -33,6 +33,11 @@ EXPECTED_READINESS = {
     "daily_ptt_weak_signal": ModelReadiness.BLOCKED_UNAPPROVED_ASSUMPTION,
     "jugular_scan_values": ModelReadiness.BLOCKED_MISSING_MODEL_RULE,
     "sans_venous_onset_day_assignment": ModelReadiness.BLOCKED_MISSING_MODEL_RULE,
+    # ASTROSENTINEL correction (same-day extension): added so detection metrics
+    # cannot read as valid on onset timing alone - see
+    # evaluation/experiment_readiness.py and registry/design_decisions.py's
+    # sans_physiological_progression entry. Unapproved AND unimplemented today.
+    "sans_physiological_progression": ModelReadiness.BLOCKED_MISSING_MODEL_RULE,
 }
 
 

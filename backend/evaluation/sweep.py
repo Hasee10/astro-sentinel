@@ -81,6 +81,33 @@ TRIGGER_FIRING_MODEL_IMPLEMENTED: bool = True
 # (5) tests - tests/test_trigger_model.py (firing-probability formula, window
 # boundaries, no-onset-day-access-at-call-time, determinism).
 
+# Round-3 correction ("fix adaptive-replacement flag semantics"): whether
+# run_sweep() actually has a wired, tested code path that SELECTS
+# AdaptiveReplacementSchedulePolicy (evaluation/policies.py's Option B) for a
+# real run - never just an authorization boolean. Today run_sweep() below
+# unconditionally constructs AdaptiveSchedulePolicy (Option A, "FIXED BACKSTOP
+# + TRIGGERED EXTRA SCANS") and has no policy-selection parameter at all;
+# AdaptiveReplacementSchedulePolicy is never imported here. Flipping this to
+# True is a claim that ALL of the following are simultaneously true:
+#   1. adaptive_scheduling_policy_semantics is FULLY approved (not "in
+#      principle") - registry/design_decisions.py.
+#   2. run_sweep() (or an equivalent real-engine entry point) accepts an
+#      explicit policy-selection parameter and actually constructs
+#      AdaptiveReplacementSchedulePolicy when it is set - never a silent
+#      fallback to AdaptiveSchedulePolicy while claiming otherwise.
+#   3. Every one of AdaptiveReplacementSchedulePolicy's required sub-rules
+#      (max_gap_days, defer_lookback_days, and the three NOT-implemented items
+#      in its own docstring) has an approved, non-invented value or an
+#      explicit scope decision that the missing ones are out of scope.
+#   4. Dedicated, deterministic, passing tests prove the SELECTED policy is
+#      the one that executes (e.g. asserting isinstance(constructed_policy,
+#      AdaptiveReplacementSchedulePolicy)), not merely that an authorization
+#      check returns True.
+# Checked by evaluation.experiment_readiness.check_adaptive_replacement_authorized()
+# ALONGSIDE (never instead of) the design-decision approval - approving the
+# decision alone must never be read as "the flag now does something different".
+ADAPTIVE_REPLACEMENT_EXECUTION_WIRED: bool = False
+
 
 def sweep_blockers(registry: Registry) -> list[Blocker]:
     blockers = [

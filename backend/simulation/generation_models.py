@@ -373,4 +373,38 @@ GENERATION_MODEL_SPECS: dict[str, GenerationModelSpec] = {
             "handoff/research_lead/BLOCKER_QUESTIONS.md items 8-9."
         ),
     ),
+    "sans_physiological_progression": GenerationModelSpec(
+        capability="sans_physiological_progression",
+        required_input_fields=("astronaut_id", "day", "sans_onset_day", "personal_baseline", "random_seed"),
+        required_parameters=(),
+        required_assumptions=(),  # no registry slot exists - see design_decisions.py
+        has_implemented_rule=False,
+        design_decision_id="sans_physiological_progression",
+        output_fields=("scan.onsd_mm (event-superimposed trajectory, day > onset)",),
+        output_units="mm",
+        scientific_context=(
+            "ASTROSENTINEL correction (2026-11-04), Part 1: distinct from "
+            "onsd_scan_values (READY - baseline + flat/noisy drift for EVERY "
+            "astronaut, event-flagged or not). This capability is specifically "
+            "the shape/rate by which an event-flagged astronaut's trajectory "
+            "departs from that flat baseline after onset. Blocking detection "
+            "metrics on sans_venous_onset_day_assignment alone (WHEN) is not "
+            "sufficient without this (WHAT HAPPENS) - evaluation/"
+            "experiment_readiness.py checks both, separately, so approving "
+            "onset timing alone can never make an experiment read as fully ready."
+        ),
+        expected_verification_tests=(
+            "a HEALTHY astronaut's trajectory is bit-for-bit identical with and "
+            "without this capability enabled (no leakage into non-event cases)",
+            "an event-flagged astronaut's post-onset trajectory is statistically "
+            "distinguishable from a healthy astronaut's, using only the approved "
+            "shape/rate - not an invented one",
+            "no SANS/venous cross-correlation is introduced",
+        ),
+        research_lead_decision_required=(
+            "Propose and approve a progression shape (e.g. linear ramp to a "
+            "target magnitude over N days) and its parameters - see "
+            "handoff/research_lead/DECISIONS_NEEDED_NOW.md item 2."
+        ),
+    ),
 }

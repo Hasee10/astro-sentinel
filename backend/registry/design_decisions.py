@@ -115,4 +115,40 @@ DESIGN_DECISIONS: dict[str, DesignDecision] = {
         ),
         approved_by=None,
     ),
+    "sans_physiological_progression": DesignDecision(
+        decision_id="sans_physiological_progression",
+        description=(
+            "How a SANS-event astronaut's ONSD (and any other SANS-relevant "
+            "measurement) actually changes, day by day, once their synthetic "
+            "event has started - a shape/rate, not just that an onset day exists. "
+            "Distinct from sans_venous_onset_day_assignment (WHEN an event starts) "
+            "and from onsd_baseline_sd_values (approved - the flat/noisy baseline "
+            "every astronaut gets regardless of event status). Without this, "
+            "simulation/physiological_generation.py::generate_onsd_scan() has "
+            "nothing to superimpose on the baseline even once onset timing is "
+            "known - every astronaut's generated trajectory stays flat/noisy "
+            "today, event-flagged or not. See "
+            "evaluation/experiment_readiness.py, which blocks detection metrics "
+            "on this capability's readiness, separately from ground-truth onset "
+            "consistency."
+        ),
+    ),
+    "venous_event_occurrence_model": DesignDecision(
+        decision_id="venous_event_occurrence_model",
+        description=(
+            "Whether a given synthetic astronaut has a venous event AT ALL, and "
+            "at what rate across the cohort - the venous counterpart to "
+            "sans_prior_mapping's approved susceptibility/event-rate scheme, "
+            "which has no venous equivalent. Today's ScenarioLabel venous "
+            "assignment (VENOUS_STASIS/BOTH) is this project's own unprincipled "
+            "50/50 structural placeholder (simulation/scenarios.py), never read "
+            "as scientific ground truth by evaluation/experiment_readiness.py's "
+            "venous_ground_truth_status(), which returns UNDETERMINED "
+            "unconditionally until this is approved. Distinct from "
+            "sans_venous_onset_day_assignment (WHEN, not WHETHER) and from "
+            "jugular_scan_values's required assumptions (which authorize the "
+            "Bayesian LR MONITORING formula's inputs, not a GENERATION-layer "
+            "event-occurrence rate)."
+        ),
+    ),
 }

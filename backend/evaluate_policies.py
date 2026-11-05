@@ -32,8 +32,9 @@ import argparse
 import csv
 import json
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence
 
 from contracts.models import AstronautDayObservation, BlockerReport, GroundTruthRecord
 from evaluation.experiment_readiness import check_experiment_readiness
@@ -100,13 +101,13 @@ def build_cohort(observations_path: Path, ground_truth_path: Path) -> list[Sweep
     return cohort
 
 
-def _comparison_rows(points: list[dict]) -> list[dict]:
+def _comparison_rows(points: list[dict], outcomes: Sequence[str] = ("sans", "venous")) -> list[dict]:
     rows = []
     for point in points:
         accuracy = point["assumed_trigger_accuracy"]
         for policy_name in ("fixed", "adaptive"):
             result: PolicyRunResult = point[policy_name]
-            for outcome in ("sans", "venous"):
+            for outcome in outcomes:
                 rows.append(
                     {
                         "assumed_trigger_accuracy": accuracy,
@@ -138,6 +139,62 @@ def _write_csv(rows: list[dict], path: Path) -> None:
         writer.writerows(rows)
 
 
+# Round-3 correction ("blocked run output safety"): the exact set of filenames a
+# genuine run of this script can produce as scientific RESULT output - shared
+# between the staleness check below and nothing else, so the two can never drift.
+_RESULT_OUTPUT_FILENAMES = ("adaptive_vs_fixed.csv", "adaptive_vs_fixed.json", "trigger_accuracy_sweep.csv", "pilot_info.json")
+
+
+def _find_preexisting_result_files(output_dir: Path) -> list[str]:
+    """Result-shaped files already sitting in `output_dir` from a PRIOR run,
+    captured BEFORE this run writes anything of its own. Used only to flag
+    staleness via run_status.json - never deleted or moved. If a later run into
+    the same --output-dir is blocked (or runs as a SANS-only pilot), these must
+    never be mistaken for that run's own output; this script does not
+    destructively remove a user's files to make that true."""
+    if not output_dir.exists():
+        return []
+    found = [name for name in _RESULT_OUTPUT_FILENAMES if (output_dir / name).exists()]
+    found.extend(sorted(p.name for p in output_dir.glob("trigger_accuracy_crossover_*.png")))
+    return found
+
+
+def _write_run_status(
+    output_dir: Path, status: str, stale_result_files: list[str], files_written_this_run: list[str]
+) -> Path:
+    """A single, always-overwritten, timestamped record of what THIS invocation
+    actually did. `status` is one of "blocked" | "ready" | "pilot". Written on
+    every call to run_evaluation - blocked or not - so a stale CSV/PNG left
+    over from an earlier successful run in the same --output-dir can never be
+    silently mistaken for the current run's result: only files_written_this_run
+    and this run's own `status` describe what just happened; anything listed
+    under stale_result_files_from_a_prior_run was left untouched."""
+    status_path = output_dir / "run_status.json"
+    status_path.write_text(
+        json.dumps(
+            {
+                "status": status,
+                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                "files_written_this_run": sorted(files_written_this_run),
+                "stale_result_files_from_a_prior_run": stale_result_files,
+                "note": (
+                    "The files under stale_result_files_from_a_prior_run were "
+                    "already present in this --output-dir before this run started. "
+                    "They are NOT this run's output and were left untouched (never "
+                    "auto-deleted) - only files_written_this_run and this run's own "
+                    "`status` reflect what actually just happened. If `status` is "
+                    "not \"ready\", none of them should be read as a current result."
+                    if stale_result_files
+                    else "No pre-existing result files were found in this --output-dir."
+                ),
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return status_path
+
+
 def run_evaluation(
     observations_path: Path,
     ground_truth_path: Path,
@@ -146,6 +203,8 @@ def run_evaluation(
     accuracy_values: Optional[list[float]] = None,
     registry: Optional[Registry] = None,
     trigger_seed: int = 0,
+    allow_sans_only_pilot: bool = False,
+    use_adaptive_replacement: bool = False,
 ) -> dict[str, Path]:
     """The real pipeline. `fixed_interval_days`/`accuracy_values` are read from the
     approved `fixed_schedule_interval_choice` / `hrv_trigger_assumed_accuracy`
@@ -153,29 +212,76 @@ def run_evaluation(
     against an in-memory fixture registry only; `main()` never passes one against
     the real registry, since doing so would bypass the approval gate this script
     exists to enforce.
+
+    `allow_sans_only_pilot`/`use_adaptive_replacement`: both opt-in, both default
+    False - see evaluation.experiment_readiness.check_experiment_readiness's
+    docstring. Neither can activate anything by itself; they only permit a
+    capability that is ALSO independently ready.
     """
     registry = registry or load_all()
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Round-3 correction ("blocked run output safety"): snapshot BEFORE this run
+    # writes anything of its own, so a result file from an earlier successful
+    # run into this same --output-dir can be flagged as stale, never silently
+    # mistaken for this run's output (see run_status.json below).
+    stale_result_files = _find_preexisting_result_files(output_dir)
+
     # Gate 1: are the right assumptions/decisions approved at all?
     blockers = sweep_blockers(registry)
 
-    # Gate 2 (ASTROSENTINEL correction): independent of Gate 1 - is the ground
-    # truth on hand actually usable for the metrics about to be computed? Built
-    # regardless of Gate 1's outcome so both reports are complete in one pass.
+    # Gate 2 (ASTROSENTINEL correction, extended): independent of Gate 1 - is the
+    # ground truth, physiological progression, and monitoring-rule coverage on
+    # hand actually usable for the metrics about to be computed? Built regardless
+    # of Gate 1's outcome so both reports are complete in one pass.
     cohort = build_cohort(observations_path, ground_truth_path)
-    readiness = check_experiment_readiness(cohort)
-    blockers = blockers + readiness.blockers
+    readiness = check_experiment_readiness(
+        cohort, registry, allow_sans_only_pilot=allow_sans_only_pilot, use_adaptive_replacement=use_adaptive_replacement
+    )
 
-    if blockers:
-        report = BlockerReport(run_id="evaluate_policies", stage="evaluate_policies", blockers=blockers)
+    # `readiness.ready` (not "readiness.blockers is empty") is the correct signal:
+    # in SANS-only-pilot mode, readiness.ready is True while readiness.blockers
+    # still carries the KEPT (not dropped) venous blockers, by design - see
+    # check_experiment_readiness's docstring. Folding those into `blockers`
+    # unconditionally would block the pilot run it exists to permit.
+    if blockers or not readiness.ready:
+        all_blockers = blockers + readiness.blockers
+        report = BlockerReport(run_id="evaluate_policies", stage="evaluate_policies", blockers=all_blockers)
         blockers_path = output_dir / "evaluation_blockers.json"
         blockers_path.write_text(report.model_dump_json(indent=2), encoding="utf-8")
         summary_path = output_dir / "experiment_readiness_summary.json"
         summary_path.write_text(
             json.dumps({"ground_truth_summary": readiness.ground_truth_summary}, indent=2), encoding="utf-8"
         )
-        return {"blockers": blockers_path, "readiness_summary": summary_path}
+        status_path = _write_run_status(
+            output_dir,
+            status="blocked",
+            stale_result_files=stale_result_files,
+            files_written_this_run=[blockers_path.name, summary_path.name],
+        )
+        return {"blockers": blockers_path, "readiness_summary": summary_path, "run_status": status_path}
+
+    # Part 6 wiring: a pilot run never reports venous - not in the CSV/JSON rows,
+    # not as a PNG, not unlabeled. `evaluation/sweep.py::run_sweep` itself is left
+    # untouched; both outcomes are still computed internally (see PolicyRunResult),
+    # only the OUTPUT written below is restricted to `outcomes`.
+    outcomes: tuple[str, ...] = ("sans", "venous")
+    pilot_info_path: Optional[Path] = None
+    if readiness.is_pilot:
+        outcomes = ("sans",)
+        pilot_info_path = output_dir / "pilot_info.json"
+        pilot_info_path.write_text(
+            json.dumps(
+                {
+                    "pilot_label": readiness.pilot_label,
+                    "included_outcomes": list(outcomes),
+                    "excluded_outcomes": ["venous"],
+                    "excluded_outcome_blockers": [b.model_dump() for b in readiness.blockers],
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
 
     if fixed_interval_days is None:
         interval_config = registry.assumptions["fixed_schedule_interval_choice"].value_or_range
@@ -203,7 +309,7 @@ def run_evaluation(
         tier_fn=tier_fn,
     )
 
-    rows = _comparison_rows(points)
+    rows = _comparison_rows(points, outcomes=outcomes)
     csv_path = output_dir / "adaptive_vs_fixed.csv"
     json_path = output_dir / "adaptive_vs_fixed.json"
     sweep_csv_path = output_dir / "trigger_accuracy_sweep.csv"
@@ -212,11 +318,22 @@ def run_evaluation(
     json_path.write_text(json.dumps(rows, indent=2), encoding="utf-8")
 
     outputs = {"comparison_csv": csv_path, "comparison_json": json_path, "sweep_csv": sweep_csv_path}
-    for outcome in ("sans", "venous"):
+    if pilot_info_path is not None:
+        outputs["pilot_info"] = pilot_info_path
+    pilot_label = readiness.pilot_label if readiness.is_pilot else None
+    for outcome in outcomes:
         for metric in OUTCOME_METRICS:
             png_path = output_dir / f"trigger_accuracy_crossover_{outcome}_{metric}.png"
-            plot_metric(points, outcome, metric, png_path)
+            plot_metric(points, outcome, metric, png_path, pilot_label=pilot_label)
             outputs[f"plot_{outcome}_{metric}"] = png_path
+
+    status_path = _write_run_status(
+        output_dir,
+        status="pilot" if readiness.is_pilot else "ready",
+        stale_result_files=stale_result_files,
+        files_written_this_run=[p.name for p in outputs.values()],
+    )
+    outputs["run_status"] = status_path
     return outputs
 
 
@@ -231,22 +348,56 @@ def main() -> int:
     parser.add_argument(
         "--trigger-seed", type=int, default=0, help="Seed for the trigger-firing simulation's own randomness."
     )
+    parser.add_argument(
+        "--allow-sans-only-pilot",
+        action="store_true",
+        help=(
+            "Opt-in only, defaults off. Permits a SANS-only pilot result (venous "
+            "explicitly excluded and labeled) when SANS clears every readiness "
+            "check but venous does not. Never activates anything by itself - see "
+            "evaluation.experiment_readiness.check_experiment_readiness."
+        ),
+    )
+    parser.add_argument(
+        "--use-adaptive-replacement",
+        action="store_true",
+        help=(
+            "Opt-in only, defaults off. Requires "
+            "registry/design_decisions.py::adaptive_scheduling_policy_semantics to "
+            "be FULLY approved (not just 'in principle') or the run is blocked."
+        ),
+    )
     args = parser.parse_args()
 
     outputs = run_evaluation(
-        args.observations, args.ground_truth, args.output_dir, trigger_seed=args.trigger_seed
+        args.observations,
+        args.ground_truth,
+        args.output_dir,
+        trigger_seed=args.trigger_seed,
+        allow_sans_only_pilot=args.allow_sans_only_pilot,
+        use_adaptive_replacement=args.use_adaptive_replacement,
     )
 
     if "blockers" in outputs:
         print(
             "Evaluation BLOCKED - either required assumptions/decisions are not "
-            "approved, or the ground truth on hand is not scientifically usable for "
-            "these metrics (see the blocker report for exactly which)."
+            "approved, or the ground truth, physiological progression, monitoring-"
+            "rule, or scheduling-policy coverage on hand is not scientifically "
+            "usable for these metrics (see the blocker report for exactly which)."
         )
         print(f"  blocker report: {outputs['blockers']}")
         if "readiness_summary" in outputs:
             print(f"  ground-truth readiness summary: {outputs['readiness_summary']}")
+        if "run_status" in outputs:
+            print(f"  run status (also flags any stale result files from a prior run): {outputs['run_status']}")
         return 0
+
+    if "pilot_info" in outputs:
+        print(
+            "PILOT MODE: SANS-only evaluation. The full two-outcome study is NOT "
+            "complete - venous is excluded, not resolved (see pilot_info for why)."
+        )
+        print(f"  pilot info: {outputs['pilot_info']}")
 
     print("Adaptive-vs-fixed evaluation complete.")
     for name, path in outputs.items():

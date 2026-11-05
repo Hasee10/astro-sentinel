@@ -47,13 +47,18 @@ def plot_metric(
     metric: str,
     output_path: Path,
     fixture_label: Optional[str] = None,
+    pilot_label: Optional[str] = None,
 ) -> Optional[float]:
     """Plots one outcome/metric pair: fixed vs. adaptive across the swept x-axis.
 
     Returns the crossover x-value (None if the curves never cross, or if either
     series contains a None point and no crossover can be computed). `fixture_label`,
     when set, is stamped on the chart title so an engineering-fixture plot can never
-    be mistaken for a real research result.
+    be mistaken for a real research result. `pilot_label` is the separate,
+    real-result case (see evaluation.experiment_readiness.SANS_ONLY_PILOT_LABEL):
+    a genuine computed result that is nonetheless partial (e.g. SANS-only, venous
+    excluded) - stamped distinctly from `fixture_label` so a pilot result is never
+    confused with throwaway test fixture output, or silently read as the full study.
     """
     xs, fixed_vals, adaptive_vals = extract_series(points, outcome, metric)
     _, lower_is_better = METRIC_SPECS[metric]
@@ -69,6 +74,8 @@ def plot_metric(
         ax.axvline(crossover, linestyle="--", color="gray", label=f"crossover @ {crossover:.3f}")
 
     title = f"{outcome.upper()} - {metric} vs. assumed trigger accuracy (SYNTHETIC DATA)"
+    if pilot_label:
+        title = f"[{pilot_label}] {title}"
     if fixture_label:
         title = f"[{fixture_label}] {title}"
     ax.set_title(title)
