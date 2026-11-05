@@ -1,0 +1,38 @@
+{
+  "run_id": "demo-integration-001",
+  "stage": "generate_crew",
+  "blockers": [
+    {
+      "capability": "daily_hrv_weak_signal",
+      "blocked_by": [
+        "hrv_trigger_assumed_accuracy"
+      ],
+      "message": "no generation algorithm is implemented in simulation/generator.py yet - approval alone does not produce numbers"
+    },
+    {
+      "capability": "daily_ptt_weak_signal",
+      "blocked_by": [
+        "ptt_trigger_assumed_usefulness"
+      ],
+      "message": "blocked: assumption(s) not approved: ['ptt_trigger_assumed_usefulness']"
+    },
+    {
+      "capability": "jugular_scan_values",
+      "blocked_by": [
+        "jugular_flow_risk_mapping",
+        "venous_probability_model"
+      ],
+      "message": "no generation algorithm is implemented in simulation/generator.py yet - approval alone does not produce numbers"
+    },
+    {
+      "capability": "sans_venous_onset_day_assignment",
+      "blocked_by": [],
+      "message": "design decision not approved: 'sans_venous_onset_day_assignment'"
+    },
+    {
+      "capability": "sans_physiological_progression",
+      "blocked_by": [],
+      "message": "design decision not approved: 'sans_physiological_progression'"
+    }
+  ]
+}

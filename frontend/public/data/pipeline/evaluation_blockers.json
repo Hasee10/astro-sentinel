@@ -1,0 +1,36 @@
+{
+  "run_id": "evaluate_policies",
+  "stage": "evaluate_policies",
+  "blockers": [
+    {
+      "capability": "sans_ground_truth_consistency",
+      "blocked_by": [],
+      "message": "sans ground truth is not fully resolved for detection-delay/missed-event/false-escalation scoring. An event flagged with unknown onset, or no event-occurrence model at all, must never be scored as healthy, detected, or a valid zero."
+    },
+    {
+      "capability": "sans_physiological_progression",
+      "blocked_by": [],
+      "message": "sans has no implemented physiological progression model (sans_physiological_progression=blocked_missing_model_rule). The synthetic event FLAG (ground truth) existing is not the same thing as an OBSERVABLE measurement signal existing - no code path superimposes an event signal onto the flat/noisy baseline every astronaut currently receives, so there is nothing for the monitoring engine to detect even when onset timing is fully known."
+    },
+    {
+      "capability": "sans_monitoring_rule",
+      "blocked_by": [],
+      "message": "monitoring.engine has no authorized evidence-to-probability/tier rule for sans (MONITORING_PROBABILITY_IMPLEMENTED). Even a perfect measurement would have no way to become a Repeat/Consult/Urgent escalation tied to that evidence."
+    },
+    {
+      "capability": "venous_ground_truth_consistency",
+      "blocked_by": [],
+      "message": "venous ground truth is not fully resolved for detection-delay/missed-event/false-escalation scoring. An event flagged with unknown onset, or no event-occurrence model at all, must never be scored as healthy, detected, or a valid zero."
+    },
+    {
+      "capability": "venous_physiological_progression",
+      "blocked_by": [],
+      "message": "venous has no implemented physiological progression model (jugular_scan_values=blocked_missing_model_rule). The synthetic event FLAG (ground truth) existing is not the same thing as an OBSERVABLE measurement signal existing - no code path superimposes an event signal onto the flat/noisy baseline every astronaut currently receives, so there is nothing for the monitoring engine to detect even when onset timing is fully known."
+    },
+    {
+      "capability": "venous_eligibility_conditions",
+      "blocked_by": [],
+      "message": "venous evaluation requires ALL THREE of an approved event-occurrence model, an approved onset model, and an implemented measurement-generation chain - current status: {'event_occurrence_model_approved': False, 'onset_model_approved': False, 'measurement_generation_implemented': False}. Missing: ['event_occurrence_model_approved', 'onset_model_approved', 'measurement_generation_implemented']."
+    }
+  ]
+}

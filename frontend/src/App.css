@@ -1,0 +1,748 @@
+/* Keeps the content centered and stops it getting too wide on big screens. */
+.page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* The two notices at the top share a shape. Their blue and purple are chosen
+   to look different from every tier color below, so nobody reads them as a
+   tier. */
+.banner,
+.fixture-warning {
+  margin: 0;
+  padding: 12px;
+  color: #ffffff;
+  font-weight: bold;
+  text-align: center;
+}
+
+.banner {
+  background: #1e3a8a;
+}
+
+.fixture-warning {
+  margin-top: 8px;
+  background: #6d28d9;
+}
+
+/* The small "Data source" line under the banner. */
+.data-source {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+/* A small warning that the data's schema isn't the one this page was built for.
+   It uses the same purple as the fixture warning, so nobody reads it as a tier. */
+.schema-warning {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border: 2px solid #6d28d9;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+/* Puts the dropdowns in a row, and wraps them when the screen is narrow. */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Long option text can't push a dropdown wider than a phone screen. */
+.controls label {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Puts each dropdown below its label text. */
+.controls select {
+  display: block;
+  padding: 4px;
+  font: inherit;
+  /* Long astronaut ids can't push the dropdown wider than a phone screen. */
+  max-width: 100%;
+}
+
+/* The "Reveal all days" debug checkbox, level with the dropdowns. */
+.reveal-all {
+  align-self: flex-end;
+  font-size: 0.875rem;
+}
+
+/* The note shown while that checkbox is ticked. */
+.reveal-note {
+  margin: 0 0 16px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: #fbbf24;
+  color: #1f2937;
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
+/* A small line of extra information, such as the mission length fallback. */
+.small-note {
+  margin: 0 0 16px;
+  font-size: 0.875rem;
+}
+
+/* The collapsible Run info panel. */
+.run-info {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid #9ca3af;
+  border-radius: 8px;
+  /* Long words in the backend's text wrap instead of widening the page. */
+  overflow-wrap: anywhere;
+}
+
+/* The title, which is the part you click to open or close the panel. */
+.run-info summary {
+  font-size: 1.125rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.run-info h3 {
+  margin: 16px 0 4px;
+  font-size: 1rem;
+}
+
+/* Marks where the whole-run numbers start, with a rule above them. */
+.run-info .run-whole-label {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 2px solid #9ca3af;
+}
+
+.run-info h4 {
+  margin: 0 0 4px;
+  font-size: 0.875rem;
+}
+
+.run-info p {
+  margin: 0 0 8px;
+}
+
+/* The run's facts, as many across as fit at 140px or wider. */
+.run-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: 8px 16px;
+  margin: 12px 0 0;
+}
+
+.run-facts dt {
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
+.run-facts dd {
+  margin: 0;
+}
+
+.run-reasons {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.run-reasons li {
+  margin-bottom: 4px;
+}
+
+.run-counts {
+  margin-bottom: 8px;
+}
+
+/* Ready and blocked side by side, stacking when the panel is narrow. */
+.run-capabilities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 8px 16px;
+}
+
+.run-info .run-note {
+  margin-bottom: 0;
+  font-size: 0.875rem;
+}
+
+/* Puts the label text on its own line above the slider. */
+.day-label {
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Puts the playback controls in a row, and wraps them when the screen is
+   narrow. */
+.playback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+}
+
+/* Lets the slider take all the space left over in the row. */
+.playback input {
+  flex: 1 1 200px;
+  margin: 0;
+}
+
+.playback button,
+.playback select {
+  padding: 4px 12px;
+  font: inherit;
+}
+
+/* Keeps the button the same width when its text changes between Play and
+   Pause, so the slider doesn't shift. */
+.playback button:first-child {
+  min-width: 5em;
+}
+
+/* The delay slider, as wide as the page, with its label above it. */
+.delay-control {
+  margin-bottom: 16px;
+}
+
+.delay-control input {
+  display: block;
+  width: 100%;
+  margin: 4px 0;
+}
+
+/* A small line of explanation, such as the demo time scale. */
+.hint {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+}
+
+/* Puts the crew and ground panels side by side, and stacks them when the screen
+   is too narrow to fit two panels of at least 340px. min(100%, 340px) stops a
+   panel from being wider than a very small phone screen. */
+.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 24px;
+  /* Lines the tops of the panels up, so one panel doesn't stretch to match
+     the height of the other. */
+  align-items: start;
+}
+
+/* min-width: 0 lets a panel get narrower than its contents would like, so long
+   text wraps instead of pushing the page wider. */
+.panel {
+  min-width: 0;
+  padding-top: 8px;
+  border-top: 4px solid #6b7280;
+}
+
+.panel > h2 {
+  margin: 0 0 12px;
+  font-size: 1.75rem;
+}
+
+.panel .banner,
+.panel .fixture-warning {
+  margin: 0 0 8px;
+}
+
+.send-button {
+  margin-bottom: 8px;
+  padding: 8px 16px;
+  font: inherit;
+  font-weight: bold;
+}
+
+.skip-button {
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+/* Puts the checkbox on its own line, below the send button. */
+.auto-send {
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* A reply that has arrived from the ground. */
+.reply {
+  margin-bottom: 12px;
+  padding-left: 8px;
+  border-left: 4px solid #6b7280;
+}
+
+.reply p {
+  margin: 0 0 4px;
+}
+
+.reply-status {
+  font-weight: bold;
+}
+
+.reply .hint {
+  margin-bottom: 0;
+}
+
+.acknowledge {
+  margin: 0 0 12px;
+}
+
+.acknowledge button {
+  margin-left: 8px;
+  padding: 4px 12px;
+  font: inherit;
+}
+
+/* The message log below both panels. */
+.log {
+  margin-top: 24px;
+}
+
+.log h2 {
+  margin: 0 0 8px;
+}
+
+.log-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each message is a row of labelled values. The columns fit as many as they can
+   at 120px or wider, then wrap, so a phone screen never scrolls sideways. */
+.log-entry {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-top: 1px solid #9ca3af;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+/* Puts each label above its value. */
+.log-label {
+  display: block;
+  font-weight: bold;
+}
+
+.log-value {
+  display: block;
+}
+
+/* One countdown and progress bar per incoming message. */
+.incoming {
+  margin-bottom: 12px;
+}
+
+.incoming p {
+  margin: 0 0 4px;
+  font-weight: bold;
+}
+
+.incoming progress {
+  display: block;
+  width: 100%;
+}
+
+.received-label {
+  font-weight: bold;
+}
+
+/* Stacks the cards when a panel is too narrow to fit two cards of at least
+   280px. min(100%, 280px) stops a card from being wider than its panel. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+}
+
+.card {
+  padding: 16px;
+  border: 1px solid #9ca3af;
+  border-radius: 8px;
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+.card h3 {
+  margin-bottom: 4px;
+  font-size: 1rem;
+}
+
+.card p,
+.card ul {
+  margin-top: 0;
+  /* Long words in the backend's text wrap instead of overflowing the card. */
+  overflow-wrap: anywhere;
+}
+
+/* The large badge on each card. The rules after this one add its colors. */
+.card .tier-badge {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 1.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* The action for this tier, directly under the badge. */
+.card .tier-action {
+  margin-bottom: 8px;
+  font-size: 1.125rem;
+  font-weight: bold;
+}
+
+/* A small grey outline, so it reads as a note and not as another tier. */
+.tier-action-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  border: 1px solid #9ca3af;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: normal;
+  vertical-align: middle;
+}
+
+.card .tier-reason {
+  font-weight: bold;
+}
+
+/* Sits directly above its small note about zero risk. */
+.card .probability-none {
+  margin-bottom: 2px;
+  font-weight: bold;
+}
+
+/* Muted by fading the text color, which works in light and dark mode. */
+.card .evidence-references {
+  font-size: 0.8125rem;
+  opacity: 0.75;
+}
+
+/* Degraded, failed and unknown quality. An outline in the text color works in
+   light and dark mode, and can't be mistaken for a filled tier color. */
+.quality-poor {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 2px dashed currentColor;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* Keeps a probability and its label together on the card. */
+.card .probability {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 1.25rem;
+}
+
+/* The label that must always sit beside a probability. It uses the same blue as
+   the SYNTHETIC banner, because both say this is not real clinical data. */
+.probability-label {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #1e3a8a;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: bold;
+}
+
+/* The timeline strip below the cards. */
+.timeline {
+  margin-top: 24px;
+}
+
+.timeline h2 {
+  margin: 0 0 8px;
+}
+
+.timeline-row {
+  margin-bottom: 12px;
+}
+
+.timeline-row h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+/* Shares out the available width equally between the boxes, however many days
+   the mission has. Each box is at least 7px wide and stretches to fill the
+   line. If a very long mission can't fit on one line, the boxes wrap onto more
+   lines, so the page never has to scroll sideways. */
+.timeline-boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7px, 1fr));
+  gap: 2px;
+}
+
+.timeline-box {
+  display: block;
+  /* Buttons have their own built-in spacing and border, so we remove those. */
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  height: 28px;
+  /* Makes any border part of the box's size, not extra width on top of it. */
+  box-sizing: border-box;
+}
+
+button.timeline-box {
+  cursor: pointer;
+}
+
+/* An outlined box with no fill, for a day with no record. */
+.timeline-empty {
+  border: 1px solid #6b7280;
+}
+
+/* A dim dashed box with no fill, for a day that hasn't been reached. */
+.timeline-future {
+  border: 1px dashed #6b7280;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* The selected day gets a ring in the page's main text color, which shows up in
+   both light and dark mode. z-index draws it on top of the boxes beside it. */
+.timeline-selected {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid CanvasText;
+  outline-offset: 1px;
+}
+
+/* Shows which box has keyboard focus when moving around with the Tab key. */
+.timeline-box:focus-visible {
+  position: relative;
+  z-index: 2;
+  outline: 3px solid #2563eb;
+  outline-offset: 1px;
+}
+
+/* The ONSD chart below the timeline. */
+.onsd {
+  margin-top: 24px;
+}
+
+.onsd h2 {
+  margin: 0 0 8px;
+}
+
+/* A fixed height that includes the axis labels. min-width: 0 lets the chart get
+   narrower with the page instead of holding it wide on a phone. */
+.onsd-chart {
+  width: 100%;
+  min-width: 0;
+  height: 320px;
+}
+
+/* No focus box after a tap or click. Keyboard users still get theirs. */
+.onsd-chart :focus:not(:focus-visible) {
+  outline: none;
+}
+
+.onsd-legend {
+  margin-bottom: 8px;
+}
+
+.onsd-swatch {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+
+.onsd-note {
+  margin: 8px 0 0;
+}
+
+/* The collapsible table of the chart's values. */
+.onsd-values {
+  margin-top: 8px;
+  font-size: 0.875rem;
+}
+
+.onsd-values summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.onsd-values table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  /* Lines the digits up in columns. */
+  font-variant-numeric: tabular-nums;
+}
+
+.onsd-values th,
+.onsd-values td {
+  padding: 2px 8px 2px 0;
+  border-bottom: 1px solid #9ca3af;
+  text-align: left;
+}
+
+.onsd-dot-solid {
+  fill: #2563eb;
+  stroke: Canvas;
+  stroke-width: 1;
+}
+
+/* Canvas is the page's background color, in light and dark mode, which is what
+   makes this dot look hollow on top of the line. */
+.onsd-dot-hollow {
+  fill: Canvas;
+  stroke: #d97706;
+  stroke-width: 2;
+}
+
+.onsd-failed {
+  fill: none;
+  stroke: #dc2626;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.onsd-tooltip {
+  padding: 6px 10px;
+  border: 1px solid #9ca3af;
+  border-radius: 4px;
+  background: Canvas;
+  color: CanvasText;
+  font-size: 0.875rem;
+}
+
+/* The adaptive vs fixed section at the bottom of the page. */
+.results {
+  margin-top: 24px;
+  overflow-wrap: anywhere;
+}
+
+.results h2 {
+  margin: 0 0 8px;
+}
+
+/* A neutral grey, because a blocked comparison is an honest state, not an alert.
+   The see-through fill works on both the light and the dark page background. */
+.results-notice {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #9ca3af;
+  border-radius: 8px;
+  background: rgba(156, 163, 175, 0.15);
+}
+
+.results-notice p {
+  margin: 0 0 8px;
+  font-weight: bold;
+}
+
+.results-notice ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.results-notice li {
+  margin-bottom: 8px;
+}
+
+.results-notice li:last-child {
+  margin-bottom: 0;
+}
+
+/* The small "Data available today" row in the crew panel. */
+.data-today {
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.data-today h3 {
+  margin: 0 0 4px;
+  font-size: 0.875rem;
+}
+
+.data-today ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.data-today li {
+  padding: 2px 8px;
+  border: 1px solid #9ca3af;
+  border-radius: 4px;
+}
+
+/* Something the file doesn't have. Grey, because a missing item isn't an alert.
+   The see-through fill works on both the light and the dark page background. */
+.data-today .data-today-missing {
+  background: rgba(156, 163, 175, 0.15);
+}
+
+/* The tier color key. Wraps onto more lines when the screen is narrow. */
+.timeline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.timeline-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+
+/* One color per tier, used by the badges, the timeline and the legend. Amber is
+   a light color, so it gets dark text; the others get white text. These colors
+   are for display only and decide nothing. */
+.tier-unresolved {
+  background: #4b5563; /* neutral grey */
+  color: #ffffff;
+}
+
+.tier-monitor {
+  background: #15803d; /* green */
+  color: #ffffff;
+}
+
+.tier-repeat {
+  background: #fbbf24; /* amber */
+  color: #1f2937;
+}
+
+.tier-consult {
+  background: #c2410c; /* orange */
+  color: #ffffff;
+}
+
+.tier-urgent {
+  background: #b91c1c; /* red */
+  color: #ffffff;
+}
