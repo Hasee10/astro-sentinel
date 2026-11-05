@@ -1,0 +1,46 @@
+{
+  "run_id": "run-73f2a3181a7f",
+  "created_at": "2026-11-05T12:31:17.396709+00:00",
+  "random_seed": 42,
+  "crew_size": 8,
+  "mission_duration_days": 30,
+  "scenario_counts": {
+    "healthy": 3,
+    "slow_sans": 1,
+    "venous_stasis": 2,
+    "both": 2
+  },
+  "schema_version": "0.6.0",
+  "parameter_registry_parameter_count": 28,
+  "assumption_registry_assumption_count": 14,
+  "active_assumption_ids": [
+    "sans_prior_mapping",
+    "venous_probability_model",
+    "decision_tier_thresholds",
+    "onsd_baseline_sd_values",
+    "hrv_trigger_assumed_accuracy",
+    "jugular_flow_risk_mapping",
+    "fixed_schedule_interval_choice",
+    "onsd_scan_failure_rate"
+  ],
+  "scenario_structure_generated": true,
+  "physiological_values_generated": false,
+  "physiological_generation_blocked_reasons": {
+    "daily_hrv_weak_signal": "no generation algorithm is implemented in simulation/generator.py yet - approval alone does not produce numbers",
+    "daily_ptt_weak_signal": "blocked: assumption(s) not approved: ['ptt_trigger_assumed_usefulness']",
+    "jugular_scan_values": "no generation algorithm is implemented in simulation/generator.py yet - approval alone does not produce numbers",
+    "sans_venous_onset_day_assignment": "design decision not approved: 'sans_venous_onset_day_assignment'",
+    "sans_physiological_progression": "design decision not approved: 'sans_physiological_progression'"
+  },
+  "capability_readiness": {
+    "personal_onsd_baseline_values": "ready",
+    "onsd_scan_values": "ready",
+    "daily_hrv_weak_signal": "blocked_missing_model_rule",
+    "daily_ptt_weak_signal": "blocked_unapproved_assumption",
+    "jugular_scan_values": "blocked_missing_model_rule",
+    "measurement_quality_failure_injection": "ready",
+    "sans_venous_onset_day_assignment": "blocked_missing_model_rule",
+    "sans_physiological_progression": "blocked_missing_model_rule"
+  },
+  "generation_status": "partially_blocked"
+}

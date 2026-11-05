@@ -1,0 +1,17 @@
+{
+  "input": "outputs\\demo\\crew_observations.jsonl",
+  "astronauts_scored": 8,
+  "days_scored": 240,
+  "errors": [],
+  "structural_warnings": [],
+  "sans_tier_distribution": {
+    "unresolved": 209,
+    "repeat": 31
+  },
+  "venous_tier_distribution": {
+    "unresolved": 240
+  },
+  "sans_probability_computed_count": 0,
+  "venous_probability_computed_count": 0,
+  "note": "SANS probability was computed for 0/240 scored days (always 0 today: no monitoring-layer SANS formula exists yet, regardless of approvals - see monitoring/engine.py). Venous probability was computed for 0/240 scored days via the approved Bayesian flow-class model (0 here because generated data carries no jugular scans yet - jugular_scan_values generation remains unimplemented). Every non-null venous probability carries probability_label='Simulation placeholder - unvalidated'. Remaining tiers reflect only rule-based logic (red-flag -> urgent, poor quality -> repeat) or the explicit 'unresolved' insufficient-evidence state."
+}

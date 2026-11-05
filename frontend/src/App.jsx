@@ -17,8 +17,9 @@ import {
 import './App.css'
 
 // The data files the user can choose from. Files in the "public" folder are
-// served from the root of the website, so public/data/example.jsonl is
-// available at /data/example.jsonl.
+// served from the root of the website, so public/data/pipeline/example.jsonl is
+// available at /data/pipeline/example.jsonl. Real backend output lives in
+// data/pipeline and mock or old example data lives in data/fixtures.
 //   label       = the text shown in the dropdown
 //   url         = where to load the file from
 //   manifestUrl = where to read this file's mission length from
@@ -33,23 +34,23 @@ import './App.css'
 // say the frontend must never read or display it.
 const DATA_FILES = [
   {
-    label: 'Pipeline run (8 astronauts)',
-    url: '/data/crew_scored.jsonl',
-    manifestUrl: '/data/simulation_manifest.json',
-    summaryUrl: '/data/scoring_summary.json',
-    observationsUrl: '/data/crew_observations.jsonl',
+    label: 'Backend pipeline run (schema v0.6.0)',
+    url: '/data/pipeline/crew_scored.jsonl',
+    manifestUrl: '/data/pipeline/simulation_manifest.json',
+    summaryUrl: '/data/pipeline/scoring_summary.json',
+    observationsUrl: '/data/pipeline/crew_observations.jsonl',
     isFixture: false,
   },
   {
-    label: 'Pipeline output (blocked)',
-    url: '/data/example_scored_blocked.jsonl',
-    manifestUrl: '/data/example_simulation_manifest.json',
+    label: 'OLD EXAMPLE – earlier blocked run, not current backend output',
+    url: '/data/fixtures/example_scored_blocked.jsonl',
+    manifestUrl: '/data/fixtures/example_simulation_manifest.json',
     isFixture: false,
   },
   {
-    label: 'UI test fixture',
-    url: '/data/example_engineering_fixture_scored.jsonl',
-    manifestUrl: '/data/example_simulation_manifest.json',
+    label: 'MOCK – engineering fixture, not backend output',
+    url: '/data/fixtures/example_engineering_fixture_scored.jsonl',
+    manifestUrl: '/data/fixtures/example_simulation_manifest.json',
     isFixture: true,
   },
 ]
@@ -93,8 +94,8 @@ const ACRONYMS = ['onsd', 'hrv', 'ptt', 'sans', 'sd', 'oct']
 // shows.
 const FALLBACK_SYNTHETIC_LABEL = 'SYNTHETIC – NOT REAL ASTRONAUT DATA'
 
-// The newest backend contract this page was built for. Data from a newer one
-// gets a small warning, because its fields may have changed.
+// The backend contract this page was built for. Data on any other version gets a
+// small warning, because its fields may be different.
 const SUPPORTED_SCHEMA_VERSION = '0.6.0'
 
 // The measurement quality values that get the warning style on a card.
@@ -123,6 +124,7 @@ const BLOCKED_STATE_TEXT = {
 // The simulated Earth–Mars delay, for display only. To keep the demo short,
 // 1 second of real time stands for 1 mission minute.
 const DEFAULT_DELAY_MINUTES = 12
+const MIN_DELAY_MINUTES = 0
 const MAX_DELAY_MINUTES = 20
 const MS_PER_MISSION_MINUTE = 1000
 
@@ -195,18 +197,19 @@ function describeTierReason(tier, reason) {
   return TIER_REASON_TEXT[reason] ?? `Reason: ${readableName(reason)}.`
 }
 
-// Is this version newer than the baseline? The parts are compared as numbers,
-// because compared as text, "0.10.0" would count as older than "0.6.0".
-function isNewerVersion(version, baseline) {
-  const toParts = (text) => String(text).split('.').map((part) => parseInt(part, 10) || 0)
-  const versionParts = toParts(version)
-  const baselineParts = toParts(baseline)
-
-  for (let i = 0; i < Math.max(versionParts.length, baselineParts.length); i++) {
-    const difference = (versionParts[i] ?? 0) - (baselineParts[i] ?? 0)
-    if (difference !== 0) return difference > 0
+// Where the loaded data says it came from, for the "Data source" line. Scored
+// records have no metadata block, so the run ID and schema version come from the
+// first observation record, or else the manifest. A fixture gets nothing from the
+// manifest, because it borrows one for its mission length but isn't from that run.
+//   metadata = the first record's metadata, if there is any
+function getDataSource(metadata, manifest, isFixture) {
+  const runManifest = isFixture ? null : manifest
+  return {
+    runId: metadata?.run_id ?? runManifest?.run_id ?? 'not stated',
+    schemaVersion: metadata?.schema_version ?? runManifest?.schema_version ?? null,
+    crewSize: runManifest?.crew_size ?? 'not stated',
+    missionDays: runManifest?.mission_duration_days ?? 'not stated',
   }
-  return false
 }
 
 // Shows the backend's probability as a percentage, always with its label right
@@ -217,7 +220,12 @@ function ProbabilityText({ probability, label }) {
   // also treat a real value of 0 as missing, and we must not mix those up.
   // "undefined" is included because the schema lets the backend leave this out.
   if (probability === null || probability === undefined) {
-    return <p>Unavailable. This does not mean zero risk; see the explanation below.</p>
+    return (
+      <>
+        <p className="probability-none">No estimate – unavailable</p>
+        <p className="hint">This does not mean zero risk; see the explanation below.</p>
+      </>
+    )
   }
 
   // A number must never appear without its label, so we hold it back instead.
@@ -271,17 +279,16 @@ function OutcomeCard({ title, outcome }) {
         </p>
       )}
 
-      {/* This section only appears when the backend gave us a quality value. */}
-      {hasQuality && (
-        <>
-          <h3>Measurement quality</h3>
-          <p>
-            <span className={POOR_QUALITY_VALUES.includes(quality) ? 'quality-poor' : undefined}>
-              {quality}
-            </span>
-          </p>
-        </>
-      )}
+      <h3>Measurement quality</h3>
+      <p>
+        {hasQuality ? (
+          <span className={POOR_QUALITY_VALUES.includes(quality) ? 'quality-poor' : undefined}>
+            {quality}
+          </span>
+        ) : (
+          'Unavailable'
+        )}
+      </p>
 
       <h3>Probability</h3>
       <ProbabilityText probability={outcome.probability} label={outcome.probability_label} />
@@ -290,7 +297,8 @@ function OutcomeCard({ title, outcome }) {
       <p>{outcome.explanation}</p>
 
       <h3>Limitations</h3>
-      {outcome.limitations.length === 0 ? (
+      {/* The schema allows this field to be left out, so "?." guards against that. */}
+      {!outcome.limitations?.length ? (
         <p>None listed for this day.</p>
       ) : (
         <ul>
@@ -312,9 +320,10 @@ function OutcomeCard({ title, outcome }) {
 //   outcomeKey       = which part of each record to read: "sans" or "venous"
 //   astronautRecords = the selected astronaut's records, earliest day first
 //   missionLength    = how many days the mission has, so how many boxes to show
-//   selectedDay      = the day to highlight
+//   selectedDay      = the day to highlight. Later days stay empty
+//   revealAll        = true if the "Reveal all days" debug checkbox is ticked
 //   onJump           = the function to call when the user clicks a box
-function TimelineRow({ title, outcomeKey, astronautRecords, missionLength, selectedDay, onJump }) {
+function TimelineRow({ title, outcomeKey, astronautRecords, missionLength, selectedDay, revealAll, onJump }) {
   // Build the list of days: 1, 2, 3... up to the mission length. Every day gets
   // a box, whether or not it has a record.
   const missionDays = Array.from({ length: missionLength }, (_, index) => index + 1)
@@ -324,6 +333,21 @@ function TimelineRow({ title, outcomeKey, astronautRecords, missionLength, selec
       <h3>{title}</h3>
       <div className="timeline-boxes">
         {missionDays.map((day) => {
+          // A day that hasn't been reached says nothing about its record, not even
+          // whether it has one. It is not a button, so it can't be clicked.
+          if (!revealAll && day > selectedDay) {
+            const text = `Day ${day}: not yet reached`
+            return (
+              <span
+                key={day}
+                className="timeline-box timeline-future"
+                role="img"
+                title={text}
+                aria-label={`${title}, ${text}`}
+              />
+            )
+          }
+
           // Find this day's position in the list. findIndex gives -1 if the
           // astronaut has no record for this day.
           const recordIndex = astronautRecords.findIndex(
@@ -382,6 +406,10 @@ function TimelineLegend() {
       <li>
         <span className="legend-swatch timeline-empty" />
         no record
+      </li>
+      <li>
+        <span className="legend-swatch timeline-future" />
+        not yet reached
       </li>
     </ul>
   )
@@ -447,7 +475,7 @@ function FailedMarker({ cx, cy }) {
 // The words for one row's value and quality. The tooltip and the table both use
 // these, so they always say the same thing.
 function onsdValueText(row) {
-  return row.onsdMm === null ? 'No value' : `${row.onsdMm.toFixed(2)} mm`
+  return row.onsdMm === null ? 'Unavailable' : `${row.onsdMm.toFixed(2)} mm`
 }
 
 function onsdQualityText(row) {
@@ -507,7 +535,7 @@ function OnsdTable({ rows }) {
 }
 
 // The key that says what each marker means.
-function OnsdLegend() {
+function OnsdLegend({ revealAll }) {
   return (
     <ul className="timeline-legend onsd-legend">
       <li>
@@ -529,7 +557,7 @@ function OnsdLegend() {
         Failed (no value)
       </li>
       <li>Gap in the line: no value that day</li>
-      <li>Days after the selected day stay hidden</li>
+      {!revealAll && <li>Days after the selected day stay hidden</li>}
     </ul>
   )
 }
@@ -542,7 +570,8 @@ function OnsdLegend() {
 //   missionLength = how many days the x-axis covers
 //   selectedDay   = where to draw the vertical marker, which follows playback. No
 //                   scan after this day is shown, because it hasn't happened yet
-function OnsdChart({ observations, loadFailed, astronautId, missionLength, selectedDay }) {
+//   revealAll     = true if the "Reveal all days" debug checkbox is ticked
+function OnsdChart({ observations, loadFailed, astronautId, missionLength, selectedDay, revealAll }) {
   const axis = observations && getOnsdAxis(observations)
 
   // One row per mission day, whether or not it has a scan. A row whose value is
@@ -550,7 +579,7 @@ function OnsdChart({ observations, loadFailed, astronautId, missionLength, selec
   // the rows hold nothing about them.
   const rows = Array.from({ length: missionLength }, (_, index) => {
     const day = index + 1
-    const isFuture = day > selectedDay
+    const isFuture = !revealAll && day > selectedDay
     const observation = isFuture
       ? undefined
       : observations?.find(
@@ -579,7 +608,7 @@ function OnsdChart({ observations, loadFailed, astronautId, missionLength, selec
 
       {axis && (
         <>
-          <OnsdLegend />
+          <OnsdLegend revealAll={revealAll} />
           <div className="onsd-chart">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={rows} margin={{ top: 30, right: 20, bottom: 4, left: 0 }}>
@@ -696,16 +725,26 @@ function hasValue(value) {
   return value !== null && value !== undefined
 }
 
+// Does this scan hold any jugular values? A real value of false counts as one.
+function hasJugularValues(scan) {
+  return [scan?.jugular_area_mm2, scan?.jugular_flow_class, scan?.jugular_collapsibility_lost].some(hasValue)
+}
+
 // Describes one scan, such as "ONSD scan: ok (5.62 mm)". A failed scan shows no
-// value, the same as on the chart.
+// value, the same as on the chart. A scan whose value is null says "Unavailable".
 function describeScan(scan) {
   const name = hasValue(scan.type) ? `${readableName(scan.type)} scan` : 'Scan'
   const status = scan.quality?.status
 
-  if (status === 'failed') return `${name}: failed quality check`
+  if (status === 'failed') return `${name}: failed quality check (Unavailable)`
   if (!hasValue(status)) return `${name}: quality not stated`
 
-  const value = scan.type === 'onsd' && hasValue(scan.onsd_mm) ? ` (${scan.onsd_mm.toFixed(2)} mm)` : ''
+  let value = ''
+  if (scan.type === 'onsd') {
+    value = hasValue(scan.onsd_mm) ? ` (${scan.onsd_mm.toFixed(2)} mm)` : ' (Unavailable)'
+  } else if (scan.type === 'jugular' && !hasJugularValues(scan)) {
+    value = ' (Unavailable)'
+  }
   return `${name}: ${status.replace('_', ' ')}${value}`
 }
 
@@ -723,7 +762,7 @@ function listDataToday(observation) {
   items.push(
     hasSignals
       ? { text: 'Daily signals (HRV, pulse transit): available – hypothesis signals', isMissing: false }
-      : { text: 'Daily signals (HRV, pulse transit): not available', isMissing: true },
+      : { text: 'Daily signals (HRV, pulse transit): Unavailable', isMissing: true },
   )
 
   items.push(
@@ -732,13 +771,9 @@ function listDataToday(observation) {
       : { text: 'Scan: none today', isMissing: true },
   )
 
-  // A jugular scan already has its own line above, so "not available" would
-  // contradict it, even if that scan holds no values.
-  const hasJugularValues =
-    hasValue(scan) &&
-    [scan.jugular_area_mm2, scan.jugular_flow_class, scan.jugular_collapsibility_lost].some(hasValue)
-  if (!hasJugularValues && scan?.type !== 'jugular') {
-    items.push({ text: 'Jugular scan: not available', isMissing: true })
+  // A jugular scan already has its own line above, so this would repeat it.
+  if (!hasJugularValues(scan) && scan?.type !== 'jugular') {
+    items.push({ text: 'Jugular scan: Unavailable', isMissing: true })
   }
 
   return items
@@ -763,13 +798,13 @@ function DataToday({ observation }) {
 // The left panel: what the crew sees now, plus the button to send it to Earth.
 //   record           = the record for the selected day
 //   observation      = that astronaut's observation for the same day, if any
-//   messages         = every message sent so far, in both directions
+//   messages         = the messages to show, in both directions
+//   hasMessageInTransit = is any message on its way, even one that's hidden for now?
 //   now              = the current time, used to work out each message's status
 //   onSend           = the function to call when the user presses the button
 //   autoSend         = is "Auto-send on tier change" ticked?
 //   onAutoSendChange = the function to call when the user changes the checkbox
-function CrewPanel({ record, observation, messages, now, onSend, autoSend, onAutoSendChange }) {
-  const hasMessageInTransit = messages.some((message) => !isDelivered(message, now))
+function CrewPanel({ record, observation, messages, hasMessageInTransit, now, onSend, autoSend, onAutoSendChange }) {
   const replies = messages.filter((message) => message.direction === GROUND_TO_CREW)
   const repliesInTransit = replies.filter((reply) => !isDelivered(reply, now))
   const repliesDelivered = replies.filter((reply) => isDelivered(reply, now))
@@ -883,6 +918,8 @@ function GroundPanel({ messages, now, isFixture, syntheticLabel, onAcknowledge }
           Engineering test data – not a simulation result.
         </p>
       )}
+
+      <p className="hint">Simulated communication delay (demo)</p>
 
       {inTransit.map((update) => (
         <IncomingMessage
@@ -1133,7 +1170,8 @@ function CapabilityReadiness({ readiness }) {
 // the fields below, so those are never shown.
 //   manifest = the selected file's manifest, or null if it couldn't be read
 //   summary  = the selected file's scoring summary, or null if it has none
-function RunInfo({ manifest, summary }) {
+//   missionLength = how many days the mission has, for the summary's heading
+function RunInfo({ manifest, summary, missionLength }) {
   // "?? {}" gives an empty list if the manifest left the reasons out, which the
   // schema allows.
   const reasons = Object.entries(manifest?.physiological_generation_blocked_reasons ?? {})
@@ -1173,8 +1211,13 @@ function RunInfo({ manifest, summary }) {
         </>
       )}
 
+      {/* Everything in this part covers the whole run, including later days. */}
       {summary && (
         <>
+          <h3 className="run-whole-label">
+            Whole-run summary (all {missionLength} days) – for review, not visible to the
+            crew during the mission
+          </h3>
           <h3>Tier counts (all astronauts, all days)</h3>
           <p>
             Astronauts scored: {summary.astronauts_scored}. Days scored: {summary.days_scored}.
@@ -1232,6 +1275,7 @@ function App() {
   const [summaryFailed, setSummaryFailed] = useState(false) // did the summary fail to load?
   const [observations, setObservations] = useState(null) // null = none loaded
   const [observationsFailed, setObservationsFailed] = useState(false) // did they fail to load?
+  const [revealAll, setRevealAll] = useState(false) // the "Reveal all days" debug checkbox
   const [resultsReport, setResultsReport] = useState(null) // null = not loaded
   const [resultsFailed, setResultsFailed] = useState(false) // did the report fail to load?
   const [delayMinutes, setDelayMinutes] = useState(DEFAULT_DELAY_MINUTES) // the delay slider
@@ -1327,7 +1371,7 @@ function App() {
   useEffect(() => {
     let isCurrent = true
 
-    fetch('/data/evaluation_blockers.json')
+    fetch('/data/pipeline/evaluation_blockers.json')
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Server responded with status ${response.status}`)
@@ -1438,13 +1482,11 @@ function App() {
   // from the backend's file.
   const selectedFile = DATA_FILES.find((file) => file.url === fileUrl)
 
-  // Today's scored records have no metadata block, so the manifest's own
-  // schema_version is what normally gives this run's version. Records are
-  // checked too, in case they carry one.
-  const newerSchemaVersion = [
-    ...records.map((record) => record.metadata?.schema_version),
-    runManifest?.schema_version,
-  ].find((version) => version && isNewerVersion(version, SUPPORTED_SCHEMA_VERSION))
+  const dataSource = getDataSource(
+    observations?.[0]?.metadata ?? records[0]?.metadata,
+    runManifest,
+    selectedFile.isFixture,
+  )
 
   // A Set keeps only one copy of each value, which gives us each astronaut once.
   // The pipeline's file isn't in astronaut order, so we sort the list to show
@@ -1469,6 +1511,15 @@ function App() {
   // than day numbers. That way it can only land on days that really exist,
   // even when there are gaps between them.
   const selectedRecord = isStillLoading ? undefined : astronautRecords[dayIndex]
+
+  // The messages to show. Sending only ever uses the day just reached, but going
+  // back to an earlier day keeps the later messages, and an onboard system wouldn't
+  // know about those yet. Only the display is filtered: the full list still decides
+  // what is in transit and what has been sent, so a hidden message comes back,
+  // without being sent twice, when its day is reached again.
+  const visibleMessages = revealAll
+    ? messages
+    : messages.filter((message) => message.day <= selectedRecord?.as_of_day)
 
   const syntheticLabel = getSyntheticLabel(observations)
 
@@ -1624,19 +1675,30 @@ function App() {
           so it sits outside the conditions below and always appears. */}
       <p className="banner">{syntheticLabel}</p>
 
+      {/* Wait until the files have loaded, so this doesn't first say "not stated". */}
+      {!isStillLoading && (
+        <p className="data-source">
+          Data source: run {dataSource.runId} · schema{' '}
+          {dataSource.schemaVersion ?? 'not stated'} · crew size {dataSource.crewSize} ·
+          mission length {dataSource.missionDays}
+          {typeof dataSource.missionDays === 'number' && ' days'}
+        </p>
+      )}
+
       {selectedFile.isFixture && (
         <p className="fixture-warning">
           Engineering test data – not a simulation result.
         </p>
       )}
 
-      {newerSchemaVersion && (
-        <p className="schema-warning">
-          This data uses schema {newerSchemaVersion}, which is newer than the{' '}
-          {SUPPORTED_SCHEMA_VERSION} this page was built for. Some fields may not
-          display correctly.
-        </p>
-      )}
+      {!isStillLoading &&
+        dataSource.schemaVersion !== null &&
+        dataSource.schemaVersion !== SUPPORTED_SCHEMA_VERSION && (
+          <p className="schema-warning">
+            Schema version {dataSource.schemaVersion} – frontend built for{' '}
+            {SUPPORTED_SCHEMA_VERSION}
+          </p>
+        )}
 
       <h1>Fluid-Shift Monitoring</h1>
 
@@ -1665,7 +1727,18 @@ function App() {
             </select>
           </label>
         )}
+
+        <label className="reveal-all">
+          <input
+            type="checkbox"
+            checked={revealAll}
+            onChange={(event) => setRevealAll(event.target.checked)}
+          />{' '}
+          Reveal all days
+        </label>
       </div>
+
+      {revealAll && <p className="reveal-note">Showing future days – debug only</p>}
 
       {usedFallback && (
         <p className="small-note">
@@ -1678,7 +1751,7 @@ function App() {
           couldn't be read. The fixture is hand-made and didn't come from the run
           the manifest describes, so it doesn't get this panel. */}
       {missionLength !== null && !selectedFile.isFixture && (
-        <RunInfo manifest={runManifest} summary={runSummary} />
+        <RunInfo manifest={runManifest} summary={runSummary} missionLength={missionLength} />
       )}
 
       {summaryFailed && <p className="small-note">Could not load the run summary.</p>}
@@ -1751,13 +1824,13 @@ function App() {
 
           <div className="delay-control">
             <label htmlFor="delay-slider">
-              One-way delay: <strong>{delayMinutes}</strong>{' '}
-              {delayMinutes === 1 ? 'minute' : 'minutes'}
+              Simulated communication delay (demo). One-way delay:{' '}
+              <strong>{delayMinutes}</strong> {delayMinutes === 1 ? 'minute' : 'minutes'}
             </label>
             <input
               id="delay-slider"
               type="range"
-              min={0}
+              min={MIN_DELAY_MINUTES}
               max={MAX_DELAY_MINUTES}
               value={delayMinutes}
               onChange={(event) => setDelayMinutes(Number(event.target.value))}
@@ -1778,14 +1851,15 @@ function App() {
             <CrewPanel
               record={selectedRecord}
               observation={selectedObservation}
-              messages={messages}
+              messages={visibleMessages}
+              hasMessageInTransit={hasMessageInTransit}
               now={now}
               onSend={() => sendUpdate(selectedRecord, 'Manual')}
               autoSend={autoSend}
               onAutoSendChange={setAutoSend}
             />
             <GroundPanel
-              messages={messages}
+              messages={visibleMessages}
               now={now}
               isFixture={selectedFile.isFixture}
               syntheticLabel={syntheticLabel}
@@ -1793,7 +1867,7 @@ function App() {
             />
           </div>
 
-          <MessageLog messages={messages} now={now} />
+          <MessageLog messages={visibleMessages} now={now} />
 
           <section className="timeline">
             <h2>Timeline</h2>
@@ -1803,6 +1877,7 @@ function App() {
               astronautRecords={astronautRecords}
               missionLength={missionLength}
               selectedDay={selectedRecord.as_of_day}
+              revealAll={revealAll}
               onJump={handleTimelineJump}
             />
             <TimelineRow
@@ -1811,6 +1886,7 @@ function App() {
               astronautRecords={astronautRecords}
               missionLength={missionLength}
               selectedDay={selectedRecord.as_of_day}
+              revealAll={revealAll}
               onJump={handleTimelineJump}
             />
             <TimelineLegend />
@@ -1825,6 +1901,7 @@ function App() {
               astronautId={astronautId}
               missionLength={missionLength}
               selectedDay={selectedRecord.as_of_day}
+              revealAll={revealAll}
             />
           )}
         </>
