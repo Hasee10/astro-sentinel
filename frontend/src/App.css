@@ -26,8 +26,15 @@
   background: #6d28d9;
 }
 
-/* A small warning that the data's schema is newer than this page. It uses the
-   same purple as the fixture warning, so nobody reads it as a tier. */
+/* The small "Data source" line under the banner. */
+.data-source {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+/* A small warning that the data's schema isn't the one this page was built for.
+   It uses the same purple as the fixture warning, so nobody reads it as a tier. */
 .schema-warning {
   margin: 8px 0 0;
   padding: 6px 10px;
@@ -42,6 +49,12 @@
   flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 16px;
+}
+
+/* Long option text can't push a dropdown wider than a phone screen. */
+.controls label {
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Puts each dropdown below its label text. */

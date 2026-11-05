@@ -17,8 +17,9 @@ import {
 import './App.css'
 
 // The data files the user can choose from. Files in the "public" folder are
-// served from the root of the website, so public/data/example.jsonl is
-// available at /data/example.jsonl.
+// served from the root of the website, so public/data/pipeline/example.jsonl is
+// available at /data/pipeline/example.jsonl. Real backend output lives in
+// data/pipeline and mock or old example data lives in data/fixtures.
 //   label       = the text shown in the dropdown
 //   url         = where to load the file from
 //   manifestUrl = where to read this file's mission length from
@@ -33,23 +34,23 @@ import './App.css'
 // say the frontend must never read or display it.
 const DATA_FILES = [
   {
-    label: 'Pipeline run (8 astronauts)',
-    url: '/data/crew_scored.jsonl',
-    manifestUrl: '/data/simulation_manifest.json',
-    summaryUrl: '/data/scoring_summary.json',
-    observationsUrl: '/data/crew_observations.jsonl',
+    label: 'Backend pipeline run (schema v0.6.0)',
+    url: '/data/pipeline/crew_scored.jsonl',
+    manifestUrl: '/data/pipeline/simulation_manifest.json',
+    summaryUrl: '/data/pipeline/scoring_summary.json',
+    observationsUrl: '/data/pipeline/crew_observations.jsonl',
     isFixture: false,
   },
   {
-    label: 'Pipeline output (blocked)',
-    url: '/data/example_scored_blocked.jsonl',
-    manifestUrl: '/data/example_simulation_manifest.json',
+    label: 'OLD EXAMPLE – earlier blocked run, not current backend output',
+    url: '/data/fixtures/example_scored_blocked.jsonl',
+    manifestUrl: '/data/fixtures/example_simulation_manifest.json',
     isFixture: false,
   },
   {
-    label: 'UI test fixture',
-    url: '/data/example_engineering_fixture_scored.jsonl',
-    manifestUrl: '/data/example_simulation_manifest.json',
+    label: 'MOCK – engineering fixture, not backend output',
+    url: '/data/fixtures/example_engineering_fixture_scored.jsonl',
+    manifestUrl: '/data/fixtures/example_simulation_manifest.json',
     isFixture: true,
   },
 ]
@@ -93,8 +94,8 @@ const ACRONYMS = ['onsd', 'hrv', 'ptt', 'sans', 'sd', 'oct']
 // shows.
 const FALLBACK_SYNTHETIC_LABEL = 'SYNTHETIC – NOT REAL ASTRONAUT DATA'
 
-// The newest backend contract this page was built for. Data from a newer one
-// gets a small warning, because its fields may have changed.
+// The backend contract this page was built for. Data on any other version gets a
+// small warning, because its fields may be different.
 const SUPPORTED_SCHEMA_VERSION = '0.6.0'
 
 // The measurement quality values that get the warning style on a card.
@@ -195,18 +196,19 @@ function describeTierReason(tier, reason) {
   return TIER_REASON_TEXT[reason] ?? `Reason: ${readableName(reason)}.`
 }
 
-// Is this version newer than the baseline? The parts are compared as numbers,
-// because compared as text, "0.10.0" would count as older than "0.6.0".
-function isNewerVersion(version, baseline) {
-  const toParts = (text) => String(text).split('.').map((part) => parseInt(part, 10) || 0)
-  const versionParts = toParts(version)
-  const baselineParts = toParts(baseline)
-
-  for (let i = 0; i < Math.max(versionParts.length, baselineParts.length); i++) {
-    const difference = (versionParts[i] ?? 0) - (baselineParts[i] ?? 0)
-    if (difference !== 0) return difference > 0
+// Where the loaded data says it came from, for the "Data source" line. Scored
+// records have no metadata block, so the run ID and schema version come from the
+// first observation record, or else the manifest. A fixture gets nothing from the
+// manifest, because it borrows one for its mission length but isn't from that run.
+//   metadata = the first record's metadata, if there is any
+function getDataSource(metadata, manifest, isFixture) {
+  const runManifest = isFixture ? null : manifest
+  return {
+    runId: metadata?.run_id ?? runManifest?.run_id ?? 'not stated',
+    schemaVersion: metadata?.schema_version ?? runManifest?.schema_version ?? null,
+    crewSize: runManifest?.crew_size ?? 'not stated',
+    missionDays: runManifest?.mission_duration_days ?? 'not stated',
   }
-  return false
 }
 
 // Shows the backend's probability as a percentage, always with its label right
@@ -1327,7 +1329,7 @@ function App() {
   useEffect(() => {
     let isCurrent = true
 
-    fetch('/data/evaluation_blockers.json')
+    fetch('/data/pipeline/evaluation_blockers.json')
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Server responded with status ${response.status}`)
@@ -1438,13 +1440,11 @@ function App() {
   // from the backend's file.
   const selectedFile = DATA_FILES.find((file) => file.url === fileUrl)
 
-  // Today's scored records have no metadata block, so the manifest's own
-  // schema_version is what normally gives this run's version. Records are
-  // checked too, in case they carry one.
-  const newerSchemaVersion = [
-    ...records.map((record) => record.metadata?.schema_version),
-    runManifest?.schema_version,
-  ].find((version) => version && isNewerVersion(version, SUPPORTED_SCHEMA_VERSION))
+  const dataSource = getDataSource(
+    observations?.[0]?.metadata ?? records[0]?.metadata,
+    runManifest,
+    selectedFile.isFixture,
+  )
 
   // A Set keeps only one copy of each value, which gives us each astronaut once.
   // The pipeline's file isn't in astronaut order, so we sort the list to show
@@ -1624,19 +1624,30 @@ function App() {
           so it sits outside the conditions below and always appears. */}
       <p className="banner">{syntheticLabel}</p>
 
+      {/* Wait until the files have loaded, so this doesn't first say "not stated". */}
+      {!isStillLoading && (
+        <p className="data-source">
+          Data source: run {dataSource.runId} · schema{' '}
+          {dataSource.schemaVersion ?? 'not stated'} · crew size {dataSource.crewSize} ·
+          mission length {dataSource.missionDays}
+          {typeof dataSource.missionDays === 'number' && ' days'}
+        </p>
+      )}
+
       {selectedFile.isFixture && (
         <p className="fixture-warning">
           Engineering test data – not a simulation result.
         </p>
       )}
 
-      {newerSchemaVersion && (
-        <p className="schema-warning">
-          This data uses schema {newerSchemaVersion}, which is newer than the{' '}
-          {SUPPORTED_SCHEMA_VERSION} this page was built for. Some fields may not
-          display correctly.
-        </p>
-      )}
+      {!isStillLoading &&
+        dataSource.schemaVersion !== null &&
+        dataSource.schemaVersion !== SUPPORTED_SCHEMA_VERSION && (
+          <p className="schema-warning">
+            Schema version {dataSource.schemaVersion} – frontend built for{' '}
+            {SUPPORTED_SCHEMA_VERSION}
+          </p>
+        )}
 
       <h1>Fluid-Shift Monitoring</h1>
 
