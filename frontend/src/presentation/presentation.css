@@ -88,6 +88,17 @@
   font-weight: 500;
 }
 
+/* A small warning that the data's schema isn't the one this view was built for. */
+.pv-schema-warning {
+  margin: 0;
+  padding: 5px 12px;
+  border: 1px solid #e9b949;
+  border-radius: 999px;
+  color: #f2cc6e;
+  font-size: 13px;
+  font-weight: 500;
+}
+
 /* Playback bar */
 .pv-playback,
 .pv-roster,
@@ -161,6 +172,7 @@
   border-radius: 50%;
   background: var(--tier);
 }
+.pv-chip-dot--future { background: transparent; box-shadow: inset 0 0 0 1px #3d5582; opacity: 0.55; }
 .pv-roster-key { font-size: 13px; margin-left: 6px; }
 
 /* Main stage: crew, link, ground */
@@ -206,6 +218,7 @@
   margin-bottom: 14px;
 }
 .pv-panel-head h2 { margin: 0; font-size: 20px; font-weight: 600; }
+.pv-head-note { flex-basis: 100%; }
 .pv-crew { border-top: 2px solid var(--mars); }
 .pv-ground { border-top: 2px solid var(--earth); }
 
@@ -296,6 +309,7 @@
   font-size: 12px;
 }
 .pv-pop em { color: var(--muted); }
+.pv-pop-note { display: block; color: var(--muted); font-size: 12px; }
 .pv-pop ul { margin: 6px 0 0; padding-left: 18px; }
 .pv-pop--up { top: auto; bottom: calc(100% + 8px); }
 
@@ -397,6 +411,7 @@
 }
 .pv-delay { display: grid; gap: 4px; text-align: center; font-size: 14px; }
 .pv-delay input { accent-color: var(--earth); width: 100%; }
+.pv-delay-title { font-weight: 500; }
 
 /* Trends */
 .pv-trends { margin-top: 16px; }

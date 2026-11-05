@@ -10,6 +10,9 @@ export const DATA = {
   evaluation: '/data/evaluation_blockers.json',
 }
 
+// The backend contract this view was built for.
+export const EXPECTED_SCHEMA_VERSION = '0.6.0'
+
 export const FALLBACK_SYNTHETIC_LABEL = 'SYNTHETIC – NOT REAL ASTRONAUT DATA'
 export const FALLBACK_MISSION_LENGTH = 30
 

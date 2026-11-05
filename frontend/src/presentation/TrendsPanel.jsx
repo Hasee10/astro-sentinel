@@ -46,7 +46,7 @@ function OnsdTooltip({ active, payload }) {
   return (
     <div className="pv-chart-tip">
       <strong>Day {row.day}</strong>
-      <span>{row.onsd === null ? 'No value' : `${row.onsd.toFixed(2)} mm`}</span>
+      <span>{row.onsd === null ? 'Unavailable' : `${row.onsd.toFixed(2)} mm`}</span>
       <span>{row.quality ? QUALITY_TEXT[row.quality] ?? row.quality : 'No scan'}</span>
     </div>
   )

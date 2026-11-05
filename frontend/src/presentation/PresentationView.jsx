@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ACTION_TIERS,
   DEFAULT_DELAY_MINUTES,
+  EXPECTED_SCHEMA_VERSION,
   FALLBACK_MISSION_LENGTH,
   FALLBACK_SYNTHETIC_LABEL,
   MAX_DELAY_MINUTES,
@@ -71,6 +72,9 @@ function Mission({ data, onOpenDebug }) {
   const { scored, observations, manifest, evaluation } = data
   const missionLength = manifest?.mission_duration_days ?? FALLBACK_MISSION_LENGTH
   const syntheticLabel = observations?.[0]?.metadata?.synthetic_label || FALLBACK_SYNTHETIC_LABEL
+  // Scored records have no metadata block, so the first record with a version is
+  // the first observation. The manifest fills in if that file couldn't be loaded.
+  const schemaVersion = observations?.[0]?.metadata?.schema_version ?? manifest?.schema_version
 
   // Every astronaut's records, sorted by day.
   const crew = useMemo(() => {
@@ -101,7 +105,9 @@ function Mission({ data, onOpenDebug }) {
   const observation = observations?.find((o) => o.astronaut_id === astronautId && o.day === day)
 
   const inTransit = messages.filter((m) => m.arrivesAt > now)
-  const delivered = messages.filter((m) => m.arrivesAt <= now)
+  // Going back to an earlier day keeps later messages, so they wait for their day
+  // again before they show. Only the display is filtered: holds still use them all.
+  const delivered = messages.filter((m) => m.arrivesAt <= now && m.day <= day)
   const lastUp = delivered.filter((m) => m.dir === 'up').at(-1)
   const lastDown = delivered.filter((m) => m.dir === 'down').at(-1)
   const ackPending = lastUp && !messages.some((m) => m.dir === 'down' && m.ackFor === lastUp.id)
@@ -214,7 +220,9 @@ function Mission({ data, onOpenDebug }) {
     const byDay = new Map((observations ?? []).filter((o) => o.astronaut_id === astronautId).map((o) => [o.day, o]))
     return Array.from({ length: missionLength }, (_, i) => {
       const scan = byDay.get(i + 1)?.scan
-      return { day: i + 1, onsd: scan?.onsd_mm ?? null, quality: scan?.quality?.status ?? null }
+      const quality = scan?.quality?.status ?? null
+      // A failed scan never has a value on the chart, even if the file gave it one.
+      return { day: i + 1, onsd: quality === 'failed' ? null : scan?.onsd_mm ?? null, quality }
     })
   }, [observations, astronautId, missionLength])
 
@@ -222,7 +230,10 @@ function Mission({ data, onOpenDebug }) {
   // doesn't jump as new points appear. This only sizes the axis: the data's own min
   // and max, rounded outwards, with room below for the failed-scan crosses.
   const onsdRange = useMemo(() => {
-    const values = (observations ?? []).map((o) => o.scan?.onsd_mm).filter((v) => v !== null && v !== undefined)
+    const values = (observations ?? [])
+      .filter((o) => o.scan?.quality?.status !== 'failed')
+      .map((o) => o.scan?.onsd_mm)
+      .filter((v) => v !== null && v !== undefined)
     if (values.length === 0) return null
     const low = Math.floor(Math.min(...values) * 4) / 4 - 0.25
     const high = Math.ceil(Math.max(...values) * 4) / 4
@@ -233,9 +244,10 @@ function Mission({ data, onOpenDebug }) {
   }, [observations])
 
   // Roster: each astronaut's tiers on the current day (or the latest day before it).
+  // It gives undefined if their first record is still ahead of the current day.
   function rosterRecord(id) {
     const list = crew.get(id) ?? []
-    return [...list].reverse().find((r) => r.as_of_day <= day) ?? list[0]
+    return [...list].reverse().find((r) => r.as_of_day <= day)
   }
 
   return (
@@ -246,6 +258,11 @@ function Mission({ data, onOpenDebug }) {
           <p>Onboard fluid-shift monitoring for a Mars transit crew</p>
         </div>
         <p className="pv-synthetic" role="note">{syntheticLabel}</p>
+        {schemaVersion && schemaVersion !== EXPECTED_SCHEMA_VERSION && (
+          <p className="pv-schema-warning" role="note">
+            Schema version {schemaVersion} – frontend built for {EXPECTED_SCHEMA_VERSION}
+          </p>
+        )}
         <button type="button" className="pv-btn pv-btn--ghost" onClick={onOpenDebug}>Debug view</button>
       </header>
 
@@ -286,9 +303,13 @@ function Mission({ data, onOpenDebug }) {
           return (
             <button key={id} type="button" className={`pv-chip${id === astronautId ? ' is-on' : ''}`} onClick={() => selectAstronaut(id)} aria-pressed={id === astronautId}>
               <span className="pv-chip-id">{id}</span>
-              {OUTCOMES.map((o) => (
-                <span key={o.key} className={`pv-chip-dot pv-tier-${r?.[o.key]?.tier ?? 'unresolved'}`} title={`${o.name}: ${TIER_TEXT[r?.[o.key]?.tier]?.label ?? 'no record'}`} />
-              ))}
+              {OUTCOMES.map((o) =>
+                r ? (
+                  <span key={o.key} className={`pv-chip-dot pv-tier-${r[o.key]?.tier ?? 'unresolved'}`} title={`${o.name}: ${TIER_TEXT[r[o.key]?.tier]?.label ?? 'no record'}`} />
+                ) : (
+                  <span key={o.key} className="pv-chip-dot pv-chip-dot--future" title={`${o.name}: not yet reached`} />
+                ),
+              )}
             </button>
           )
         })}
@@ -331,6 +352,7 @@ function Mission({ data, onOpenDebug }) {
           <header className="pv-panel-head">
             <h2 id="pv-ground-title">Ground, Earth</h2>
             <span className="pv-muted">{lastUp ? `Last received: day ${lastUp.day}` : 'Nothing received yet'}</span>
+            <span className="pv-muted pv-small pv-head-note">Simulated communication delay (demo)</span>
           </header>
           {lastUp ? (
             <>
@@ -387,20 +409,43 @@ function ActionBanner({ stop, onContinue }) {
   )
 }
 
+// Is this value in the file? A real value of 0 or false still counts as present.
+function hasValue(value) {
+  return value !== null && value !== undefined
+}
+
+const FAILED_SCAN_TEXT = 'failed quality check (Unavailable)'
+
+function onsdText(scan) {
+  if (scan?.type !== 'onsd') return 'Unavailable'
+  const status = scan.quality?.status
+  if (status === 'failed') return FAILED_SCAN_TEXT
+  const value = hasValue(scan.onsd_mm) ? `${scan.onsd_mm.toFixed(2)} mm` : 'Unavailable'
+  return `${value}, ${QUALITY_TEXT[status]?.toLowerCase() ?? status ?? 'quality not recorded'}`
+}
+
+function jugularText(scan) {
+  if (scan?.type === 'jugular' && scan.quality?.status === 'failed') return FAILED_SCAN_TEXT
+  const values = [
+    hasValue(scan?.jugular_area_mm2) && `${scan.jugular_area_mm2} mm²`,
+    hasValue(scan?.jugular_flow_class) && scan.jugular_flow_class,
+    hasValue(scan?.jugular_collapsibility_lost) && `collapsibility lost: ${scan.jugular_collapsibility_lost ? 'yes' : 'no'}`,
+  ].filter(Boolean)
+  return values.length > 0 ? values.join(', ') : 'Unavailable'
+}
+
 // What was measured today, from the observation file only.
 function TodayData({ observation }) {
   if (!observation) return <p className="pv-today pv-muted">No observation record for this day.</p>
-  const scan = observation.scan
-  const status = scan?.quality?.status
-  const onsd = scan?.type === 'onsd'
-    ? `${scan.onsd_mm !== null && scan.onsd_mm !== undefined ? `${scan.onsd_mm.toFixed(2)} mm, ` : ''}${QUALITY_TEXT[status]?.toLowerCase() ?? status ?? 'quality not recorded'}`
-    : 'none today'
-  const jugular = scan?.jugular_area_mm2 !== null && scan?.jugular_area_mm2 !== undefined ? `${scan.jugular_area_mm2} mm²` : 'not available'
+  const { scan, weak_signals: signals } = observation
+  const failed = scan?.quality?.status === 'failed'
+  // An object whose fields are all null holds no signals, the same as a null.
+  const hasSignals = hasValue(signals) && Object.values(signals).some(hasValue)
   return (
     <dl className="pv-today">
-      <div className={status === 'failed' ? 'is-warn' : ''}><dt>ONSD scan</dt><dd>{onsd}</dd></div>
-      <div><dt>Jugular scan</dt><dd>{jugular}</dd></div>
-      <div><dt>Daily signals</dt><dd>{observation.weak_signals ? 'available, hypothesis only' : 'not available'}</dd></div>
+      <div className={failed && scan.type === 'onsd' ? 'is-warn' : ''}><dt>ONSD scan</dt><dd>{onsdText(scan)}</dd></div>
+      <div className={failed && scan.type === 'jugular' ? 'is-warn' : ''}><dt>Jugular scan</dt><dd>{jugularText(scan)}</dd></div>
+      <div><dt>Daily signals</dt><dd>{hasSignals ? 'available, hypothesis only' : 'Unavailable'}</dd></div>
     </dl>
   )
 }
@@ -431,6 +476,7 @@ function Link({ messages, now, delay, onDelay, onSkip }) {
         )}
       </div>
       <label className="pv-delay">
+        <span className="pv-delay-title">Simulated communication delay (demo)</span>
         <span>One-way delay <strong>{delay} min</strong></span>
         <input type="range" min={0} max={MAX_DELAY_MINUTES} value={delay} onChange={(e) => onDelay(Number(e.target.value))} />
         <span className="pv-muted pv-small">Demo time: 1 second stands for 1 minute</span>

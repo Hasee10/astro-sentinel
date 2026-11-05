@@ -9,10 +9,14 @@ function readable(id) {
     .join(' ')
 }
 
+function hasNoEstimate(outcome) {
+  return outcome.probability === null || outcome.probability === undefined
+}
+
 // The probability, only as the backend sent it. Null is "no estimate", never 0.
 function Probability({ outcome }) {
-  if (outcome.probability === null || outcome.probability === undefined) {
-    return <span className="pv-prob pv-prob--none">No estimate</span>
+  if (hasNoEstimate(outcome)) {
+    return <span className="pv-prob pv-prob--none">No estimate – unavailable</span>
   }
   return (
     <span className="pv-prob">
@@ -53,10 +57,16 @@ export function OutcomeTile({ meta, outcome, compact = false }) {
           {text.pending && <em> (wording pending clinical lead)</em>}
         </p>
         {outcome.tier_reason && <p><span>Why</span>{REASON_TEXT[outcome.tier_reason] ?? outcome.tier_reason}</p>}
-        {outcome.measurement_quality && <p><span>Scan quality</span>{outcome.measurement_quality}</p>}
-        {outcome.limitations?.length > 0 && (
-          <p><span>Limits</span>{outcome.limitations[0]}</p>
+        {/* The compact tile shows no probability, so this also says it for that one. */}
+        {hasNoEstimate(outcome) && (
+          <p>
+            <span>Probability</span>
+            No estimate – unavailable
+            <small className="pv-pop-note">This does not mean zero risk</small>
+          </p>
         )}
+        <p><span>Scan quality</span>{outcome.measurement_quality ?? 'Unavailable'}</p>
+        <p><span>Limits</span>{outcome.limitations?.[0] ?? 'None listed for this day'}</p>
         {outcome.evidence_references?.length > 0 && (
           <p><span>Based on</span>{outcome.evidence_references.map(readable).join(', ')}</p>
         )}
