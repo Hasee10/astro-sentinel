@@ -1,6 +1,6 @@
 {
-  "run_id": "run-ee37dd8bee2b",
-  "created_at": "2026-11-04T18:19:41.326647+00:00",
+  "run_id": "run-73f2a3181a7f",
+  "created_at": "2026-11-05T12:31:17.396709+00:00",
   "random_seed": 42,
   "crew_size": 8,
   "mission_duration_days": 30,
@@ -29,7 +29,8 @@
     "daily_hrv_weak_signal": "no generation algorithm is implemented in simulation/generator.py yet - approval alone does not produce numbers",
     "daily_ptt_weak_signal": "blocked: assumption(s) not approved: ['ptt_trigger_assumed_usefulness']",
     "jugular_scan_values": "no generation algorithm is implemented in simulation/generator.py yet - approval alone does not produce numbers",
-    "sans_venous_onset_day_assignment": "design decision not approved: 'sans_venous_onset_day_assignment'"
+    "sans_venous_onset_day_assignment": "design decision not approved: 'sans_venous_onset_day_assignment'",
+    "sans_physiological_progression": "design decision not approved: 'sans_physiological_progression'"
   },
   "capability_readiness": {
     "personal_onsd_baseline_values": "ready",
@@ -38,7 +39,8 @@
     "daily_ptt_weak_signal": "blocked_unapproved_assumption",
     "jugular_scan_values": "blocked_missing_model_rule",
     "measurement_quality_failure_injection": "ready",
-    "sans_venous_onset_day_assignment": "blocked_missing_model_rule"
+    "sans_venous_onset_day_assignment": "blocked_missing_model_rule",
+    "sans_physiological_progression": "blocked_missing_model_rule"
   },
   "generation_status": "partially_blocked"
 }

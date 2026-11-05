@@ -1,5 +1,5 @@
 {
-  "input": "/tmp/run1/crew_observations.jsonl",
+  "input": "outputs\\demo\\crew_observations.jsonl",
   "astronauts_scored": 8,
   "days_scored": 240,
   "errors": [],
