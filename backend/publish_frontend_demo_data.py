@@ -23,6 +23,13 @@ the frontend/backend integration review. Two rules it enforces:
    (e.g. "no implemented physiological progression model"), which is already
    public information (it is exactly what registry/design_decisions.py and
    simulation/generation_models.py say in this same repository).
+3. `simulation_manifest.json` is published with `scenario_counts` removed.
+   It is a cohort-level aggregate, not a per-astronaut label, but the team's
+   explicit policy (frontend/scripts/check-public-data.mjs's own
+   `forbiddenKeys`) treats it as a hidden-scenario-classification signal that
+   should not cross into the public demo either - no frontend code reads it
+   (confirmed: only a comment in App.jsx mentions the field), so dropping it
+   costs nothing.
 
 Usage:
     python publish_frontend_demo_data.py --run-dir outputs/frontend_demo_v2 \\
@@ -36,14 +43,20 @@ import shutil
 from pathlib import Path
 
 # Copied verbatim - already safe (observable-only data, or code/registry-state
-# metadata with no per-case ground-truth content).
+# metadata with no per-case ground-truth content). simulation_manifest.json is
+# handled separately below - it needs scenario_counts stripped first.
 _SAFE_PASSTHROUGH_FILES = (
     "crew_observations.jsonl",
     "crew_scored.jsonl",
     "scoring_summary.json",
-    "simulation_manifest.json",
     "simulation_blockers.json",
 )
+
+# Manifest keys that must never reach the public demo - see module docstring
+# rule 3. Kept as a set, not a single field, so a future field in the same
+# spirit (another cohort-level hidden-classification aggregate) is one line
+# to add here instead of a second special case.
+_MANIFEST_FORBIDDEN_KEYS = ("scenario_counts",)
 
 # Never copied, no matter what - see module docstring rule 1.
 _NEVER_PUBLISH_FILES = (
@@ -89,6 +102,16 @@ def publish(run_dir: Path, public_dir: Path) -> list[str]:
             json.dumps(report, indent=2), encoding="utf-8"
         )
         published.append("evaluation_blockers.json (sanitized)")
+
+    manifest_path = run_dir / "simulation_manifest.json"
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        for key in _MANIFEST_FORBIDDEN_KEYS:
+            manifest.pop(key, None)
+        (public_dir / "simulation_manifest.json").write_text(
+            json.dumps(manifest, indent=2), encoding="utf-8"
+        )
+        published.append("simulation_manifest.json (scenario_counts removed)")
 
     for name in _NEVER_PUBLISH_FILES:
         if (public_dir / name).exists():
