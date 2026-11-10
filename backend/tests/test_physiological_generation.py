@@ -5,11 +5,13 @@ from __future__ import annotations
 import pytest
 
 from contracts.models import QualityStatus, ScanType
+from registry.design_decisions import DesignDecision
 from registry.loader import load_all
 from simulation.physiological_generation import (
     SYNTHETIC_PRIOR_LABEL,
     generate_onsd_baseline,
     generate_onsd_scan,
+    generate_sans_progression_offset,
     generate_sans_susceptibility,
 )
 
@@ -162,6 +164,62 @@ def test_synthetic_prior_caps_at_approved_maximum(registry):
 
 def test_synthetic_prior_label_is_the_required_disclaimer():
     assert SYNTHETIC_PRIOR_LABEL == "HYPOTHETICAL SIMULATION ESTIMATE - NOT CLINICALLY VALIDATED"
+
+
+# ---- SANS physiological progression - implemented, independently gated, INACTIVE ----
+# generation_models.py's sans_physiological_progression spec explicitly requires:
+# (1) a healthy astronaut's trajectory is bit-for-bit identical with/without this
+#     capability enabled; (2) an event-flagged astronaut's post-onset trajectory is
+#     statistically distinguishable, using only the approved shape/rate; (3) no
+#     SANS/venous cross-correlation is introduced. These tests cover exactly that,
+#     plus the most important property today: the real, unapproved registry must
+#     produce IDENTICAL output whether or not an onset day is supplied.
+
+
+def test_progression_offset_is_zero_today_against_the_real_unapproved_decision(registry):
+    """The decisive regression: against the REAL registry (sans_physiological_
+    progression is not approved), the offset is 0.0 no matter what day/onset
+    combination is passed - this is what makes implementing the algorithm safe to
+    do before Rahat approves it."""
+    from registry.design_decisions import DESIGN_DECISIONS
+
+    assert DESIGN_DECISIONS["sans_physiological_progression"].is_approved() is False
+    for day, onset in [(1, None), (10, 5), (30, 1), (5, 5), (3, 5)]:
+        assert generate_sans_progression_offset(day, onset, registry) == 0.0
+
+
+def test_generate_onsd_scan_identical_with_and_without_onset_day_argument(registry):
+    """Requirement 1 from the spec, exercised through the real call site: a
+    healthy astronaut's generated scan (sans_onset_day omitted) must be
+    byte-identical to passing an explicit onset day, since the design decision
+    gate gives nothing useful to distinguish on yet."""
+    for i in range(50):
+        without = generate_onsd_scan(f"H{i}", 10, 5.35, seed=23, registry=registry)
+        with_onset = generate_onsd_scan(f"H{i}", 10, 5.35, seed=23, registry=registry, sans_onset_day=5)
+        assert without == with_onset
+
+
+def test_progression_offset_formula_once_hypothetically_approved(monkeypatch, registry):
+    """Requirements 2/3 from the spec: force-approve ONLY inside this test (an
+    engineering fixture - never how real approval happens) to verify the
+    formula itself is correct and SANS-only. Linear, 0.04mm/day since onset,
+    zero at and before onset, no cap."""
+    import registry.design_decisions as dd_module
+
+    approved = DesignDecision(
+        decision_id="sans_physiological_progression",
+        description="test fixture",
+        approved=True,
+        decision_text="test-only approval for formula verification",
+        approved_by="test-fixture",
+    )
+    monkeypatch.setitem(dd_module.DESIGN_DECISIONS, "sans_physiological_progression", approved)
+
+    assert generate_sans_progression_offset(5, 5, registry) == 0.0  # onset day itself: zero
+    assert generate_sans_progression_offset(3, 5, registry) == 0.0  # before onset: zero
+    assert generate_sans_progression_offset(10, 5, registry) == pytest.approx(0.04 * 5)
+    assert generate_sans_progression_offset(30, 5, registry) == pytest.approx(0.04 * 25)  # no cap
+    assert generate_sans_progression_offset(10, None, registry) == 0.0  # no onset at all: still zero
 
 
 def test_off_axis_bias_midpoint_is_flagged_pending_not_approved(registry):

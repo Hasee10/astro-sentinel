@@ -378,7 +378,15 @@ GENERATION_MODEL_SPECS: dict[str, GenerationModelSpec] = {
         required_input_fields=("astronaut_id", "day", "sans_onset_day", "personal_baseline", "random_seed"),
         required_parameters=(),
         required_assumptions=(),  # no registry slot exists - see design_decisions.py
-        has_implemented_rule=False,
+        # 2026-11-10: simulation/physiological_generation.py's
+        # generate_sans_progression_offset() implements this, tested in
+        # tests/test_physiological_generation.py - flipped by hand, same
+        # convention as trigger_firing_simulation_model above. Implementing and
+        # testing the algorithm does NOT activate it: the function itself checks
+        # design_decision_id's is_approved() and returns 0.0 unconditionally
+        # until Rahat approves it, so this flip changes no live output today -
+        # only check_readiness()'s truthful statement of what code exists.
+        has_implemented_rule=True,
         design_decision_id="sans_physiological_progression",
         output_fields=("scan.onsd_mm (event-superimposed trajectory, day > onset)",),
         output_units="mm",

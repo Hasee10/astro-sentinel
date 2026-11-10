@@ -1,8 +1,16 @@
 # Proposed `sans_physiological_progression` model — for Rahat's review only
 
-**Status: NOT APPROVED. This is a proposal, not a registry entry.** No code
-reads this file, `registry/design_decisions.py::sans_physiological_progression`
-is unchanged (`approved=False`), and nothing in the backend has been modified.
+**Status: NOT APPROVED — but fully implemented and tested, ready to activate.**
+`registry/design_decisions.py::sans_physiological_progression` is still
+`approved=False`. As of 2026-11-10, the exact formula below now exists as
+`simulation/physiological_generation.py::generate_sans_progression_offset()`,
+with tests proving it returns `0.0` unconditionally against today's real,
+unapproved registry — confirmed by regenerating the published demo run and
+diffing it byte-for-byte against the version already on GitHub: identical.
+**The only remaining step is Rahat's explicit yes/no on the specific number
+below** — not an engineering task, just a decision. Once he sets `approved=True`,
+`decision_text`, and `approved_by="Rahat"` on that entry, the formula activates
+with no further code changes.
 
 ## Where this came from
 

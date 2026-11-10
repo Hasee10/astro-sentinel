@@ -8,10 +8,20 @@ IMPLEMENTED_GENERATION_ALGORITHMS is flipped alongside these in generation_model
 What stays blocked, on purpose, even after this module exists:
 - The physiological PROGRESSION curve for an astronaut whose has_sans_event is True:
   every astronaut, event-flagged or not, gets only a flat/noisy-around-baseline
-  trajectory here - see design_decisions.py::sans_venous_onset_day_assignment,
-  still unapproved. No generated ONSD reading carries a detectable disease signal.
-  That is an honest limitation, not a bug: inventing a progression shape without an
-  approved rule would be exactly the fabrication this project refuses to do.
+  trajectory from `generate_onsd_scan` - see design_decisions.py::
+  sans_venous_onset_day_assignment, still unapproved (no onset day exists to
+  superimpose anything on yet). `generate_sans_progression_offset` below IS now
+  implemented and tested against the exact candidate rule in
+  handoff/research_lead/PROPOSED_sans_physiological_progression.md (fit from an
+  EXTERNAL, unverified 20,000-astronaut CSV - not the parameter sheet, not Rahat) -
+  but it is a free function nothing in the live generate_crew.py call path invokes,
+  and `sans_physiological_progression` stays BLOCKED_MISSING_MODEL_RULE in
+  check_readiness() regardless of has_implemented_rule, because its
+  design_decision_id gate is independently unapproved (see
+  registry/design_decisions.py). Implementing and testing the algorithm now
+  removes all remaining engineering work; it does NOT activate it. Inventing a
+  progression shape AND silently wiring it live without an approved rule would be
+  exactly the fabrication this project refuses to do - this module does neither.
 - jugular_scan_values: still blocked. venous_probability_model/jugular_flow_risk_mapping
   authorize the MONITORING-side Bayesian calculation (monitoring/engine.py), not
   generation of synthetic jugular measurements - no flow-class prevalence/timing rule
@@ -58,20 +68,81 @@ def generate_onsd_baseline(astronaut_id: str, seed: int, registry: Registry) -> 
 
 
 # ---------------------------------------------------------------------------
+# sans_physiological_progression - implemented, independently gated, INACTIVE
+# ---------------------------------------------------------------------------
+
+
+def generate_sans_progression_offset(day: int, sans_onset_day: int | None, registry: Registry) -> float:
+    """Additive mm offset for an event-flagged astronaut's ONSD reading, active
+    only once BOTH of these are true:
+    1. `sans_onset_day` is not None and `day > sans_onset_day` (there IS an onset,
+       and we're asking about a day after it) - this half is just arithmetic.
+    2. `design_decisions.DESIGN_DECISIONS["sans_physiological_progression"]
+       .is_approved()` is True - this half is the actual authorization gate.
+
+    Condition 2 is checked FIRST and unconditionally short-circuits to 0.0 if it
+    fails, regardless of what `sans_onset_day`/`day` are - so even a future caller
+    that mistakenly passes a real onset day before this decision is approved gets
+    no progression signal. `generate_crew.py` does not pass a real onset day
+    today anyway (sans_venous_onset_day_assignment is a SEPARATE, also-unapproved
+    design decision for WHEN an event starts; this one is WHAT HAPPENS after -
+    see generation_models.py's sans_physiological_progression spec), so today this
+    function returns 0.0 unconditionally and generate_onsd_scan's live numeric
+    output is unchanged from before this function existed.
+
+    The implemented formula, which activates only if/when Rahat approves it, is
+    EXACTLY the candidate characterized in handoff/research_lead/
+    PROPOSED_sans_physiological_progression.md: fit from an EXTERNAL, unverified
+    20,000-astronaut CSV (not the parameter sheet, not previously Rahat-approved
+    input) - linear, +0.04mm per day since onset, uncapped. That document's own
+    analysis found the CSV's late-mission flattening to be a shrinking-sample
+    artifact, not evidence of a real plateau, so no cap is implemented here;
+    approving a capped version instead would need this function updated, not just
+    the design decision flipped.
+    """
+    from registry.design_decisions import DESIGN_DECISIONS
+
+    if not DESIGN_DECISIONS["sans_physiological_progression"].is_approved():
+        return 0.0
+    if sans_onset_day is None or day <= sans_onset_day:
+        return 0.0
+
+    slope_mm_per_day = 0.04  # see docstring: external-CSV characterization, pending Rahat approval
+    return slope_mm_per_day * (day - sans_onset_day)
+
+
+# ---------------------------------------------------------------------------
 # onsd_scan_values + measurement_quality_failure_injection (one synthetic scan)
 # ---------------------------------------------------------------------------
 
 
-def generate_onsd_scan(astronaut_id: str, day: int, baseline_mm: float, seed: int, registry: Registry) -> ScanMeasurement:
+def generate_onsd_scan(
+    astronaut_id: str,
+    day: int,
+    baseline_mm: float,
+    seed: int,
+    registry: Registry,
+    sans_onset_day: int | None = None,
+) -> ScanMeasurement:
     """One day's synthetic ONSD scan: baseline + within-person Gaussian drift, with
-    failure injection per onsd_scan_failure_rate. No progression signal is added for
-    any astronaut, event-flagged or not - see module docstring."""
+    failure injection per onsd_scan_failure_rate.
+
+    `sans_onset_day` defaults to None, and generate_crew.py's real call site never
+    passes anything else today (sans_venous_onset_day_assignment is unapproved, so
+    there is no approved onset day to pass) - so this parameter changes NOTHING
+    about current live output. Passed explicitly, it would apply
+    generate_sans_progression_offset() - itself gated independently on
+    sans_physiological_progression's own, separately unapproved design decision;
+    see that function's docstring. Two independent gates, neither bypassed by
+    the other, matching this module's existing pattern for every other capability.
+    """
     sd_config = registry.assumptions["onsd_baseline_sd_values"].value_or_range
     within_person_sd = sd_config["within_person_sd_mm_base"]
     failure_config = registry.assumptions["onsd_scan_failure_rate"].value_or_range
 
     drift_rng = _seeded_rng(seed, astronaut_id, f"onsd_drift_day{day}")
-    reading = baseline_mm + drift_rng.gauss(0.0, within_person_sd)
+    progression_offset = generate_sans_progression_offset(day, sans_onset_day, registry)
+    reading = baseline_mm + drift_rng.gauss(0.0, within_person_sd) + progression_offset
 
     failure_rng = _seeded_rng(seed, astronaut_id, f"onsd_failure_day{day}")
     fails = failure_rng.random() < (failure_config["base_failure_rate_pct"] / 100.0)
