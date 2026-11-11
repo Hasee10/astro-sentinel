@@ -3,14 +3,22 @@
 # what tests/test_source_documents_unchanged.py needs: that test hashes raw
 # file bytes, so any tool that silently rewrites line endings on checkout
 # would break it even though nothing in the repository actually changed.
-* text=auto eol=lf
+#
+# Deliberately `text=auto` with NO `eol=` here: `text`/`eol` are independent
+# per-path attributes, and a later `-text` override (below) only unsets
+# `text` - it does NOT clear an `eol=lf` set by this blanket rule, so a
+# blanket `eol=lf` would still force LF onto vn.txt on checkout even with
+# `-text` set (confirmed with `git check-attr -a vn.txt` after a first,
+# wrong attempt at this file: `eol: lf` was still showing). Omitting `eol=`
+# here means there is nothing for vn.txt's rule below to fail to override.
+* text=auto
 
 # vn.txt predates this convention and is committed with CRLF line endings -
 # its sha256 hash is pinned in tests/test_source_documents_unchanged.py.
 # -text means "never normalize this file's line endings, under any platform
 # or tool" - the one safe way to keep an already-hashed file byte-identical
-# forever, rather than trying to make eol=lf match a hash it was never
-# computed against.
+# forever, rather than trying to make a normalization rule match a hash it
+# was never computed against.
 vn.txt -text
 
 # Explicit binary - avoids relying on git's own content-sniffing heuristics
