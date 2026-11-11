@@ -7,7 +7,10 @@ import './experience/experience.css'
 // Hash routing keeps the Vite static build deployable without server rewrites.
 // All original monitoring behaviour remains in PresentationView. #debug remains
 // the unmodified functional dashboard for integration diagnostics.
-const ROUTES = new Set(['home', 'signin', 'signup', 'mission', 'dashboard', 'debug'])
+// signin/signup archived (not deleted): Experience.jsx still has the Auth
+// component for later, it's just not reachable - any old #signin/#signup
+// link now falls back to home via routeFromHash's ROUTES.has() check.
+const ROUTES = new Set(['home', 'mission', 'dashboard', 'debug'])
 function routeFromHash() {
   const route = window.location.hash.slice(1).split('?')[0].replace(/^\//, '') || 'home'
   return ROUTES.has(route) ? route : 'home'

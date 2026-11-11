@@ -19,7 +19,7 @@ function TopNav({ navigate, light = false }) {
     <nav className="as-nav" aria-label="Main navigation">
       <button type="button" onClick={() => scrollTo('mission-story')}>The mission</button><button type="button" onClick={() => scrollTo('how-it-works')}>Our approach</button><button type="button" onClick={() => navigate('mission')}>Experience</button>
     </nav>
-    <div className="as-nav-right"><button type="button" className="as-text-link" onClick={() => navigate('signin')}>Sign in</button><button type="button" className="as-nav-cta" onClick={() => navigate('mission')}>OPEN THE DEMO <Arrow diagonal /></button></div>
+    <div className="as-nav-right"><button type="button" className="as-nav-cta" onClick={() => navigate('mission')}>OPEN THE DEMO <Arrow diagonal /></button></div>
   </header>
 }
 function Footer({ navigate }) {
