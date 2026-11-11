@@ -1,0 +1,22 @@
+# Normalize line endings for ordinary text so every platform (Windows dev
+# machines, Linux CI runners, zip exports) checks out the same bytes. This is
+# what tests/test_source_documents_unchanged.py needs: that test hashes raw
+# file bytes, so any tool that silently rewrites line endings on checkout
+# would break it even though nothing in the repository actually changed.
+* text=auto eol=lf
+
+# vn.txt predates this convention and is committed with CRLF line endings -
+# its sha256 hash is pinned in tests/test_source_documents_unchanged.py.
+# -text means "never normalize this file's line endings, under any platform
+# or tool" - the one safe way to keep an already-hashed file byte-identical
+# forever, rather than trying to make eol=lf match a hash it was never
+# computed against.
+vn.txt -text
+
+# Explicit binary - avoids relying on git's own content-sniffing heuristics
+# for files whose integrity also matters (source documents, generated art).
+*.docx -text
+*.png -text
+*.webp -text
+*.woff -text
+*.woff2 -text
