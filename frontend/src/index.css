@@ -2,8 +2,8 @@
 
 /* "light dark" lets the browser follow the computer's light or dark setting. */
 :root {
-  color-scheme: light dark;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: dark;
+  font-family: "Manrope", "Segoe UI", sans-serif;
   line-height: 1.5;
 }
 

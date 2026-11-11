@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "assets": "node scripts/generate-design-assets.mjs",
+    "test": "node --test src/presentation/missionModel.test.js",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
@@ -11,14 +13,14 @@
     "check:data": "node scripts/check-public-data.mjs"
   },
   "dependencies": {
-    "@fontsource/barlow": "^5.3.0",
-    "@fontsource/barlow-semi-condensed": "^5.3.0",
+    "@fontsource/manrope": "^5.3.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@resvg/resvg-js": "^2.6.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",

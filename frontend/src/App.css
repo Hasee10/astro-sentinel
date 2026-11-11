@@ -746,3 +746,18 @@ button.timeline-box {
   background: #b91c1c; /* red */
   color: #ffffff;
 }
+
+/* Diagnostics share the product's typography and surfaces while retaining all
+   original fixture selection, reveal-all, audit-log and run-info controls. */
+.page { max-width:1280px; padding:76px 28px 40px; font-family:'Manrope','Segoe UI',sans-serif; color:#dce8ef; font-size:14px; }
+.page h1 { font-size:30px; font-weight:500; letter-spacing:-.04em; }
+.page h2 { font-size:19px; font-weight:600; }
+.page .banner { background:#193c3b; color:#b9ead8; border:1px solid #38635a; border-radius:7px; font-size:11px; letter-spacing:.03em; }
+.page .data-source { color:#a0b6c4; font-size:11px; margin:12px 0 25px; }
+.page .run-info,.page .panel,.page .log,.page .onsd-section { padding:20px; background:#101d27; border:1px solid #304653; border-radius:8px; }
+.page .card { background:#162833; border-color:#3b5362; border-radius:7px; }
+.page button,.page select { background:#1a303b; color:#dfefee; border:1px solid #405d67; border-radius:5px; padding:8px 12px; }
+.page button:disabled { opacity:.45; }
+.page .hint,.page .small-note { color:#a1b9c6; }
+.page .results-notice { background:#252d28; border-color:#716445; color:#d4d4bc; border-radius:8px; }
+@media(max-width:600px) { .page { padding:72px 17px 30px; font-size:12px; } .page .run-info,.page .panel,.page .log,.page .onsd-section { padding:15px; } }

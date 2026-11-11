@@ -23,7 +23,7 @@ jobs:
         working-directory: backend
 
   frontend:
-    name: Frontend (check:data, lint, build)
+    name: Frontend (data, tests, lint, build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +35,8 @@ jobs:
       - run: npm ci
         working-directory: frontend
       - run: npm run check:data
+        working-directory: frontend
+      - run: npm test
         working-directory: frontend
       - run: npm run lint
         working-directory: frontend
