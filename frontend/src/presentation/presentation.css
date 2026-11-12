@@ -892,7 +892,15 @@
 .pv-transmission-dot {
   position: absolute;
   top: calc(50% - 3px);
-  left: calc(13% + 74% * var(--progress));
+  /* Path runs between the facing edges of the planets in mission-link.svg
+     (viewBox 300 wide): Mars edge x=55 (18.333%), Earth edge x=245 (81.667%).
+     margin-left centres the 6px dot on that point. */
+  --from: 18.333%;
+  --to: 81.667%;
+  left: calc(var(--from) + (var(--to) - var(--from)) * var(--progress));
+  margin-left: -3px;
+  /* Duration = the message's one-way delay; negative delay resumes mid-flight. */
+  animation: pv-transmit var(--duration) linear var(--start-offset) both;
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -900,8 +908,17 @@
   box-shadow: 0 0 14px #a7ebd0;
 }
 .pv-transmission-dot.is-returning {
-  left: calc(87% - 74% * var(--progress));
+  --from: 81.667%;
+  --to: 18.333%;
   background: #b6d3ff;
+}
+@keyframes pv-transmit {
+  from {
+    left: var(--from);
+  }
+  to {
+    left: var(--to);
+  }
 }
 .pv-link-labels {
   display: flex;

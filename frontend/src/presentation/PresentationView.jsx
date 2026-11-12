@@ -923,6 +923,29 @@ function TodayData({ observation }) {
   );
 }
 
+// The dot's travel time is the message's own delay (arrivesAt - sentAt), so it
+// reaches Earth exactly when the countdown hits zero. A CSS animation gives
+// smooth motion; the animation clock is anchored once, on mount, by offsetting
+// it by the time already elapsed (e.g. when the panel is opened mid-transit).
+// --progress is the fallback position when motion is reduced.
+function TransmissionDot({ message, now }) {
+  const duration = Math.max(1, message.arrivesAt - message.sentAt);
+  const [elapsedAtMount] = useState(() =>
+    Math.min(duration, Math.max(0, Date.now() - message.sentAt)),
+  );
+  const progress = Math.min(1, Math.max(0, (now - message.sentAt) / duration));
+  return (
+    <span
+      className={`pv-transmission-dot${message.dir === "down" ? " is-returning" : ""}`}
+      style={{
+        "--progress": progress,
+        "--duration": `${duration}ms`,
+        "--start-offset": `${-elapsedAtMount}ms`,
+      }}
+    />
+  );
+}
+
 function Link({ messages, now, delay, onDelay, onSkip }) {
   return (
     <>
@@ -932,18 +955,10 @@ function Link({ messages, now, delay, onDelay, onSkip }) {
           alt="Mars to Earth communication path"
         />
         {messages.length > 0 && (
-          <span
-            className={`pv-transmission-dot${messages[0].dir === "down" ? " is-returning" : ""}`}
-            style={{
-              "--progress": Math.min(
-                1,
-                Math.max(
-                  0,
-                  (now - messages[0].sentAt) /
-                    (messages[0].arrivesAt - messages[0].sentAt || 1),
-                ),
-              ),
-            }}
+          <TransmissionDot
+            key={messages[0].id}
+            message={messages[0]}
+            now={now}
           />
         )}
       </div>
