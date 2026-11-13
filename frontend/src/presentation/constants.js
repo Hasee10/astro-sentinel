@@ -12,7 +12,7 @@ export const DATA = {
 }
 
 // The backend contract this view was built for.
-export const EXPECTED_SCHEMA_VERSION = '0.6.0'
+export const EXPECTED_SCHEMA_VERSION = '0.7.0'
 
 export const FALLBACK_SYNTHETIC_LABEL = 'SYNTHETIC – NOT REAL ASTRONAUT DATA'
 export const FALLBACK_MISSION_LENGTH = 30
@@ -39,7 +39,7 @@ export const TIERS = ['unresolved', 'monitor', 'repeat', 'consult', 'urgent']
 // tier table. "unresolved" has no row in the brief, so it is marked pending.
 export const TIER_TEXT = {
   unresolved: { label: 'Unresolved', short: 'Not enough evidence yet', action: 'No action determined – insufficient evidence', pending: true },
-  monitor: { label: 'Monitor', short: 'Within personal baseline', action: 'Continue schedule' },
+  monitor: { label: 'Monitor', short: 'Continue routine monitoring', action: 'Continue schedule' },
   repeat: { label: 'Repeat', short: 'Retake the measurement', action: 'Repeat or add a measurement' },
   consult: { label: 'Consult', short: 'Earth review needed', action: 'Flag for Earth review, queued for send' },
   urgent: { label: 'Urgent', short: 'Immediate flag', action: 'Immediate flag to the crew medical officer and ground' },
@@ -56,6 +56,7 @@ export const REASON_TEXT = {
   measurement_quality: 'Scan quality issue – not a sign of a detected problem.',
   insufficient_evidence_for_probability: 'Not enough evidence to estimate a probability. This does not mean low risk.',
   probability_threshold: 'Set by comparing a simulated probability with the decision thresholds.',
+  persistent_serious_evidence: 'Prior serious evidence remains active; a technically inadequate acquisition does not clear it.',
 }
 
 export const QUALITY_TEXT = {

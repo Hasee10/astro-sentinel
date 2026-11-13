@@ -20,7 +20,11 @@ export function OutcomeTile({ meta, outcome }) {
     { label: "Recorded explanation", text: outcome.explanation },
     {
       label: "Action",
-      text: `${text.action}${text.pending ? " (wording pending clinical lead)" : ""}`,
+      text: outcome.recommended_action?.text ?? `${text.action}${text.pending ? " (wording pending clinical lead)" : ""}`,
+    },
+    {
+      label: "Follow-up and action status",
+      text: `${outcome.recommended_action?.follow_up_rule ?? "Timing unavailable"}. Status: ${outcome.recommended_action?.status ?? "Not recorded"}. Latest usable evidence: ${outcome.evidence_day ? `day ${outcome.evidence_day}` : "unavailable"}.`,
     },
     {
       label: "Measurement quality",
@@ -71,7 +75,7 @@ export function OutcomeTile({ meta, outcome }) {
           : text.short}
       </p>
       <p className="pv-tile-reason">
-        {REASON_TEXT[outcome.tier_reason] ??
+        {outcome.recommended_action?.text ?? REASON_TEXT[outcome.tier_reason] ??
           "See the recorded evidence for this assessment."}
       </p>
       <div className="pv-prob">

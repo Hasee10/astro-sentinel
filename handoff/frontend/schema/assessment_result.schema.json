@@ -61,6 +61,29 @@
         "explanation": {
           "title": "Explanation",
           "type": "string"
+        },
+        "recommended_action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecommendedAction"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "evidence_day": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Day"
         }
       },
       "required": [
@@ -83,13 +106,70 @@
       "title": "QualityStatus",
       "type": "string"
     },
+    "RecommendedAction": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "outcome": {
+          "title": "Outcome",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "status": {
+          "default": "suggested",
+          "title": "Status",
+          "type": "string"
+        },
+        "ground_review_required": {
+          "default": false,
+          "title": "Ground Review Required",
+          "type": "boolean"
+        },
+        "follow_up_day": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Follow Up Day"
+        },
+        "follow_up_rule": {
+          "title": "Follow Up Rule",
+          "type": "string"
+        },
+        "quality_repeat_required": {
+          "default": false,
+          "title": "Quality Repeat Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "outcome",
+        "text",
+        "follow_up_rule"
+      ],
+      "title": "RecommendedAction",
+      "type": "object"
+    },
     "TierReason": {
       "description": "Schema v0.4.0 (additive): WHY a tier was assigned, kept structurally\nseparate from the tier itself (section 4, Unified Prompt 8-9) - a\nmeasurement-quality Repeat is not evidence a physiological event was\ndetected, and must never be read as one just because the tier is Repeat.",
       "enum": [
         "red_flag_symptom",
         "measurement_quality",
         "insufficient_evidence_for_probability",
-        "probability_threshold"
+        "probability_threshold",
+        "persistent_serious_evidence"
       ],
       "title": "TierReason",
       "type": "string"
@@ -111,6 +191,18 @@
     "astronaut_id": {
       "title": "Astronaut Id",
       "type": "string"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
     },
     "as_of_day": {
       "title": "As Of Day",

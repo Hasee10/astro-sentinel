@@ -1,12 +1,12 @@
 {
-  "input": "outputs\\frontend_demo_v2\\crew_observations.jsonl",
+  "input": "outputs\\recovery_public\\crew_observations.jsonl",
   "astronauts_scored": 300,
   "days_scored": 9000,
   "errors": [],
   "structural_warnings": [],
   "sans_tier_distribution": {
-    "repeat": 977,
-    "unresolved": 8023
+    "repeat": 931,
+    "unresolved": 8069
   },
   "venous_tier_distribution": {
     "unresolved": 9000

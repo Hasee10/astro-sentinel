@@ -1,0 +1,40 @@
+{
+  "version": "user-relayed-2026-11-13-v1",
+  "provenance": "User relayed Rahat's earlier project discussions in the Codex chat on 2026-11-13. No independent signed confirmation supplied.",
+  "approval_status": "pending_independent_written_confirmation",
+  "label": "ENGINEERING FIXTURE - USER-RELAYED MODEL - NOT VALIDATED EXPERIMENT RESULTS",
+  "sans": {
+    "high_fraction": 0.25, "event_high": 0.7, "event_low": 0.3,
+    "onset_days": [5, 20], "baseline_mean_mm": 5.35, "baseline_sd_mm": 0.25,
+    "baseline_clip_mm": [4.8, 5.9], "amplitude_mm": [0.3, 1.0], "ramp_days": [6, 10],
+    "within_person_sd_mm": 0.2, "observer_sd_mm": 0.1,
+    "positive_delta_mm": 0.3, "lr_positive": 7.2, "lr_negative": 0.07,
+    "poor_log_weight": 0.2, "prior_low_pct": 5, "prior_high_pct": 10,
+    "increment_pct_points_per_day": 0.1, "prior_cap_pct": 25,
+    "demonstration_onset": 8, "demonstration_amplitude_mm": 0.6, "demonstration_ramp_days": 10
+  },
+  "venous": {
+    "event_probability": 0.3, "onset_days": [3, 15], "baseline_mm2": 34,
+    "baseline_sd_fraction": 0.2, "measurement_noise_fraction": 0.1,
+    "ramp_days": 7, "area_multiplier": [1.5, 3.0], "synthetic_cap_mm2": 108,
+    "stagnant_after_days": 2, "retrograde_after_days": 5, "retrograde_fraction": 0.5,
+    "healthy_false_stagnant": 0.08, "healthy_false_retrograde": 0.02,
+    "monitoring_prior_pct": 5, "lr": {"antegrade": 0.3, "stagnant": 4, "retrograde": 10},
+    "area_flag_multiplier": 1.2, "demonstration_onset": 6
+  },
+  "monitoring": {"half_life_days": 7, "half_life_sweep_days": [4, 7, 14], "threshold_pct": [15, 40, 80]},
+  "acquisition": {"failure_probability": 0.1, "next_day_retry_limit": 1},
+  "scheduling": {"routine_days": 7, "max_gap_days": 14, "trigger_lookback_days": 3, "min_trigger_gap_days": 2, "repeat_consult_follow_up_days": 2, "urgent_follow_up_days": 1},
+  "trigger": {"false_fire_probability": 0.05, "window_days": 5, "sweep": [0.5, 0.6, 0.7, 0.8, 0.9]},
+  "unresolved_interpretations": [
+    "Sequential evidence aggregation was not specified. Engineering fixtures use only the latest usable measurement's decayed log LR, never multiply correlated observations; this preserves the historical venous restriction.",
+    "Readable degraded evidence at 0.2 log weight conflicts with the historical exclusion rule. Relayed shared-session failures do not specify degraded/failed split; engineering fixtures retain the historically approved 50/50 split and +0.4mm off-axis bias, pending confirmation for jugular quality.",
+    "Venous baseline distribution and measurement-noise distribution were not specified. Engineering fixtures use positive-truncated normal baseline and Gaussian proportional noise; neither is activated for experiments.",
+    "Adaptive required trigger evidence conditions and usable-recent-scan window were not fully specified. Fixtures interpret recent as the 3-day lookback and require an observable trigger for either outcome plus no usable shared session in that window.",
+    "Fixtures prioritize first scan, single next-day failed retry, Urgent, Repeat/Consult, maximum gap, trigger, routine deferral. Follow-up is measured from the last session to avoid daily resetting of due dates. Confirm this precedence and whether a failed retry can spawn another retry (fixtures say no).",
+    "Routine deferral in fixtures requires both Monitor tiers, usable measurements, and no recent trigger. An unresolved or poor assessment prevents deferral.",
+    "Area flag implies at least Repeat (Tier 2), but no LR is inferred from area. No red flags are randomly invented.",
+    "No automatic Urgent clearance is specified; Urgent remains sticky. Consult persists across technically inadequate scans, including readable degraded acquisitions; a lower quality-weighted estimate alone cannot clear a serious tier. Successful newer evidence can change Consult per the monitoring model.",
+    "Synthetic high/low susceptibility is hidden ground truth. Fixtures supply the associated starting prior as an explicitly synthetic preflight input; a real observable prior-assignment protocol still needs confirmation."
+  ]
+}

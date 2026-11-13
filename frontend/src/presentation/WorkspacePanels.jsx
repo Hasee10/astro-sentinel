@@ -4,6 +4,7 @@ import { OUTCOMES, QUALITY_TEXT } from "./constants.js";
 import { OutcomeTile } from "./OutcomeTile.jsx";
 import { DetailDialog, Pager, Tabs } from "./WorkspaceUI.jsx";
 import { usePageSize } from "./usePageSize.js";
+import { recordPage } from "./missionModel.js";
 
 export function OutcomeGroup({ record }) {
   const [outcome, setOutcome] = useState("sans");
@@ -91,12 +92,17 @@ export function EventPanel({ events, day, onJump }) {
   );
 }
 
-export function ObservationPanel({ rows, day, astronautId }) {
+export function ObservationPanel(props) {
+  return <ObservationPage key={`${props.astronautId}:${props.day}`} {...props} />;
+}
+
+function ObservationPage({ rows, day, astronautId }) {
   const [page, setPage] = useState(0);
   const { ref, size } = usePageSize(42, 170, 10);
   const reached = rows.filter((row) => row.day <= day);
   const count = Math.max(1, Math.ceil(reached.length / size));
-  const current = Math.min(page, count - 1);
+  const [manuallyPaged, setManuallyPaged] = useState(false);
+  const current = Math.min(manuallyPaged ? page : recordPage(rows, day, size), count - 1);
   return (
     <section className="pv-panel pv-paged-panel" ref={ref}>
       <div className="pv-panel-head">
@@ -111,29 +117,31 @@ export function ObservationPanel({ rows, day, astronautId }) {
             <th>Day</th>
             <th>ONSD</th>
             <th>Quality</th>
+            <th>Jugular / flow</th>
           </tr>
         </thead>
         <tbody>
           {reached.slice(current * size, (current + 1) * size).map((row) => (
-            <tr key={row.day}>
+            <tr key={row.day} aria-current={row.day === day ? "true" : undefined}>
               <td>{row.day}</td>
               <td>
                 {row.onsd === null
-                  ? "Unavailable"
+                  ? "No value"
                   : `${row.onsd.toFixed(2)} mm`}
               </td>
               <td>{QUALITY_TEXT[row.quality] ?? "No scan"}</td>
+              <td>{row.jugular == null ? "—" : `${row.jugular.toFixed(1)} mm²`} {row.flow ?? ""}</td>
             </tr>
           ))}
         </tbody>
       </table>
       <p className="pv-subtle">
-        Failed values are excluded. Future records stay hidden.
+        Selected day {day} is revealed automatically. Failed values are excluded. Future records stay hidden.
       </p>
       <Pager
         page={current}
         count={count}
-        onChange={setPage}
+        onChange={(value) => { setManuallyPaged(true); setPage(value); }}
         label="Observation pages"
       />
     </section>
@@ -204,6 +212,16 @@ export function ResearchPanel({ manifest, evaluation, tab }) {
     text
       .replaceAll("_", " ")
       .replace(/\b(sans|onsd|hrv|ptt)\b/gi, (word) => word.toUpperCase());
+  if (tab === "results") return <section className="pv-panel pv-consultations">
+    <div className="pv-panel-head"><h2>Fixed versus adaptive results</h2></div>
+    <h3>No validated experiment results available</h3>
+    <p>Independent written confirmation is still required for the user-relayed SANS progression and evidence model, the 0.1 percentage-point daily prior supersession, venous generation, shared-session retries, and adaptive deferral precedence.</p>
+    <p>Engineering acceptance cases are available separately. Their outputs verify program behavior and cannot establish scan savings or medical performance.</p>
+    <dl><div><dt>Loaded cohort</dt><dd>{manifest?.crew_size ?? "Unavailable"} profiles · {manifest?.mission_duration_days ?? "Unavailable"} days · seed {manifest?.random_seed ?? "Unavailable"}</dd></div>
+    <div><dt>Outcome metrics</dt><dd>Scan burden, detection delay, missed events, and false escalations remain withheld until experiment readiness passes.</dd></div></dl>
+    <p>Open Blockers for the exact current readiness failures. The versioned specification and approval questions are recorded in the research-lead handoff.</p>
+    <p><a href="#engineering-dashboard">Inspect labeled engineering acceptance cases</a></p>
+  </section>;
   if (tab === "summary")
     return (
       <section className="pv-panel pv-research-summary" ref={ref}>
@@ -252,6 +270,7 @@ export function ResearchPanel({ manifest, evaluation, tab }) {
           Missing probabilities remain unavailable. Quality-related Repeat is
           not evidence of a detected physiological event.
         </p>
+        <p><a href="#engineering-dashboard">Open labeled engineering acceptance cases</a></p>
       </section>
     );
   if (tab === "provenance") {

@@ -63,4 +63,4 @@ def test_ground_truth_record_still_carries_scenario_and_onset_evaluation_only():
 
 
 def test_schema_version_reflects_latest_contract_revision():
-    assert SCHEMA_VERSION == "0.6.0"
+    assert SCHEMA_VERSION == "0.7.0"

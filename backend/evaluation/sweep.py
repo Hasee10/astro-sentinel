@@ -32,7 +32,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Sequence
 
-from contracts.models import AstronautDayObservation, Blocker, QualityStatus, ScanMeasurement, WeakSignals
+from contracts.models import AstronautDayObservation, Blocker, QualityStatus, ScanMeasurement, ScanSession, WeakSignals, measurements_of
 from monitoring.engine import SANS_SCAN_TYPES, VENOUS_SCAN_TYPES, assess_history
 from registry.design_decisions import DESIGN_DECISIONS
 from registry.loader import Registry
@@ -214,8 +214,8 @@ class ObservableCase:
             if d > as_of_day:
                 continue
             obs = self.observations_by_day[d]
-            if obs.scan is not None and d not in scanned_days:
-                obs = obs.model_copy(update={"scan": None})
+            if d not in scanned_days:
+                obs = obs.model_copy(update={"scan": None, "scan_session": None})
             visible.append(obs)
         return visible
 
@@ -253,6 +253,7 @@ class PolicyDayView:
     day: int
     weak_signals_by_day: dict[int, Optional[WeakSignals]] = field(default_factory=dict)
     acquired_scans_by_day: dict[int, ScanMeasurement] = field(default_factory=dict)
+    acquired_sessions_by_day: dict[int, ScanSession] = field(default_factory=dict)
     scanned_days_so_far: tuple[int, ...] = ()
     last_known_tier: dict[str, Optional[str]] = field(default_factory=lambda: {"sans": None, "venous": None})
 
@@ -275,17 +276,21 @@ def _build_policy_day_view(
         weak_signals_by_day[d] = obs.weak_signals if obs is not None else None
 
     acquired_scans_by_day: dict[int, ScanMeasurement] = {}
+    acquired_sessions_by_day: dict[int, ScanSession] = {}
     prior_scanned_days = [d for d in scanned_days_so_far if d < day]
     for d in prior_scanned_days:
         obs = observable.observations_by_day.get(d)
         if obs is not None and obs.scan is not None:
             acquired_scans_by_day[d] = obs.scan
+        if obs is not None and obs.scan_session is not None:
+            acquired_sessions_by_day[d] = obs.scan_session
 
     return PolicyDayView(
         case_id=observable.case_id,
         day=day,
         weak_signals_by_day=weak_signals_by_day,
         acquired_scans_by_day=acquired_scans_by_day,
+        acquired_sessions_by_day=acquired_sessions_by_day,
         scanned_days_so_far=tuple(prior_scanned_days),
         last_known_tier=dict(last_known_tier),
     )
@@ -456,7 +461,7 @@ def _scan_accounting(
     degraded_or_unknown = 0
     for day in scan_days:
         obs = observable.observations_by_day.get(day)
-        scan = obs.scan if obs is not None else None
+        scan = next((m for m in measurements_of(obs) if m.type in scan_types), None) if obs is not None else None
         if scan is None or scan.type not in scan_types:
             continue
         data_available += 1

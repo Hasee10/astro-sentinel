@@ -17,18 +17,19 @@ async function load(url, jsonl) {
 
 // Loads the pipeline run once. The scored file is required; the others are
 // optional, and the view shows what it can when one is missing.
-export function useMissionData() {
+export function useMissionData(engineeringFixture = false) {
   const [state, setState] = useState({ status: 'loading' })
 
   useEffect(() => {
     let cancelled = false
     const optional = (promise) => promise.catch(() => null)
+    const source = engineeringFixture ? Object.fromEntries(Object.entries(DATA).map(([key, url]) => [key, url.replace('/pipeline/', '/fixtures/recovery/')])) : DATA
 
     Promise.all([
-      load(DATA.scored, true),
-      optional(load(DATA.observations, true)),
-      optional(load(DATA.manifest, false)),
-      optional(load(DATA.evaluation, false)),
+      load(source.scored, true),
+      optional(load(source.observations, true)),
+      optional(load(source.manifest, false)),
+      optional(load(source.evaluation, false)),
     ])
       .then(([scored, observations, manifest, evaluation]) => {
         if (!cancelled) setState({ status: 'ready', scored, observations, manifest, evaluation })
@@ -40,7 +41,7 @@ export function useMissionData() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [engineeringFixture])
 
   return state
 }

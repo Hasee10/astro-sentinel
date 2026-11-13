@@ -24,7 +24,8 @@ import {
 } from "./WorkspacePanels.jsx";
 import { TrendsPanel } from "./TrendsPanel.jsx";
 import { useMissionData } from "./useMissionData.js";
-import { chartRange, indexMission, reachedEvents } from "./missionModel.js";
+import { chartRange, indexMission, reachedEvents, observationRows, measurementsOf } from "./missionModel.js";
+import ConsultationPanel from "./ConsultationPanel.jsx";
 import "./presentation.css";
 
 const VIEWS = [
@@ -67,7 +68,7 @@ function tierChange(previous, record) {
 }
 
 export default function PresentationView(props) {
-  const data = useMissionData();
+  const data = useMissionData(props.engineeringFixture);
   if (data.status !== "ready")
     return (
       <div className="pv pv-loading">
@@ -108,7 +109,7 @@ export default function PresentationView(props) {
   return <Mission data={data} {...props} />;
 }
 
-function Mission({ data, view, navigate }) {
+function Mission({ data, view, navigate, engineeringFixture }) {
   const { scored, observations, manifest, evaluation } = data;
   const missionLength =
     manifest?.mission_duration_days ?? FALLBACK_MISSION_LENGTH;
@@ -133,6 +134,7 @@ function Mission({ data, view, navigate }) {
   const [delay, setDelay] = useState(DEFAULT_DELAY_MINUTES);
   const [autoSend, setAutoSend] = useState(true);
   const [messages, setMessages] = useState([]);
+  const [consultations, setConsultations] = useState([]);
   const [now, setNow] = useState(() => Date.now());
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideStep, setGuideStep] = useState(0);
@@ -267,33 +269,25 @@ function Mission({ data, view, navigate }) {
   }
 
   const onsdRows = useMemo(
-    () =>
-      Array.from({ length: missionLength }, (_, index) => {
-        const scan = indexed.scans.get(`${astronautId}:${index + 1}`)?.scan;
-        return {
-          day: index + 1,
-          onsd:
-            scan?.type === "onsd" && scan.quality?.status !== "failed"
-              ? (scan.onsd_mm ?? null)
-              : null,
-          quality:
-            scan?.type === "onsd" ? (scan.quality?.status ?? null) : null,
-        };
-      }),
+    () => observationRows(indexed.scans, astronautId, missionLength),
     [indexed, astronautId, missionLength],
   );
   const range = useMemo(() => chartRange(onsdRows, day), [onsdRows, day]);
   const events = useMemo(
-    () => reachedEvents(records, indexed.scans, day),
-    [records, indexed, day],
+    () => [...reachedEvents(records, indexed.scans, day), ...consultations
+      .filter(c => c.astronautId === astronautId && c.day <= day)
+      .flatMap(c => c.events.map(e => ({ day: c.day, title: `Consultation · ${e.state.replaceAll("_", " ")}`,
+        detail: `${c.outcome.toUpperCase()} request from mission day ${c.day}; communication timestamp ${new Date(e.at).toISOString()}. State refers to the independent communication clock.`, key: `${c.id}:${e.state}` })))].sort((a, b) => b.day - a.day),
+    [records, indexed, day, consultations, astronautId],
   );
   const schemaVersion =
     observations?.[0]?.metadata?.schema_version ?? manifest?.schema_version;
   const title = TITLES[view] ?? TITLES.dashboard;
-  const quality = observation?.scan?.quality?.status;
+  const currentOnsd = measurementsOf(observation).find(m => m.type === "onsd");
+  const quality = currentOnsd?.quality?.status;
   const latestValue =
-    observation?.scan?.type === "onsd" && quality !== "failed"
-      ? observation.scan.onsd_mm
+    currentOnsd && quality !== "failed"
+      ? currentOnsd.onsd_mm
       : null;
   const acknowledged = !!lastUp && !!lastDown && lastDown.ackFor === lastUp.id;
 
@@ -304,6 +298,7 @@ function Mission({ data, view, navigate }) {
       ["measurements", "Measurements"],
     ],
     ground: [
+      ["consultation", "Consultation"],
       ["snapshot", "Earth snapshot"],
       ["link", "Send update"],
       ["messages", "Messages"],
@@ -315,6 +310,7 @@ function Mission({ data, view, navigate }) {
     ],
     research: [
       ["summary", "Summary"],
+      ["results", "Results"],
       ["blockers", "Blockers"],
       ["capabilities", "Models"],
       ["provenance", "Run info"],
@@ -433,6 +429,7 @@ function Mission({ data, view, navigate }) {
           />
         )}
         <main id="mission-content" className="pv-workspace" tabIndex={-1}>
+          {engineeringFixture && <p className="pv-notice" role="status">ENGINEERING FIXTURE · User-relayed model pending independent written approval. These cases verify functionality and are not representative experiment results. <a href="#dashboard">Return to published fixed-policy demo</a></p>}
           <header className="pv-heading">
             <div>
               <h1>
@@ -561,10 +558,9 @@ function Mission({ data, view, navigate }) {
             <div className="pv-action" role="alert">
               <Icon name="info" size={20} />
               <span>
-                <strong>Review needed · Day {actionStop.day}</strong>
+                <strong>Recorded action · Day {actionStop.day}</strong>
                 <span>
-                  {actionStop.changes.map(({ name }) => name).join(" + ")} tier
-                  changed. View the recorded evidence.
+                  {actionStop.changes.map(({ key, name }) => `${name}: ${record?.[key]?.recommended_action?.text ?? record?.[key]?.explanation ?? "Evidence unavailable"}`).join(" ")}
                 </span>
               </span>
               <button
@@ -605,7 +601,7 @@ function Mission({ data, view, navigate }) {
                   (tab === "assessments" ? (
                     <OutcomeGroup record={record} />
                   ) : (
-                    <TodayData observation={observation} />
+                    <TodayData observation={observation} rows={onsdRows} day={day} />
                   ))}
                 {view === "timeline" &&
                   (tab === "chart" ? (
@@ -619,7 +615,7 @@ function Mission({ data, view, navigate }) {
                       onJump={jump}
                     />
                   ) : tab === "changes" ? (
-                    <EventPanel events={events} day={day} onJump={jump} />
+                    <EventPanel events={events} day={day} onJump={(target) => { jump(target); setTabs(current => ({ ...current, timeline: "records" })); }} />
                   ) : (
                     <ObservationPanel
                       rows={onsdRows}
@@ -628,7 +624,11 @@ function Mission({ data, view, navigate }) {
                     />
                   ))}
                 {view === "ground" &&
-                  (tab === "snapshot" ? (
+                  (tab === "consultation" ? (
+                    <ConsultationPanel record={record} observation={observation}
+                      evidenceObservations={Object.fromEntries(OUTCOMES.map(({ key }) => [key, indexed.scans.get(`${astronautId}:${record?.[key]?.evidence_day}`)]))}
+                      cases={consultations} onCases={setConsultations} delay={delay} onDelay={setDelay} />
+                  ) : tab === "snapshot" ? (
                     <GroundSnapshot
                       lastUp={lastUp}
                       day={day}
@@ -835,21 +835,24 @@ function Tour({ step, onNext, onClose }) {
   );
 }
 
-function TodayData({ observation }) {
-  const scan = observation?.scan;
+function TodayData({ observation, rows = [], day }) {
+  const scans = measurementsOf(observation);
+  const scan = scans.find(m => m.type === "onsd");
+  const jugularScan = scans.find(m => m.type === "jugular");
   const quality = scan?.quality?.status;
+  const lastOnsd = rows.findLast(r => r.day <= day && r.onsd != null);
+  const lastJugular = rows.findLast(r => r.day <= day && r.jugular != null);
   const onsd =
     scan?.type === "onsd" && quality !== "failed" ? scan.onsd_mm : null;
   const jugular =
-    scan?.type === "jugular" && quality !== "failed"
+    jugularScan && jugularScan.quality?.status !== "failed"
       ? [
-          scan.jugular_flow_class,
-          scan.jugular_area_mm2 !== null && scan.jugular_area_mm2 !== undefined
-            ? `${scan.jugular_area_mm2} mm²`
+          jugularScan.jugular_flow_class,
+          jugularScan.jugular_area_mm2 !== null && jugularScan.jugular_area_mm2 !== undefined
+            ? `${jugularScan.jugular_area_mm2.toFixed(1)} mm²`
             : null,
-          scan.jugular_collapsibility_lost !== null &&
-          scan.jugular_collapsibility_lost !== undefined
-            ? `Collapsibility lost: ${scan.jugular_collapsibility_lost ? "yes" : "no"}`
+          jugularScan.jugular_baseline_mm2 != null && jugularScan.jugular_area_mm2 != null
+            ? `Baseline ${jugularScan.jugular_baseline_mm2.toFixed(1)} mm²; change ${(jugularScan.jugular_area_mm2 - jugularScan.jugular_baseline_mm2).toFixed(1)} mm²; quality ${jugularScan.quality?.status ?? "unknown"}`
             : null,
         ]
           .filter(Boolean)
@@ -865,6 +868,11 @@ function TodayData({ observation }) {
         <span className="pv-subtle">Recorded observations</span>
       </div>
       <dl>
+        <div><dt>Latest recorded ONSD</dt><dd>{lastOnsd ? `${lastOnsd.onsd.toFixed(2)} mm · Day ${lastOnsd.day} · ${QUALITY_TEXT[lastOnsd.quality] ?? "Quality unknown"}` : "Unavailable"}</dd></div>
+        <div><dt>Latest recorded jugular area and flow</dt><dd>{lastJugular ? `${lastJugular.jugular.toFixed(1)} mm² · ${lastJugular.flow ?? "Flow unavailable"} · Day ${lastJugular.day} · ${QUALITY_TEXT[lastJugular.jugularQuality] ?? "Quality unknown"}; baseline ${lastJugular.jugularBaseline?.toFixed(1) ?? "unavailable"} mm²` : "Unavailable"}</dd></div>
+        <div><dt>Acquisition policy</dt><dd>{observation?.metadata?.acquisition_policy ?? "Not recorded"} · {observation?.metadata?.scheduling_reason ?? "No scheduling reason"}</dd></div>
+        <div><dt>Personal ONSD baseline</dt><dd>{Number.isFinite(scan?.onsd_baseline_mm ?? lastOnsd?.baseline) ? `${(scan?.onsd_baseline_mm ?? lastOnsd.baseline).toFixed(2)} mm; latest recorded change ${lastOnsd?.baseline != null ? `${(lastOnsd.onsd - lastOnsd.baseline).toFixed(2)} mm` : "unavailable"}` : "Unavailable; no baseline inferred from the first scan"}</dd></div>
+        <div><dt>Last good ONSD observation</dt><dd>{rows.findLast(r => r.day <= day && r.quality === "ok" && r.onsd !== null)?.day ?? "Unavailable"}</dd></div>
         <div>
           <dt>
             <Icon name="eye" size={16} />
@@ -896,10 +904,13 @@ function TodayData({ observation }) {
           </dt>
           <dd>
             {jugular ||
-              (scan?.type === "jugular" && quality === "failed"
+              (jugularScan?.quality?.status === "failed"
                 ? "Failed quality check · value unavailable"
                 : "Unavailable in this record")}
           </dd>
+        </div>
+        <div>
+          <dt>Last good jugular observation</dt><dd>{rows.findLast(r => r.day <= day && r.jugularQuality === "ok" && r.jugular !== null)?.day ?? "Unavailable"}</dd>
         </div>
         <div>
           <dt>
@@ -919,6 +930,7 @@ function TodayData({ observation }) {
           </dd>
         </div>
       </dl>
+      <p className="pv-subtle">Synthetic recorded measurements; acquisition quality and baseline change do not establish a diagnosis. Monitoring estimates and model limitations are shown in Assessments. Unscheduled days contain no acquisition.</p>
     </section>
   );
 }

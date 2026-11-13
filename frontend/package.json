@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "assets": "node scripts/generate-design-assets.mjs",
-    "test": "node --test src/presentation/missionModel.test.js",
+    "test": "node --test src/presentation/*.test.js",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test:e2e": "playwright test",
     "check:data": "node scripts/check-public-data.mjs"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@resvg/resvg-js": "^2.6.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

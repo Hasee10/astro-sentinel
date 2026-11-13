@@ -38,8 +38,8 @@ from contracts.models import (
 # Fields that only make sense for a given scan type - used to catch a record that
 # mixes, say, jugular fields into a scan typed ONSD. Structural self-consistency
 # only; no clinical meaning is attached to the values themselves here.
-_ONSD_ONLY_FIELDS = ("onsd_mm", "on_axis", "oct_disc_edema", "visual_acuity_change")
-_JUGULAR_ONLY_FIELDS = ("jugular_area_mm2", "jugular_flow_class", "jugular_collapsibility_lost")
+_ONSD_ONLY_FIELDS = ("onsd_mm", "onsd_baseline_mm", "on_axis", "oct_disc_edema", "visual_acuity_change")
+_JUGULAR_ONLY_FIELDS = ("jugular_area_mm2", "jugular_baseline_mm2", "jugular_flow_class", "jugular_collapsibility_lost")
 
 _SCAN_TYPE_ALLOWED_FIELDS: dict[ScanType, tuple[str, ...]] = {
     ScanType.ONSD: _ONSD_ONLY_FIELDS,
@@ -56,6 +56,10 @@ def validate_observation_structure(obs: AstronautDayObservation) -> list[str]:
     """Structural self-consistency errors for one observation record, or [] if
     clean. Never raises - the caller (score_crew.py) decides how to report these."""
     errors: list[str] = []
+    if obs.scan_session is not None:
+        for measurement in obs.scan_session.measurements:
+            errors.extend(validate_observation_structure(obs.model_copy(update={"scan_session": None, "scan": measurement})))
+        return errors
 
     if not obs.astronaut_id or not obs.astronaut_id.strip():
         errors.append("astronaut_id is empty")

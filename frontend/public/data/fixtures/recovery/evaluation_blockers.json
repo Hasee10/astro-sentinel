@@ -1,0 +1,11 @@
+{
+  "run_id": "engineering-42",
+  "stage": "engineering_acceptance",
+  "blockers": [
+    {
+      "capability": "research_v1_written_confirmation",
+      "blocked_by": [],
+      "message": "ENGINEERING FIXTURE - USER-RELAYED MODEL - NOT VALIDATED EXPERIMENT RESULTS. Confirm specification user-relayed-2026-11-13-v1 SHA256 dd3f16e5cd13d2f7f156a1fcf5b98ca2678225160719661d6187fe1de625374c, including all unresolved interpretations in backend/research_v1/spec.json. These outputs verify engineering behavior only."
+    }
+  ]
+}

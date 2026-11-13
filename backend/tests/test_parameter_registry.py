@@ -84,7 +84,7 @@ def test_jugular_prevalence_and_geometry(params):
         "g_0_75_mm2": 24,
         "g_0_5_mm2": 34,
         "g_0_25_mm2": 68,
-        "supine_1g_mm2": 108,
+        "supine_1g_mm2": 103,
     }
 
 
@@ -237,10 +237,11 @@ def test_established_does_not_imply_verified(params):
     established = [p for p in params.values() if p.evidence_classification.value == "established"]
     assert established, "expected at least one established parameter"
     already_verified = [p for p in established if p.verification_status.value == "verified"]
-    assert already_verified == [], (
-        "no parameter should be marked 'verified' yet - Phase 0 only transcribes the "
-        "sheet, it does not independently check primary sources"
-    )
+    assert {p.parameter_id for p in already_verified} == {"jugular_csa_by_gravity_level"}
+    verified = params["jugular_csa_by_gravity_level"]
+    assert "10.3389/fphys.2020.00863" in verified.source_location
+    assert "108" in verified.limitations and "103" in verified.limitations
+
 
 
 # ---- source metadata present for every entry ----

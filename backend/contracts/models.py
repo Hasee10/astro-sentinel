@@ -12,9 +12,9 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-SCHEMA_VERSION = "0.6.0"
+SCHEMA_VERSION = "0.7.0"
 SYNTHETIC_LABEL = "SYNTHETIC - NOT REAL ASTRONAUT DATA"
 
 
@@ -70,6 +70,7 @@ class TierReason(str, Enum):
     # OutcomeAssessment.probability_label to keep "hypothetical simulation estimate"
     # visibly attached, never presented as a validated clinical tier.
     PROBABILITY_THRESHOLD = "probability_threshold"
+    PERSISTENT_SERIOUS_EVIDENCE = "persistent_serious_evidence"
 
 
 class WeakSignals(BaseModel):
@@ -98,14 +99,33 @@ class ScanMeasurement(BaseModel):
 
     type: Optional[ScanType] = None
     onsd_mm: Optional[float] = None
+    onsd_baseline_mm: Optional[float] = None
     on_axis: Optional[bool] = None  # acquisition geometry; feeds quality check
     jugular_area_mm2: Optional[float] = None
+    jugular_baseline_mm2: Optional[float] = None
     jugular_flow_class: Optional[str] = None  # antegrade / stagnant / retrograde
     jugular_collapsibility_lost: Optional[bool] = None
     oct_disc_edema: Optional[bool] = None
     visual_acuity_change: Optional[str] = None
     red_flag_symptom: Optional[bool] = None
     quality: Optional[MeasurementQuality] = None
+
+
+class ScanSession(BaseModel):
+    """One acquisition session, with independent outcome-specific measurements."""
+    model_config = ConfigDict(extra="forbid")
+    session_id: str
+    policy: str
+    reason_codes: list[str]
+    is_retry: bool = False
+    measurements: list[ScanMeasurement]
+
+    @model_validator(mode="after")
+    def validate_measurements(self):
+        types = [m.type for m in self.measurements]
+        if sorted(t.value if t else "" for t in types) != ["jugular", "onsd"]:
+            raise ValueError("A shared session must attempt one ONSD and one jugular measurement")
+        return self
 
 
 class OutcomeProbability(BaseModel):
@@ -140,6 +160,9 @@ class ObservationMetadata(BaseModel):
     synthetic: bool = True
     synthetic_label: str = SYNTHETIC_LABEL
     run_id: str
+    acquisition_policy: Optional[str] = None
+    scheduling_reason: Optional[str] = None
+    observable_triggers: dict[str, bool] = Field(default_factory=dict)
     schema_version: str = SCHEMA_VERSION
     generation_blocked: bool = False
     blocked_reasons: list[str] = Field(default_factory=list)
@@ -155,9 +178,22 @@ class AstronautDayObservation(BaseModel):
     day: int
     weak_signals: Optional[WeakSignals] = None
     scan: Optional[ScanMeasurement] = None
+    scan_session: Optional[ScanSession] = None
     probability: OutcomeProbability = Field(default_factory=OutcomeProbability)
     tier: OutcomeTier = Field(default_factory=OutcomeTier)
     metadata: ObservationMetadata
+
+    @model_validator(mode="after")
+    def validate_acquisition(self):
+        if self.scan is not None and self.scan_session is not None:
+            raise ValueError("Use legacy scan OR shared scan_session, never both")
+        return self
+
+
+def measurements_of(observation: AstronautDayObservation) -> list[ScanMeasurement]:
+    if observation.scan_session is not None:
+        return observation.scan_session.measurements
+    return [observation.scan] if observation.scan is not None else []
 
 
 class GroundTruthRecord(BaseModel):

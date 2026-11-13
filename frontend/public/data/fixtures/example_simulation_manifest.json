@@ -4,12 +4,6 @@
   "random_seed": 42,
   "crew_size": 8,
   "mission_duration_days": 30,
-  "scenario_counts": {
-    "healthy": 2,
-    "slow_sans": 2,
-    "venous_stasis": 2,
-    "both": 2
-  },
   "schema_version": "0.4.0",
   "parameter_registry_parameter_count": 26,
   "assumption_registry_assumption_count": 14,

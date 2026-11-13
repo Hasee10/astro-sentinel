@@ -1,0 +1,18 @@
+{
+  "run_id": "engineering-42",
+  "created_at": "2026-11-13T00:00:00+05:00",
+  "random_seed": 42,
+  "crew_size": 5,
+  "mission_duration_days": 30,
+  "schema_version": "0.7.0",
+  "parameter_registry_parameter_count": 28,
+  "assumption_registry_assumption_count": 14,
+  "active_assumption_ids": [],
+  "scenario_structure_generated": true,
+  "physiological_values_generated": false,
+  "physiological_generation_blocked_reasons": {
+    "research_v1": "User-relayed model pending independent written confirmation"
+  },
+  "capability_readiness": {},
+  "generation_status": "engineering_fixture_pending_approval"
+}

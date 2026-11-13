@@ -43,8 +43,39 @@
           "title": "Run Id",
           "type": "string"
         },
+        "acquisition_policy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Acquisition Policy"
+        },
+        "scheduling_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scheduling Reason"
+        },
+        "observable_triggers": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "title": "Observable Triggers",
+          "type": "object"
+        },
         "schema_version": {
-          "default": "0.6.0",
+          "default": "0.7.0",
           "title": "Schema Version",
           "type": "string"
         },
@@ -174,6 +205,18 @@
           "default": null,
           "title": "Onsd Mm"
         },
+        "onsd_baseline_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Onsd Baseline Mm"
+        },
         "on_axis": {
           "anyOf": [
             {
@@ -197,6 +240,18 @@
           ],
           "default": null,
           "title": "Jugular Area Mm2"
+        },
+        "jugular_baseline_mm2": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jugular Baseline Mm2"
         },
         "jugular_flow_class": {
           "anyOf": [
@@ -271,6 +326,47 @@
         }
       },
       "title": "ScanMeasurement",
+      "type": "object"
+    },
+    "ScanSession": {
+      "additionalProperties": false,
+      "description": "One acquisition session, with independent outcome-specific measurements.",
+      "properties": {
+        "session_id": {
+          "title": "Session Id",
+          "type": "string"
+        },
+        "policy": {
+          "title": "Policy",
+          "type": "string"
+        },
+        "reason_codes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reason Codes",
+          "type": "array"
+        },
+        "is_retry": {
+          "default": false,
+          "title": "Is Retry",
+          "type": "boolean"
+        },
+        "measurements": {
+          "items": {
+            "$ref": "#/$defs/ScanMeasurement"
+          },
+          "title": "Measurements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "session_id",
+        "policy",
+        "reason_codes",
+        "measurements"
+      ],
+      "title": "ScanSession",
       "type": "object"
     },
     "ScanType": {
@@ -366,6 +462,17 @@
       "anyOf": [
         {
           "$ref": "#/$defs/ScanMeasurement"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "scan_session": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ScanSession"
         },
         {
           "type": "null"

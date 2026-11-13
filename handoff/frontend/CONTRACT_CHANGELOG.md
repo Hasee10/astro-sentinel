@@ -139,3 +139,19 @@ and `probability.venous` now genuinely goes non-null in real output.
   own (the field already exists and is already nullable) — but will be called out
   here with the run/assumption id so the frontend can confirm when real numbers
   start appearing.
+# Schema 0.7.0 — recovery workflow, 2026-11-13
+
+Additive fields: ONSD/jugular personal baselines; mutually exclusive legacy
+`scan` or shared `scan_session` (one ONSD and one jugular attempt); acquisition
+policy, scheduling reason and observable trigger booleans. Assessments now carry
+simulation run ID, latest usable evidence day and a structured recommended action with reason code,
+text, status, ground-review flag and explicit follow-up timing/approval state.
+`persistent_serious_evidence` distinguishes alert persistence from a new threshold
+crossing. A communication acknowledgment never clears a physiological alert.
+
+Public fixed-policy data has scans only on days 1,8,15,22,29. Retries are withheld
+in that dataset while the newer retry protocol awaits independent confirmation.
+The separate `data/fixtures/recovery` namespace is explicitly labeled engineering
+verification; the normal publisher refuses to replace production data with it.
+No hidden condition, onset, susceptibility class or experiment answer key is added
+to any public contract. All four JSON schema snapshots were regenerated.

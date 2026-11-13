@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { Tabs } from "./WorkspaceUI.jsx";
 import { OUTCOMES, QUALITY_TEXT, TIER_TEXT, TIERS } from "./constants.js";
+import { chartRange } from "./missionModel.js";
 
 const POOR = ["degraded", "unknown"];
 
@@ -49,7 +50,7 @@ function DayCursor({ points, payload }) {
   );
 }
 
-function OnsdTooltip({ active, payload }) {
+function OnsdTooltip({ active, payload, unit = "mm" }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   if (row.isFuture) return null;
@@ -57,7 +58,7 @@ function OnsdTooltip({ active, payload }) {
     <div className="pv-chart-tip">
       <strong>Day {row.day}</strong>
       <span>
-        {row.onsd === null ? "Unavailable" : `${row.onsd.toFixed(2)} mm`}
+        {row.onsd === null ? "Unavailable" : `${row.onsd.toFixed(2)} ${unit}`}
       </span>
       <span>
         {row.quality ? (QUALITY_TEXT[row.quality] ?? row.quality) : "No scan"}
@@ -68,7 +69,7 @@ function OnsdTooltip({ active, payload }) {
 
 // The ONSD values for one astronaut up to the current day, with that day marked.
 // The axes stay fixed, so the line grows from left to right.
-function OnsdChart({ rows, range, day }) {
+function OnsdChart({ rows, range, day, jugular = false }) {
   // This checks every day, so a failed first scan doesn't read as "no scans".
   const reached = rows.filter((row) => row.day <= day);
   const hasScans = reached.some(
@@ -78,7 +79,7 @@ function OnsdChart({ rows, range, day }) {
     const failed = reached.filter((row) => row.quality === "failed").length;
     return (
       <div className="pv-chart-empty">
-        <p>No usable ONSD values through day {day}.</p>
+        <p>No usable {jugular ? "jugular" : "ONSD"} values through day {day}.</p>
         <small>
           {failed
             ? `${failed} failed scan(s) recorded. Failed values are never plotted.`
@@ -105,7 +106,7 @@ function OnsdChart({ rows, range, day }) {
     <div
       className="pv-chart"
       role="img"
-      aria-label="Optic nerve sheath diameter by mission day"
+      aria-label={jugular ? "Jugular area by mission day" : "Optic nerve sheath diameter by mission day"}
     >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
@@ -137,7 +138,7 @@ function OnsdChart({ rows, range, day }) {
           {/* filterNull={false} keeps every row in the tooltip's data, so it can
               tell a later day from an earlier day with no scan. */}
           <Tooltip
-            content={<OnsdTooltip />}
+            content={<OnsdTooltip unit={jugular ? "mm²" : "mm"} />}
             cursor={<DayCursor />}
             filterNull={false}
             isAnimationActive={false}
@@ -249,7 +250,7 @@ export function TrendsPanel({
       <header className="pv-panel-head">
         <div>
           <span className="pv-eyebrow">OBSERVATION HISTORY</span>
-          <h2 id="pv-trends-title">ONSD over time</h2>
+          <h2 id="pv-trends-title">{mode === "jugular" ? "Jugular area over time" : "ONSD over time"}</h2>
         </div>
         <span className="pv-subtle">
           {astronautId} · through day {day}
@@ -259,12 +260,19 @@ export function TrendsPanel({
         label="Chart views"
         items={[
           ["trace", "ONSD trace"],
+          ["jugular", "Jugular trace"],
           ["tiers", "Tier history"],
         ]}
         value={mode}
         onChange={setMode}
       />
       <div className="pv-trends-grid">
+        {mode === "jugular" && <div className="pv-trace-view">
+          <h3 className="pv-sub">Jugular cross-sectional area (mm²)</h3>
+          <OnsdChart rows={onsdRows.map(r => ({ ...r, onsd: r.jugular, quality: r.jugularQuality }))}
+            range={chartRange(onsdRows.map(r => ({ ...r, onsd: r.jugular })), day, 10)} day={day} jugular />
+          <p>Area is a measurement, not a disease threshold. No scans are inferred on unscheduled days.</p>
+        </div>}
         {mode === "trace" && (
           <div className="pv-trace-view">
             <h3 className="pv-sub">Optic nerve sheath diameter (mm)</h3>

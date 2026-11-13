@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 const base = fileURLToPath(new URL('../public/data/pipeline/', import.meta.url))
 const files = readdirSync(base)
 const forbiddenNames = ['ground_truth', 'experiment_readiness_summary', 'run_status', 'pilot_info']
-const forbiddenKeys = new Set(['scenario_counts', 'scenario_label', 'sans_onset_day', 'venous_onset_day', 'has_sans_event', 'has_venous_event', 'sans_event_occurs'])
+const forbiddenKeys = new Set(['scenario_counts', 'scenario_label', 'sans_onset_day', 'venous_onset_day', 'has_sans_event', 'has_venous_event', 'sans_event_occurs', 'is_sans_high_susceptibility', 'synthetic_sans_prior_label', 'sans_onset', 'venous_onset'])
 const expected = ['crew_observations.jsonl', 'crew_scored.jsonl', 'simulation_manifest.json', 'evaluation_blockers.json']
 const assert = (ok, message) => { if (!ok) throw new Error(message) }
 for (const name of files) assert(!forbiddenNames.some(x => name.includes(x)), `Forbidden public file: ${name}`)
@@ -33,8 +33,27 @@ for (const [i, record] of obs.entries()) {
   visit(record, `observations[${i}]`)
   assert(record.metadata?.run_id === manifest.run_id, `Mixed run IDs in record ${i}`)
   assert(record.metadata?.synthetic === true, `Non-synthetic record ${i}`)
+  assert(!record.metadata.synthetic_label.includes('ENGINEERING FIXTURE'), 'Engineering fixture in production pipeline')
+  assert(!(record.scan && record.scan_session), 'Ambiguous duplicate acquisition representation')
+  if (record.metadata.acquisition_policy === 'fixed_7_day_day1_anchor' && (record.day - 1) % 7 !== 0)
+    assert(!record.scan && !record.scan_session, `Unscheduled measurement on day ${record.day}`)
 }
-for (const [i, record] of scored.entries()) visit(record, `scored[${i}]`)
+const identities = new Set(obs.map(r => `${r.astronaut_id}:${r.day}`))
+assert(identities.size === obs.length, 'Duplicate observation identities')
+const scoredIdentities = new Set()
+for (const [i, record] of scored.entries()) {
+  visit(record, `scored[${i}]`)
+  const identity = `${record.astronaut_id}:${record.as_of_day}`
+  assert(record.run_id === manifest.run_id, `Mixed assessment run ID ${identity}`)
+  assert(identities.has(identity) && !scoredIdentities.has(identity), `Missing or duplicate scored identity ${identity}`)
+  scoredIdentities.add(identity)
+  for (const outcome of ['sans', 'venous']) {
+    const assessment = record[outcome]
+    assert(assessment.evidence_day == null || assessment.evidence_day <= record.as_of_day, 'Future evidence leak')
+    assert(assessment.probability == null || (assessment.probability >= 0 && assessment.probability <= 1 && assessment.probability_label), 'Unlabeled or invalid probability')
+    assert(assessment.recommended_action?.code, 'Missing structured action')
+  }
+}
 const evalData = JSON.parse(readFileSync(join(base,'evaluation_blockers.json'), 'utf8'))
 visit(evalData, 'evaluation')
 
@@ -67,3 +86,17 @@ for (const blocker of evalData.blockers || []) {
 }
 
 console.log(`Verified ${obs.length} public synthetic observation records and ${scored.length} scored records; run ${manifest.run_id}. No hidden ground-truth keys.`)
+
+// Apply the privacy boundary to every published fixture as well as the pipeline.
+const allData = fileURLToPath(new URL('../public/data/', import.meta.url))
+function scanPublicDirectory(directory) {
+  for (const item of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, item.name)
+    assert(!forbiddenNames.some(x => item.name.includes(x)), `Forbidden public file: ${path}`)
+    if (item.isDirectory()) scanPublicDirectory(path)
+    else if (item.name.endsWith('.json')) visit(JSON.parse(readFileSync(path, 'utf8')), path)
+    else if (item.name.endsWith('.jsonl')) readFileSync(path, 'utf8').split(/\r?\n/).filter(Boolean).forEach(line => visit(JSON.parse(line), path))
+  }
+}
+scanPublicDirectory(allData)
+console.log('Verified all published fixtures and manifests for hidden fields.')

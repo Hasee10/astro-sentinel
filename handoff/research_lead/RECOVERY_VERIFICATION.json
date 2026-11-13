@@ -1,0 +1,129 @@
+{
+  "audited_remote_commit": "b43ce8c78bf30d4531a0b0094b60da48c3d9db0e",
+  "before": {
+    "profiles": 300,
+    "observations": 9000,
+    "sans_probability_unavailable": 9000,
+    "venous_probability_unavailable": 9000,
+    "sans_quality_repeat_assessments": 977,
+    "consult": 0,
+    "urgent": 0,
+    "jugular_measurements": 0,
+    "candidate_scans_presented_as_acquisitions": 9000
+  },
+  "production": {
+    "profiles": 300,
+    "observations": 9000,
+    "sessions": 1500,
+    "measurements": 1500,
+    "measurement_types": {
+      "onsd": 1500
+    },
+    "quality_counts": {
+      "failed": 77,
+      "ok": 1342,
+      "degraded": 81
+    },
+    "tier_counts": {
+      "sans": {
+        "repeat": 931,
+        "unresolved": 8069
+      },
+      "venous": {
+        "unresolved": 9000
+      }
+    },
+    "probability_unavailable": {
+      "sans": 9000,
+      "venous": 9000
+    },
+    "note": "Fixed anchors only; retries and physiological models remain gated. Repeated assessment-days after one bad scan are not additional acquisitions."
+  },
+  "engineering_acceptance": {
+    "profiles": 5,
+    "observations": 150,
+    "sessions": 78,
+    "measurements": 156,
+    "measurement_types": {
+      "onsd": 78,
+      "jugular": 78
+    },
+    "quality_counts": {
+      "ok": 141,
+      "failed": 9,
+      "degraded": 6
+    },
+    "tier_counts": {
+      "sans": {
+        "monitor": 88,
+        "repeat": 13,
+        "consult": 19,
+        "urgent": 30
+      },
+      "venous": {
+        "repeat": 77,
+        "monitor": 73
+      }
+    },
+    "probability_unavailable": {
+      "sans": 0,
+      "venous": 1
+    }
+  },
+  "engineering_study": {
+    "label": "ENGINEERING FIXTURE - USER-RELAYED MODEL - NOT VALIDATED EXPERIMENT RESULTS",
+    "validated_for_experiment": false,
+    "rows": 90,
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "cohort_size_per_seed": 60,
+    "spec_sha256": "dd3f16e5cd13d2f7f156a1fcf5b98ca2678225160719661d6187fe1de625374c",
+    "central_settings": {
+      "fixed": {
+        "sessions": 1068,
+        "repeat_sessions": 168,
+        "successful_measurements": 1923,
+        "degraded_measurements": 109,
+        "failed_measurements": 104,
+        "sans": {
+          "events": 68,
+          "detected": 66,
+          "missed": 2,
+          "false_escalation_days": 12,
+          "pooled_mean_delay_detected_only": 7.409090909090909
+        },
+        "venous": {
+          "events": 59,
+          "detected": 59,
+          "missed": 0,
+          "false_escalation_days": 0,
+          "pooled_mean_delay_detected_only": 4.762711864406779
+        }
+      },
+      "adaptive_replacement": {
+        "sessions": 1579,
+        "repeat_sessions": 240,
+        "successful_measurements": 2828,
+        "degraded_measurements": 181,
+        "failed_measurements": 149,
+        "sans": {
+          "events": 68,
+          "detected": 59,
+          "missed": 9,
+          "false_escalation_days": 19,
+          "pooled_mean_delay_detected_only": 6.084745762711864
+        },
+        "venous": {
+          "events": 59,
+          "detected": 59,
+          "missed": 0,
+          "false_escalation_days": 0,
+          "pooled_mean_delay_detected_only": 4.491525423728813
+        }
+      }
+    }
+  }
+}

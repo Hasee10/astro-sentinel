@@ -29,7 +29,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from contracts.models import AstronautDayObservation, QualityStatus, ScanType, TierReason, TierValue
+from contracts.models import AstronautDayObservation, QualityStatus, ScanType, TierReason, TierValue, measurements_of
 from monitoring.measurement_quality import derive_onsd_quality
 from registry.loader import Registry
 
@@ -71,6 +71,18 @@ _TIER_RANK = {
 }
 
 
+class RecommendedAction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    code: str
+    outcome: str
+    text: str
+    status: str = "suggested"
+    ground_review_required: bool = False
+    follow_up_day: int | None = None
+    follow_up_rule: str
+    quality_repeat_required: bool = False
+
+
 class OutcomeAssessment(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -82,12 +94,15 @@ class OutcomeAssessment(BaseModel):
     evidence_references: list[str] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
     explanation: str
+    recommended_action: RecommendedAction | None = None
+    evidence_day: int | None = None
 
 
 class AssessmentResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     astronaut_id: str
+    run_id: str | None = None
     as_of_day: int
     sans: OutcomeAssessment
     venous: OutcomeAssessment
@@ -103,6 +118,8 @@ def _validate_and_sort(history: list[AstronautDayObservation]) -> list[Astronaut
     astronaut_ids = {o.astronaut_id for o in history}
     if len(astronaut_ids) > 1:
         raise HistoryError(f"history must belong to one astronaut, got {astronaut_ids}")
+    if len({o.metadata.run_id for o in history}) > 1:
+        raise HistoryError("history must belong to one simulation run")
     days = [o.day for o in history]
     if len(set(days)) != len(days):
         raise HistoryError(f"history contains duplicate day entries: {days}")
@@ -111,8 +128,9 @@ def _validate_and_sort(history: list[AstronautDayObservation]) -> list[Astronaut
 
 def _latest_scan_of(history: list[AstronautDayObservation], scan_types: set[ScanType]):
     for obs in reversed(history):  # history is chronological; walk backward for "latest"
-        if obs.scan is not None and obs.scan.type in scan_types:
-            return obs.scan
+        for scan in measurements_of(obs):
+            if scan.type in scan_types:
+                return scan
     return None
 
 
@@ -123,8 +141,8 @@ def _any_red_flag(history: list[AstronautDayObservation], scan_types: set[ScanTy
     function does not, and must not, implement one on its own initiative (that
     would be inventing an automatic medical clearance rule)."""
     return any(
-        obs.scan is not None and obs.scan.type in scan_types and obs.scan.red_flag_symptom
-        for obs in history
+        scan.type in scan_types and scan.red_flag_symptom
+        for obs in history for scan in measurements_of(obs)
     )
 
 
@@ -143,7 +161,13 @@ def _compute_venous_probability(
     ):
         return None, None
 
-    latest = _latest_scan_of(history, VENOUS_SCAN_TYPES)
+    # A technical failure is not new physiological evidence. Retain the latest
+    # explicitly usable observation; never multiply correlated daily LRs.
+    latest = next((scan for o in reversed(history) for scan in measurements_of(o)
+                   if scan.type in VENOUS_SCAN_TYPES
+                   and scan.quality is not None
+                   and scan.quality.status == QualityStatus.OK
+                   and scan.jugular_flow_class is not None), None)
     if latest is None or latest.jugular_flow_class is None:
         return None, None
     if latest.quality is not None and latest.quality.status != QualityStatus.OK:
@@ -230,6 +254,17 @@ def _assess_outcome(
         )
 
     if quality in (QualityStatus.DEGRADED, QualityStatus.FAILED, QualityStatus.UNKNOWN):
+        if len(history) > 1:
+            previous = _assess_outcome(history[:-1], outcome, scan_types, registry)
+            if _TIER_RANK[previous.tier] >= _TIER_RANK[TierValue.CONSULT]:
+                return previous.model_copy(update={
+                    "tier_reason": TierReason.PERSISTENT_SERIOUS_EVIDENCE,
+                    "measurement_quality": quality,
+                    "limitations": previous.limitations + [
+                        "Latest scan is technically unreliable. Prior serious evidence is retained; no clearance rule is approved."
+                    ],
+                    "explanation": previous.explanation + " Latest acquisition needs repeating; it does not clear the existing alert.",
+                })
         return OutcomeAssessment(
             probability=None,
             tier=TierValue.REPEAT,
@@ -345,8 +380,16 @@ def assess_history(history: list[AstronautDayObservation], registry: Registry) -
     sans = _assess_outcome(sorted_history, "sans", SANS_SCAN_TYPES, registry)
     venous = _assess_outcome(sorted_history, "venous", VENOUS_SCAN_TYPES, registry)
 
+    from monitoring.actions import describe_action
+    for name, assessment, types in (("sans", sans, SANS_SCAN_TYPES), ("venous", venous, VENOUS_SCAN_TYPES)):
+        evidence = [o for o in sorted_history for scan in measurements_of(o) if scan.type in types
+                    and scan.quality is not None and scan.quality.status == QualityStatus.OK]
+        assessment.evidence_day = evidence[-1].day if evidence else None
+        assessment.recommended_action = RecommendedAction(**describe_action(assessment, name))
+
     return AssessmentResult(
         astronaut_id=sorted_history[-1].astronaut_id,
+        run_id=sorted_history[-1].metadata.run_id,
         as_of_day=as_of_day,
         sans=sans,
         venous=venous,

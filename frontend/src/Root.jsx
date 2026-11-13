@@ -16,6 +16,10 @@ const ROUTES = new Set([
   "timeline",
   "research",
   "debug",
+  "engineering-dashboard",
+  "engineering-timeline",
+  "engineering-ground",
+  "engineering-research",
 ]);
 function routeFromHash() {
   const route =
@@ -66,11 +70,13 @@ function Router() {
     );
   // Keep the operational component mounted across views: day, profile and sent
   // snapshots belong to this session, not to any one tab.
-  if (["dashboard", "ground", "timeline", "research"].includes(route))
+  if (["dashboard", "ground", "timeline", "research"].includes(route.replace("engineering-", "")))
     return (
       <PresentationView
-        view={route}
-        navigate={navigate}
+        key={route.startsWith("engineering-") ? "fixture" : "pipeline"}
+        engineeringFixture={route.startsWith("engineering-")}
+        view={route.replace("engineering-", "")}
+        navigate={(to) => navigate(route.startsWith("engineering-") && ["dashboard", "ground", "timeline", "research"].includes(to) ? `engineering-${to}` : to)}
         onOpenDebug={() => navigate("debug")}
       />
     );

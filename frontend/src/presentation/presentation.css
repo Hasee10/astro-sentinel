@@ -2418,3 +2418,15 @@
     animation: none !important;
   }
 }
+.pv-consultations { overflow: auto; padding: 24px; }
+.pv-consultations p { line-height: 1.6; overflow-wrap: anywhere; }
+.pv-consult-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.pv-consult-case { border-top: 1px solid #29434e; margin-top: 20px; padding: 18px 0; }
+.pv-consult-perspectives { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.pv-consult-case details { margin: 16px 0; }
+.pv-data-table tr[aria-current="true"] { background: #203a43; }
+.pv-workspace { overflow-y: auto; }
+.pv-content-grid { flex-shrink: 0; min-height: 360px; }
+.pv-measurements, .pv-trends { overflow-y: auto; }
+.pv-trends .pv-chart { min-height: 150px; }
+@media(max-width: 700px) { .pv-consult-perspectives { grid-template-columns: 1fr; } }

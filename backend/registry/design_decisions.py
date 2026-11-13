@@ -45,6 +45,16 @@ class DesignDecision:
 # the research lead's actual sign-off recorded in `decision_text`/`approved_by` -
 # this file is reviewed the same way registry/data/assumptions.json is.
 DESIGN_DECISIONS: dict[str, DesignDecision] = {
+    "user_relayed_recovery_v1_confirmation": DesignDecision(
+        decision_id="user_relayed_recovery_v1_confirmation",
+        description=(
+            "Independent written confirmation of backend/research_v1/spec.json, including its exact SHA256, "
+            "the 0.1 vs 0.5 prior supersession, model provenance, evidence aggregation, quality handling, "
+            "venous noise distributions, shared retries and adaptive precedence. User-relayed on 2026-11-13; "
+            "this records provenance only, not independently verified Rahat sign-off. See "
+            "handoff/research_lead/RECOVERY_APPROVAL_SHEET.md."
+        ),
+    ),
     "sans_venous_onset_day_assignment": DesignDecision(
         decision_id="sans_venous_onset_day_assignment",
         description=(

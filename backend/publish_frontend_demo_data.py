@@ -83,6 +83,29 @@ def _sanitize_blocker_message(capability: str, message: str) -> str:
 
 
 def publish(run_dir: Path, public_dir: Path) -> list[str]:
+    # Validate all inputs before touching the existing public dataset.
+    from contracts.models import AstronautDayObservation
+    from monitoring.engine import AssessmentResult
+    manifest = json.loads((run_dir / "simulation_manifest.json").read_text(encoding="utf-8"))
+    for name in _NEVER_PUBLISH_FILES:
+        if (public_dir / name).exists():
+            raise RuntimeError(f"Forbidden public file: {public_dir / name}")
+    observations = [AstronautDayObservation.model_validate_json(line) for line in
+                    (run_dir / "crew_observations.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    scored = [AssessmentResult.model_validate_json(line) for line in
+              (run_dir / "crew_scored.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    keys = [(o.astronaut_id, o.day) for o in observations]
+    if not keys or len(keys) != len(set(keys)) or set(keys) != {(r.astronaut_id, r.as_of_day) for r in scored} or len(keys) != len(scored):
+        raise ValueError("Observation/assessment identities or days do not match uniquely")
+    if any(o.metadata.run_id != manifest["run_id"] or not o.metadata.synthetic for o in observations):
+        raise ValueError("Mixed run IDs or non-synthetic observations")
+    if any(r.run_id != manifest["run_id"] for r in scored):
+        raise ValueError("Assessment run ID does not match observation manifest")
+    if any("ENGINEERING FIXTURE" in o.metadata.synthetic_label for o in observations):
+        raise ValueError("Engineering fixtures must not replace the public pipeline dataset")
+    for obs in observations:
+        if obs.scan is not None and obs.metadata.acquisition_policy == "fixed_7_day_day1_anchor" and (obs.day - 1) % 7:
+            raise ValueError("Unscheduled scan in fixed-policy public data")
     public_dir.mkdir(parents=True, exist_ok=True)
     published: list[str] = []
 

@@ -70,19 +70,19 @@
   {
     "parameter_id": "jugular_csa_by_gravity_level",
     "name": "Jugular cross-sectional area by gravity level",
-    "value": {"seated_1g_mm2": 12, "g_0_75_mm2": 24, "g_0_5_mm2": 34, "g_0_25_mm2": 68, "supine_1g_mm2": 108},
+    "value": {"seated_1g_mm2": 12, "g_0_75_mm2": 24, "g_0_5_mm2": 34, "g_0_25_mm2": 68, "supine_1g_mm2": 103},
     "unit": null,
     "source_name": "Lee et al. 2020",
     "source_document": "Mission_NASA_updated.docx",
-    "source_location": "Table 4 (Parameter sheet), row \"Jugular cross-sectional area by gravity level\"",
+    "source_location": "Table 4 of mission brief, corrected against Lee et al. 2020 Results, https://doi.org/10.3389/fphys.2020.00863 (verified 2026-11-13)",
     "original_study_context": "Lee et al. 2020, Frontiers in Physiology. Parabolic-flight analog study, n=9 subjects, measuring jugular cross-sectional area at discrete simulated gravity levels.",
     "original_study_endpoint": "Jugular cross-sectional area vs. simulated gravity level (geometry, not a venous-stasis probability or risk study)",
     "target_measurement": "venous",
     "evidence_classification": "established",
-    "verification_status": "open_paper",
+    "verification_status": "verified",
     "permitted_use": "Reference geometry only - expected jugular area at a given gravity level, for synthetic data generation and sanity-checking simulated measurements. Not a risk or disease cutoff: the source gives no threshold area above which venous stasis is indicated, and these values must never be read directly as a venous-stasis probability.",
     "authorized_operations": [],
-    "limitations": "Small sample (n=9); parabolic-flight analog rather than sustained microgravity or partial-gravity exposure. Moon (0.16g) and Mars (0.38g) are not among the directly tested levels."
+    "limitations": "Primary-paper correction verified 2026-11-13: supine 1g is 103 (95% CI 75-131) mm2; both source briefs transcribe 108 and remain unchanged. Synthetic 108 mm2 cap is a separate unverified design assumption. Small sample (n=9); parabolic-flight analog rather than sustained microgravity or partial-gravity exposure. Moon (0.16g) and Mars (0.38g) are not among the directly tested levels."
   },
   {
     "parameter_id": "optic_disc_edema_tilt_study",

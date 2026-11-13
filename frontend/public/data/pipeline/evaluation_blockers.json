@@ -3,6 +3,11 @@
   "stage": "evaluate_policies",
   "blockers": [
     {
+      "capability": "adaptive_replacement_scheduling",
+      "blocked_by": [],
+      "message": "AdaptiveReplacementSchedulePolicy (Option B) requires BOTH a full design-decision approval AND a wired, tested execution path before it may run - approving the decision alone would not change what executes. Unmet: adaptive_scheduling_policy_semantics is not fully approved (today only 'in principle' - max_gap_days, defer_lookback_days, and the remaining sub-rules in AdaptiveReplacementSchedulePolicy's docstring are still unspecified); no wired, tested execution path selects AdaptiveReplacementSchedulePolicy for a real run - evaluation.sweep.run_sweep() always constructs the original AdaptiveSchedulePolicy (FIXED BACKSTOP + TRIGGERED EXTRA SCANS) today, regardless of this flag. This blocker fires only because Option B was explicitly requested; it is never used by default, and the original policy (FIXED BACKSTOP + TRIGGERED EXTRA SCANS) remains the one that actually runs."
+    },
+    {
       "capability": "sans_ground_truth_consistency",
       "blocked_by": [],
       "message": "sans ground truth is not fully resolved for detection-delay/missed-event/false-escalation scoring. An event flagged with unknown onset, or no event-occurrence model at all, must never be scored as healthy, detected, or a valid zero."
