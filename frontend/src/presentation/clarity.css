@@ -24,12 +24,14 @@
 .pv .pv-tabs { flex-wrap: wrap; height: auto; flex-shrink: 0; gap: 6px; }
 .pv .pv-tabs button { white-space: normal; padding: 10px 14px; }
 .pv .pv-navigation-toggle { display: none; }
-.pv .pv-sidebar { position: sticky; top: 0; padding: 24px 16px; min-width: 0; height: auto; max-height: 100dvh; }
+.pv .pv-sidebar { position: sticky; top: 0; display: grid; grid-template-rows: auto auto minmax(min-content, 1fr) auto; padding: 24px 16px; min-width: 0; height: calc(100dvh - 80px); max-height: calc(100dvh - 80px); overflow-y: auto; }
 .pv .pv-cohort-heading h2 { font-size: 18px; }
 .pv .pv-profile { min-height: 62px; height: auto; padding: 10px; }
 .pv .pv-profile-name { font-size: 15px; }
 .pv .pv-profile-name small { font-size: 12px; }
-.pv .pv-crew-list { flex: none; height: min(480px, 50dvh); max-height: 50dvh; overflow-y: auto; }
+.pv .pv-browser { display: grid; grid-template-rows: auto auto auto minmax(72px, 1fr) auto; min-height: 0; }
+.pv .pv-crew-list { height: auto; min-height: 0; max-height: none; overflow-y: auto; }
+.pv .pv-sidebar .pv-pager { margin-top: 0; }
 .pv .pv-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .pv .pv-filters select, .pv select { font-size: 14px; min-height: 44px; max-width: 100%; }
 .pv .pv-search input { font-size: 15px; min-height: 44px; min-width: 0; }
@@ -127,13 +129,12 @@
 }
 @media (max-width: 1023px) {
   .pv .pv-shell { display: flex; flex-direction: column; height: auto; }
-  .pv .pv-sidebar { position: static; width: 100%; max-height: none; padding: 14px 22px; border-bottom: 1px solid #38505e; }
+  .pv .pv-sidebar { position: static; display: block; height: auto; width: 100%; max-height: none; padding: 14px 22px; border-bottom: 1px solid #38505e; overflow: visible; }
   .pv .pv-cohort-heading, .pv .pv-sidebar-note, .pv .pv-sidebar-bottom { display: none; }
   .pv .pv-mobile-browser { display: flex; width: 100%; min-height: 44px; font-size: 16px !important; gap: 12px; }
   .pv .pv-mobile-browser > span { display: flex; margin-left: auto; gap: 10px; font-size: 14px; }
   .pv .pv-browser { display: none; }
-  .pv .pv-browser.is-open { display: flex; margin-top: 14px; gap: 12px; }
-  .pv .pv-crew-list { height: min(360px, 45dvh); max-height: 360px; }
+  .pv .pv-browser.is-open { display: grid; margin-top: 14px; gap: 12px; overflow-y: auto; }
   .pv .pv-workspace { width: 100%; padding: 22px; }
   .pv .pv-topbar { gap: 12px; }
   .pv .pv-topbar nav { flex: 1; justify-content: flex-end; }
