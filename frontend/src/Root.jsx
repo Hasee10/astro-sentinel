@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import Experience from "./experience/Experience.jsx";
 import Logo from "./components/Logo.jsx";
 import "./experience/experience.css";
+import "./experience/readability.css";
 
 const App = lazy(() => import("./App.jsx"));
 const PresentationView = lazy(

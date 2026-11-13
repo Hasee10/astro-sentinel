@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Icon from "../components/Icon.jsx";
 import Logo from "../components/Logo.jsx";
+import EngineeringPreview from "./EngineeringPreview.jsx";
 
 const HERO = "/images/astronaut-earth.webp";
 
@@ -333,7 +334,7 @@ function Landing({ navigate }) {
                 </li>
                 <li>
                   <Icon name="check" size={16} />
-                  See why an assessment is unavailable
+                  Understand the evidence and next action
                 </li>
               </ul>
               <button
@@ -354,14 +355,10 @@ function Landing({ navigate }) {
                 <span>ASTROSENTINEL / MISSION CONTROL</span>
                 <Icon name="grid" size={13} />
               </div>
-              <img
-                src="/images/mission-preview.svg"
-                alt="Data-derived preview: synthetic astronaut A1, independent SANS and venous assessments, and recorded ONSD observations through day 10"
-                loading="lazy"
-              />
+              <EngineeringPreview navigate={navigate} researchCohortSize={run?.crew_size} />
               <div className="as-preview-caption">
-                <span>REAL DEMO DATA / FIXED DAY-10 PREVIEW</span>
-                <button type="button" onClick={() => navigate("dashboard")}>
+                <span>Current engineering acceptance data · E4, day 14</span>
+                <button type="button" onClick={() => navigate("engineering-dashboard?profile=E4&day=14")}>
                   Explore the workspace <Icon name="arrow" size={14} />
                 </button>
               </div>

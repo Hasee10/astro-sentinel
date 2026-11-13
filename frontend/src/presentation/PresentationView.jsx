@@ -21,12 +21,14 @@ import {
   ObservationPanel,
   TransmissionPanel,
   ResearchPanel,
+  SchedulePanel,
 } from "./WorkspacePanels.jsx";
 import { TrendsPanel } from "./TrendsPanel.jsx";
 import { useMissionData } from "./useMissionData.js";
 import { chartRange, indexMission, reachedEvents, observationRows, measurementsOf } from "./missionModel.js";
 import ConsultationPanel from "./ConsultationPanel.jsx";
 import "./presentation.css";
+import "./clarity.css";
 
 const VIEWS = [
   { id: "dashboard", label: "Overview", icon: "grid" },
@@ -117,7 +119,10 @@ function Mission({ data, view, navigate, engineeringFixture }) {
     () => indexMission(scored, observations ?? []),
     [scored, observations],
   );
-  const [astronautId, setAstronautId] = useState(indexed.ids[0]);
+  const [astronautId, setAstronautId] = useState(() => {
+    const requested = new URLSearchParams(window.location.hash.split("?")[1]).get("profile");
+    return indexed.ids.includes(requested) ? requested : indexed.ids[0];
+  });
   const records = useMemo(
     () => indexed.crew.get(astronautId) ?? [],
     [indexed, astronautId],
@@ -126,7 +131,10 @@ function Mission({ data, view, navigate, engineeringFixture }) {
     () => records.map((record) => record.as_of_day),
     [records],
   );
-  const [day, setDay] = useState(days[0] ?? 1);
+  const [day, setDay] = useState(() => {
+    const requested = Number(new URLSearchParams(window.location.hash.split("?")[1]).get("day"));
+    return days.includes(requested) ? requested : days[0] ?? 1;
+  });
   const [playing, setPlaying] = useState(false);
   const [pauseOnAction, setPauseOnAction] = useState(true);
   const [actionStop, setActionStop] = useState(null);
@@ -139,6 +147,7 @@ function Mission({ data, view, navigate, engineeringFixture }) {
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideStep, setGuideStep] = useState(0);
   const [controlsOpen, setControlsOpen] = useState(false);
+  const [navigationOpen, setNavigationOpen] = useState(false);
   const [tabs, setTabs] = useState({
     dashboard: "assessments",
     ground: "snapshot",
@@ -307,10 +316,12 @@ function Mission({ data, view, navigate, engineeringFixture }) {
       ["chart", "Charts"],
       ["changes", "Changes"],
       ["records", "Records"],
+      ["schedule", "Schedule"],
     ],
     research: [
       ["summary", "Summary"],
       ["results", "Results"],
+      ["engineering", "Engineering Comparison"],
       ["blockers", "Blockers"],
       ["capabilities", "Models"],
       ["provenance", "Run info"],
@@ -388,14 +399,16 @@ function Mission({ data, view, navigate, engineeringFixture }) {
             ASTROSENTINEL<small>MISSION CONTROL</small>
           </span>
         </button>
-        <nav aria-label="Workspace views">
+        <button type="button" className="pv-navigation-toggle pv-btn" aria-label="Workspace navigation" aria-expanded={navigationOpen}
+          aria-controls="workspace-navigation" onClick={() => setNavigationOpen(value => !value)}><Icon name="menu" size={20} /> Menu</button>
+        <nav id="workspace-navigation" className={navigationOpen ? "is-open" : ""} aria-label="Workspace views">
           {VIEWS.map((item) => (
             <button
               key={item.id}
               type="button"
               className={view === item.id ? "is-active" : ""}
               aria-current={view === item.id ? "page" : undefined}
-              onClick={() => navigate(item.id)}
+              onClick={() => { setNavigationOpen(false); navigate(item.id); }}
             >
               <Icon name={item.icon} size={19} />
               <span>{item.label}</span>
@@ -421,6 +434,7 @@ function Mission({ data, view, navigate, engineeringFixture }) {
       <div className="pv-shell">
         {view !== "research" && (
           <CohortBrowser
+            engineeringFixture={engineeringFixture}
             indexed={indexed}
             day={day}
             astronautId={astronautId}
@@ -430,6 +444,7 @@ function Mission({ data, view, navigate, engineeringFixture }) {
         )}
         <main id="mission-content" className="pv-workspace" tabIndex={-1}>
           {engineeringFixture && <p className="pv-notice" role="status">ENGINEERING FIXTURE · User-relayed model pending independent written approval. These cases verify functionality and are not representative experiment results. <a href="#dashboard">Return to published fixed-policy demo</a></p>}
+          {!engineeringFixture && <p className="pv-context">Research cohort · {indexed.ids.length} synthetic profiles · {manifest?.run_id ?? "Run unavailable"}. Scientific comparison remains gated. <a href="#engineering-dashboard">Open the separate E1–E5 engineering cases</a></p>}
           <header className="pv-heading">
             <div>
               <h1>
@@ -599,7 +614,10 @@ function Mission({ data, view, navigate, engineeringFixture }) {
               >
                 {view === "dashboard" &&
                   (tab === "assessments" ? (
-                    <OutcomeGroup record={record} />
+                    <OutcomeGroup record={record} rows={onsdRows} day={day} consultations={consultations}
+                      onTimeline={target => { if (target != null) jump(target); setTabs(current => ({ ...current, timeline: "records" })); navigate("timeline"); }}
+                      onSchedule={() => { setTabs(current => ({ ...current, timeline: "schedule" })); navigate("timeline"); }}
+                      onConsultation={() => { setTabs(current => ({ ...current, ground: "consultation" })); navigate("ground"); }} />
                   ) : (
                     <TodayData observation={observation} rows={onsdRows} day={day} />
                   ))}
@@ -613,7 +631,10 @@ function Mission({ data, view, navigate, engineeringFixture }) {
                       missionLength={missionLength}
                       day={day}
                       onJump={jump}
+                      onRecord={target => { jump(target); setTabs(current => ({ ...current, timeline: "records" })); }}
                     />
+                  ) : tab === "schedule" ? (
+                    <SchedulePanel rows={onsdRows} day={day} onRecord={target => { jump(target); setTabs(current => ({ ...current, timeline: "records" })); }} />
                   ) : tab === "changes" ? (
                     <EventPanel events={events} day={day} onJump={(target) => { jump(target); setTabs(current => ({ ...current, timeline: "records" })); }} />
                   ) : (

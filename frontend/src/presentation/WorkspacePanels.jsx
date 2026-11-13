@@ -2,41 +2,28 @@ import { useState } from "react";
 import Icon from "../components/Icon.jsx";
 import { OUTCOMES, QUALITY_TEXT } from "./constants.js";
 import { OutcomeTile } from "./OutcomeTile.jsx";
-import { DetailDialog, Pager, Tabs } from "./WorkspaceUI.jsx";
-import { usePageSize } from "./usePageSize.js";
-import { recordPage } from "./missionModel.js";
+import { DetailDialog, Pager } from "./WorkspaceUI.jsx";
+import { policyLabel, recordPage } from "./missionModel.js";
+import EngineeringComparison from "./EngineeringComparison.jsx";
 
-export function OutcomeGroup({ record }) {
-  const [outcome, setOutcome] = useState("sans");
-  return (
-    <div className="pv-outcome-group">
-      <div className="pv-outcome-switch">
-        <Tabs
-          label="Monitoring outcome"
-          items={OUTCOMES.map((meta) => [meta.key, meta.name])}
-          value={outcome}
-          onChange={setOutcome}
-        />
-      </div>
-      <div className="pv-tiles" data-outcome={outcome}>
-        {OUTCOMES.map((meta) => (
-          <div className={`pv-outcome-slot pv-slot-${meta.key}`} key={meta.key}>
-            <OutcomeTile meta={meta} outcome={record?.[meta.key]} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+export function OutcomeGroup({ record, rows = [], day, consultations = [], onTimeline, onSchedule, onConsultation }) {
+  return <div className="pv-outcome-group"><div className="pv-tiles">
+    {OUTCOMES.map(meta => <div className={`pv-outcome-slot pv-slot-${meta.key}`} key={meta.key}>
+      <OutcomeTile meta={meta} outcome={record?.[meta.key]} rows={rows} day={day ?? record?.as_of_day}
+        consultation={consultations.findLast(c => c.astronautId === record?.astronaut_id && c.outcome === meta.key && c.day <= (day ?? record?.as_of_day) && c.state !== "closed")}
+        onTimeline={onTimeline} onSchedule={onSchedule} onConsultation={onConsultation} />
+    </div>)}
+  </div></div>;
 }
 
 export function EventPanel({ events, day, onJump }) {
   const [page, setPage] = useState(0);
   const [detail, setDetail] = useState(null);
-  const { ref, size } = usePageSize(100, 110, 4);
+  const size = 6;
   const count = Math.max(1, Math.ceil(events.length / size));
   const current = Math.min(page, count - 1);
   return (
-    <section className="pv-panel pv-paged-panel" ref={ref}>
+    <section className="pv-panel pv-paged-panel">
       <div className="pv-panel-head">
         <h2>Recorded changes</h2>
         <span className="pv-subtle">Through day {day}</span>
@@ -96,15 +83,23 @@ export function ObservationPanel(props) {
   return <ObservationPage key={`${props.astronautId}:${props.day}`} {...props} />;
 }
 
+export function SchedulePanel({ rows, day, onRecord }) {
+  return <section className="pv-panel"><div className="pv-panel-head"><h2>Scan decisions</h2><span>Through day {day}</span></div>
+    <p>Only decisions already recorded at this mission day are shown. Follow-up targets do not guarantee a future acquisition.</p>
+    <div className="pv-table-wrap"><table className="pv-data-table"><thead><tr><th>Day</th><th>Session</th><th>Recorded reason</th><th>Policy</th></tr></thead>
+      <tbody>{rows.filter(row => row.day <= day).map(row => <tr key={row.day}><td><button type="button" className="pv-text-button" onClick={() => onRecord(row.day)}>Day {row.day}</button></td><td>{row.hasSession ? "Acquired" : "No acquisition"}</td><td>{row.schedulingReason?.replaceAll("_", " ") ?? "Not recorded"}</td><td>{policyLabel(row.policy)}</td></tr>)}</tbody></table></div>
+  </section>;
+}
+
 function ObservationPage({ rows, day, astronautId }) {
   const [page, setPage] = useState(0);
-  const { ref, size } = usePageSize(42, 170, 10);
+  const size = 10;
   const reached = rows.filter((row) => row.day <= day);
   const count = Math.max(1, Math.ceil(reached.length / size));
   const [manuallyPaged, setManuallyPaged] = useState(false);
   const current = Math.min(manuallyPaged ? page : recordPage(rows, day, size), count - 1);
   return (
-    <section className="pv-panel pv-paged-panel" ref={ref}>
+    <section className="pv-panel pv-paged-panel">
       <div className="pv-panel-head">
         <h2>Observation record</h2>
         <span className="pv-subtle">
@@ -130,7 +125,7 @@ function ObservationPage({ rows, day, astronautId }) {
                   : `${row.onsd.toFixed(2)} mm`}
               </td>
               <td>{QUALITY_TEXT[row.quality] ?? "No scan"}</td>
-              <td>{row.jugular == null ? "—" : `${row.jugular.toFixed(1)} mm²`} {row.flow ?? ""}</td>
+              <td>{row.jugular == null ? "No value" : `${row.jugular.toFixed(1)} mm²`}<br />{row.flow ?? "Flow unavailable"}<br />{QUALITY_TEXT[row.jugularQuality] ?? "No jugular acquisition"}</td>
             </tr>
           ))}
         </tbody>
@@ -150,11 +145,11 @@ function ObservationPage({ rows, day, astronautId }) {
 
 export function TransmissionPanel({ messages, now }) {
   const [page, setPage] = useState(0);
-  const { ref, size } = usePageSize(78, 110, 5);
+  const size = 5;
   const count = Math.max(1, Math.ceil(messages.length / size));
   const current = Math.min(page, count - 1);
   return (
-    <section className="pv-panel pv-paged-panel" ref={ref}>
+    <section className="pv-panel pv-paged-panel">
       <div className="pv-panel-head">
         <h2>Transmission history</h2>
         <span className="pv-subtle">{messages.length} messages</span>
@@ -202,7 +197,7 @@ export function TransmissionPanel({ messages, now }) {
 export function ResearchPanel({ manifest, evaluation, tab }) {
   const [page, setPage] = useState(0);
   const [detail, setDetail] = useState(null);
-  const { ref, size } = usePageSize(62, 110, 6);
+  const size = 6;
   const blockers = evaluation?.blockers ?? [];
   const capabilities = Object.entries(manifest?.capability_readiness ?? {});
   const source = tab === "blockers" ? blockers : capabilities;
@@ -212,6 +207,7 @@ export function ResearchPanel({ manifest, evaluation, tab }) {
     text
       .replaceAll("_", " ")
       .replace(/\b(sans|onsd|hrv|ptt)\b/gi, (word) => word.toUpperCase());
+  if (tab === "engineering") return <EngineeringComparison />;
   if (tab === "results") return <section className="pv-panel pv-consultations">
     <div className="pv-panel-head"><h2>Fixed versus adaptive results</h2></div>
     <h3>No validated experiment results available</h3>
@@ -224,7 +220,7 @@ export function ResearchPanel({ manifest, evaluation, tab }) {
   </section>;
   if (tab === "summary")
     return (
-      <section className="pv-panel pv-research-summary" ref={ref}>
+      <section className="pv-panel pv-research-summary">
         <div className="pv-panel-head">
           <h2>Research readiness</h2>
           <span className="pv-tag">Synthetic demonstration</span>
@@ -285,7 +281,7 @@ export function ResearchPanel({ manifest, evaluation, tab }) {
     const pages = Math.max(1, Math.ceil(entries.length / size));
     const selected = Math.min(page, pages - 1);
     return (
-      <section className="pv-panel pv-run-info" ref={ref}>
+      <section className="pv-panel pv-run-info">
         <div className="pv-panel-head">
           <h2>Run provenance</h2>
         </div>
@@ -309,7 +305,7 @@ export function ResearchPanel({ manifest, evaluation, tab }) {
     );
   }
   return (
-    <section className="pv-panel pv-paged-panel" ref={ref}>
+    <section className="pv-panel pv-paged-panel">
       <div className="pv-panel-head">
         <h2>
           {tab === "blockers"

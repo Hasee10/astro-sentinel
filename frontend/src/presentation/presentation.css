@@ -193,7 +193,7 @@
 .pv-brand small {
   display: block;
   margin-top: 2px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.12em;
   color: #a3bec8;
   font-weight: 500;
@@ -383,7 +383,7 @@
 }
 .pv-profile-name small {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   color: #b2c5ce;
 }
@@ -924,7 +924,7 @@
   display: flex;
   justify-content: space-between;
   color: #abc7d5;
-  font-size: 11px;
+  font-size: 12px;
 }
 .pv-link-status {
   display: grid;
@@ -1614,7 +1614,7 @@
     gap: 5px;
   }
   .pv-synthetic {
-    font-size: 11px;
+    font-size: 12px;
   }
   .pv-content-grid {
     grid-template-columns: minmax(0, 1fr) 265px;
@@ -1656,7 +1656,7 @@
     font-size: 15px;
   }
   .pv-link-labels {
-    font-size: 10px;
+    font-size: 12px;
   }
   .pv-heading p {
     font-size: 12px;
@@ -1777,7 +1777,7 @@
     height: 34px;
   }
   .pv-brand small {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.07em;
   }
   .pv-top-actions {
@@ -2084,7 +2084,7 @@
     height: 46px;
   }
   .pv-link-labels {
-    font-size: 11px;
+    font-size: 12px;
   }
   .pv-link-status {
     min-height: 63px;
@@ -2127,18 +2127,18 @@
     height: 14px;
   }
   .pv-foot {
-    font-size: 11px;
+    font-size: 12px;
     padding-top: 6px;
     gap: 8px;
   }
   .pv-foot > span {
-    font-size: 11px;
+    font-size: 12px;
   }
   .pv-foot > span i {
     display: none;
   }
   .pv-foot button {
-    font-size: 11px;
+    font-size: 12px;
   }
   .pv-foot button svg {
     display: none;
@@ -2354,7 +2354,7 @@
     font-size: 14px;
   }
   .pv-foot button {
-    font-size: 11px;
+    font-size: 12px;
   }
   .pv-dialog > header h2 {
     font-size: 16px;

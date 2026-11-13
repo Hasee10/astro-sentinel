@@ -100,3 +100,14 @@ function scanPublicDirectory(directory) {
 }
 scanPublicDirectory(allData)
 console.log('Verified all published fixtures and manifests for hidden fields.')
+const engineering = JSON.parse(readFileSync(join(allData, 'engineering', 'comparison.json'), 'utf8'))
+assert(engineering.validated_for_experiment === false && engineering.label.includes('ENGINEERING FIXTURE'), 'Engineering comparison must remain explicitly unvalidated')
+assert(engineering.rows.length > 0 && engineering.seeds.length > 0, 'Missing engineering configuration/results')
+for (const row of engineering.rows) {
+  assert(engineering.seeds.includes(row.seed), 'Unregistered engineering seed')
+  assert(['fixed', 'adaptive_replacement'].includes(row.policy), 'Unregistered comparison policy')
+  assert(Number.isInteger(row.sessions) && row.sessions >= 0, 'Invalid shared-session count')
+  assert(row.successful_measurements + row.degraded_measurements + row.failed_measurements === row.sessions * 2, 'Shared-session measurement accounting mismatch')
+  assert(!('astronaut_id' in row) && !('synthetic_events' in row.sans) && !('synthetic_events' in row.venous), 'Unexpected hidden per-profile/event label in aggregate comparison')
+}
+console.log(`Verified ${engineering.rows.length} unvalidated aggregate engineering rows; existing cohort and fixtures stay separate.`)

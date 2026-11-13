@@ -16,6 +16,12 @@ async function choose(page, id) {
   await page.getByRole("button", { name: `Select astronaut ${id}`, exact: true }).click();
 }
 
+async function navigate(page, name) {
+  const target = page.getByRole("button", { name, exact: true });
+  if (!(await target.isVisible())) await page.getByRole("button", { name: "Workspace navigation", exact: true }).click();
+  await target.click();
+}
+
 test("fixed published scans, measurements and selected record agree", async ({ page, request }, testInfo) => {
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
@@ -28,7 +34,7 @@ test("fixed published scans, measurements and selected record agree", async ({ p
   const rows = (await (await request.get("/data/pipeline/crew_observations.jsonl")).text()).trim().split(/\r?\n/).map(JSON.parse);
   const row = rows.find(r => r.astronaut_id === "A1" && r.day === 15);
   await expect(page.getByText(`${row.scan.onsd_mm.toFixed(2)}`, { exact: false }).first()).toBeVisible();
-  await page.getByRole("button", { name: "Timeline", exact: true }).click();
+  await navigate(page, "Timeline");
   await page.getByRole("tab", { name: "Records", exact: true }).click();
   const selected = page.locator('tr[aria-current="true"]');
   await expect(selected).toContainText("15");
@@ -49,11 +55,11 @@ test("gated dual-measurement cases expose justified Consult and complete delayed
   await expect(page.locator(".pv-tile-tier").filter({ hasText: "Consult" }).first()).toBeVisible();
   await page.getByRole("tab", { name: "Measurements", exact: true }).click();
   await expect(page.getByText(/mm²/).first()).toBeVisible();
-  await page.getByRole("button", { name: "Timeline", exact: true }).click();
+  await navigate(page, "Timeline");
   await page.getByRole("tab", { name: "Jugular trace", exact: true }).click();
   await expect(page.getByRole("img", { name: "Jugular area by mission day" })).toBeVisible();
   await page.screenshot({ path: `test-results/jugular-${testInfo.project.name}.png`, fullPage: true });
-  await page.getByRole("button", { name: "Earth link", exact: true }).click();
+  await navigate(page, "Earth link");
   await page.getByRole("tab", { name: "Consultation", exact: true }).click();
   const delay = page.getByRole("slider", { name: "Consultation one-way delay" });
   await delay.focus();
@@ -83,7 +89,7 @@ test("research reports the exact gate and Urgent fixture follows daily scan prot
   await choose(page, "E5");
   await setDay(page, 2);
   await expect(page.locator(".pv-tile-tier").filter({ hasText: "Urgent" }).first()).toBeVisible();
-  await page.getByRole("button", { name: "Research", exact: true }).click();
+  await navigate(page, "Research");
   await expect(page.getByText("Scientific comparison blocked", { exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "Blockers", exact: true }).click();
   await page.getByRole("button", { name: /Research v1 written confirmation/i }).click();

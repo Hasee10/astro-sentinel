@@ -10,6 +10,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "publish:engineering": "node scripts/publish-engineering-comparison.mjs",
     "test:e2e": "playwright test",
     "check:data": "node scripts/check-public-data.mjs"
   },

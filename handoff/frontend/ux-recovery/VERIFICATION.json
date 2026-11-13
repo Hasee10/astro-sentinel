@@ -1,0 +1,63 @@
+{
+  "base_checkpoint": "cd786d0",
+  "branch": "main",
+  "backend_models_modified": false,
+  "existing_research_and_acceptance_datasets_modified": false,
+  "datasets_regenerated": false,
+  "new_public_artifact": "frontend/public/data/engineering/comparison.json",
+  "new_artifact_source": "handoff/research_lead/RECOVERY_ENGINEERING_RESULTS.json",
+  "new_artifact_scope": "Allowlisted aggregate engineering metrics only; 90 rows; validated_for_experiment=false",
+  "tests": {
+    "backend_passed": 316,
+    "frontend_unit_passed": 14,
+    "browser_acceptance_passed": 17,
+    "lint": "passed",
+    "production_build": "passed",
+    "public_data_safety": "passed"
+  },
+  "responsive_widths": [
+    375,
+    390,
+    768,
+    1280,
+    1440
+  ],
+  "zoom_200_equivalent": {
+    "css_viewport": [
+      720,
+      500
+    ],
+    "device_pixel_ratio": 2,
+    "status": "passed"
+  },
+  "native_chrome_zoom_200": "Unverified: Computer Use stopped because it could not confidently determine the active browser URL. Native browser interaction stopped.",
+  "screenshots": [
+    "cards-1280.png",
+    "cards-1440.png",
+    "cards-375.png",
+    "cards-390.png",
+    "cards-768.png",
+    "comparison-tablet-768.png",
+    "engineering-comparison-1440.png",
+    "gateway-768.png",
+    "jugular-1280.png",
+    "jugular-1440.png",
+    "jugular-375.png",
+    "jugular-390.png",
+    "jugular-768.png",
+    "landing-mobile-375.png",
+    "landing-preview-1440.png",
+    "onsd-1280.png",
+    "onsd-1440.png",
+    "onsd-375.png",
+    "onsd-390.png",
+    "onsd-768.png",
+    "records-1440.png",
+    "research-cohort-1440.png",
+    "results-blocked-1440.png",
+    "schedule-1440.png",
+    "timeline-1440.png",
+    "zoom-200-equivalent.png"
+  ],
+  "push_or_deployment_performed": false
+}

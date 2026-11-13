@@ -93,8 +93,61 @@ export function observationRows(observations, astronautId, length) {
       quality: scan?.quality?.status ?? null,
       policy: observation?.metadata?.acquisition_policy,
       schedulingReason: observation?.metadata?.scheduling_reason,
+      hasSession: measurements.length > 0,
+      onsdAttempted: !!scan,
+      jugularAttempted: !!jugularScan,
     };
   });
+}
+
+// Preserve actual acquisition days. Connector geometry is separate from data:
+// no samples are generated for unscanned days, and failed values are excluded.
+export function sparseObservations(rows, day, outcome = "sans") {
+  const jugular = outcome === "venous";
+  const visible = rows.filter(row => row.day <= day);
+  const attempts = visible.filter(row => jugular ? row.jugularAttempted ?? row.jugularQuality != null : row.onsdAttempted ?? row.quality != null);
+  const samples = attempts.map(row => ({ day: row.day,
+    value: jugular ? row.jugular : row.onsd,
+    baseline: jugular ? row.jugularBaseline : row.baseline,
+    quality: jugular ? row.jugularQuality : row.quality,
+    flow: jugular ? row.flow : null,
+  })).map(row => ({ ...row, value: row.quality === "failed" ? null : row.value }));
+  const points = samples.filter(row => Number.isFinite(row.value));
+  const usable = points.filter(row => ["ok", "degraded"].includes(row.quality));
+  const segments = usable.slice(1).map((point, i) => ({ from: usable[i], to: point, gap: point.day - usable[i].day > 1 }));
+  const baseline = samples.findLast(row => Number.isFinite(row.baseline))?.baseline ?? null;
+  const values = points.map(row => row.value).concat(baseline == null ? [] : [baseline]);
+  const padding = jugular ? 5 : 0.15;
+  const step = jugular ? 10 : 0.2;
+  const low = values.length ? Math.max(0, Math.floor((Math.min(...values) - padding) / step) * step) : 0;
+  const high = values.length ? Math.max(low + step * 2, Math.ceil((Math.max(...values) + padding) / step) * step) : 1;
+  return { samples, points, segments, baseline, low, high,
+    summary: { sessions: visible.filter(row => row.hasSession ?? (row.quality != null || row.jugularQuality != null)).length,
+      attempts: samples.length, usable: usable.length,
+      degraded: samples.filter(row => row.quality === "degraded").length,
+      failed: samples.filter(row => row.quality === "failed").length,
+      lastDay: samples.at(-1)?.day ?? null,
+      policy: visible.findLast(row => row.policy)?.policy ?? "Not recorded" } };
+}
+
+export function evidenceFor(rows, day, outcome) {
+  const series = sparseObservations(rows, day, outcome);
+  return { ...series, latest: series.samples.at(-1),
+    latestUsable: series.samples.findLast(row => Number.isFinite(row.value) && ["ok", "degraded"].includes(row.quality)) };
+}
+
+export function policyLabel(policy) {
+  return policy === "fixed_7_day_day1_anchor" || policy === "fixed" ? "Fixed · 7-day schedule" : policy === "adaptive_replacement" ? "Adaptive replacement" : policy ?? "Not recorded";
+}
+
+export function nextEvidenceAction(outcome, day, policy, missionLength = 30) {
+  const action = outcome?.recommended_action;
+  if (policy === "fixed_7_day_day1_anchor" || policy === "fixed") {
+    const next = 1 + Math.ceil(day / 7) * 7;
+    return next <= missionLength ? `Next routine scan: day ${next} · fixed 7-day anchor. ${action?.quality_repeat_required ? "Retry required; exact retry timing awaits protocol confirmation." : ""}` : "Routine mission schedule complete; further follow-up requires a new decision.";
+  }
+  if (action?.follow_up_day != null) return `Follow-up target: day ${action.follow_up_day}. ${action.follow_up_rule}. This is a target, not a confirmed future acquisition.`;
+  return "Next scan decision pending the active policy and newly available evidence. Future acquisitions are not known in advance.";
 }
 
 export function recordPage(rows, day, size) {

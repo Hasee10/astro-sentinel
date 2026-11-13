@@ -1,0 +1,3274 @@
+{
+  "label": "ENGINEERING FIXTURE - USER-RELAYED MODEL - NOT VALIDATED EXPERIMENT RESULTS",
+  "validated_for_experiment": false,
+  "source_artifact": "RECOVERY_ENGINEERING_RESULTS.json",
+  "source_sha256": "169846222d3ad0f0bd444c4216a19390b2947ec2171733a46e5147001d003d93",
+  "spec_version": "user-relayed-2026-11-13-v1",
+  "spec_sha256": "dd3f16e5cd13d2f7f156a1fcf5b98ca2678225160719661d6187fe1de625374c",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "cohort_size_per_seed": 60,
+  "rows": [
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 4,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1418,
+          "repeat": 324,
+          "consult": 58
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 4,
+      "sessions": 558,
+      "repeat_sessions": 80,
+      "successful_measurements": 998,
+      "degraded_measurements": 71,
+      "failed_measurements": 47,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 6.565217391304348,
+        "missed_events": 1,
+        "false_escalation_days": 1,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1431,
+          "repeat": 259,
+          "consult": 110
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 5.444444444444445,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 550,
+          "monitor": 1250
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 4,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1418,
+          "repeat": 324,
+          "consult": 58
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 4,
+      "sessions": 568,
+      "repeat_sessions": 85,
+      "successful_measurements": 1012,
+      "degraded_measurements": 73,
+      "failed_measurements": 51,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 6.818181818181818,
+        "missed_events": 2,
+        "false_escalation_days": 1,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1437,
+          "repeat": 264,
+          "consult": 99
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.7407407407407405,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 569,
+          "monitor": 1231
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 4,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1418,
+          "repeat": 324,
+          "consult": 58
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 4,
+      "sessions": 578,
+      "repeat_sessions": 87,
+      "successful_measurements": 1028,
+      "degraded_measurements": 75,
+      "failed_measurements": 53,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 6.409090909090909,
+        "missed_events": 2,
+        "false_escalation_days": 1,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1426,
+          "repeat": 267,
+          "consult": 107
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.333333333333333,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 582,
+          "monitor": 1218
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 4,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1418,
+          "repeat": 324,
+          "consult": 58
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 4,
+      "sessions": 589,
+      "repeat_sessions": 86,
+      "successful_measurements": 1052,
+      "degraded_measurements": 73,
+      "failed_measurements": 53,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 6.181818181818182,
+        "missed_events": 2,
+        "false_escalation_days": 1,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1424,
+          "repeat": 269,
+          "consult": 107
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 3.740740740740741,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 597,
+          "monitor": 1203
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 4,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1418,
+          "repeat": 324,
+          "consult": 58
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 4,
+      "sessions": 602,
+      "repeat_sessions": 88,
+      "successful_measurements": 1076,
+      "degraded_measurements": 76,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.545454545454546,
+        "missed_events": 2,
+        "false_escalation_days": 1,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1409,
+          "repeat": 272,
+          "consult": 119
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 3.5555555555555554,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 606,
+          "monitor": 1194
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 7,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1377,
+          "repeat": 355,
+          "consult": 68
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 7,
+      "sessions": 558,
+      "repeat_sessions": 80,
+      "successful_measurements": 998,
+      "degraded_measurements": 71,
+      "failed_measurements": 47,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 6.565217391304348,
+        "missed_events": 1,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1431,
+          "repeat": 250,
+          "consult": 119
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 5.444444444444445,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 550,
+          "monitor": 1250
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 7,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1377,
+          "repeat": 355,
+          "consult": 68
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 7,
+      "sessions": 568,
+      "repeat_sessions": 85,
+      "successful_measurements": 1012,
+      "degraded_measurements": 73,
+      "failed_measurements": 51,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 6.818181818181818,
+        "missed_events": 2,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1437,
+          "repeat": 255,
+          "consult": 108
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.7407407407407405,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 569,
+          "monitor": 1231
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 7,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1377,
+          "repeat": 355,
+          "consult": 68
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 7,
+      "sessions": 578,
+      "repeat_sessions": 87,
+      "successful_measurements": 1028,
+      "degraded_measurements": 75,
+      "failed_measurements": 53,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 6.409090909090909,
+        "missed_events": 2,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1426,
+          "repeat": 258,
+          "consult": 116
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.333333333333333,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 582,
+          "monitor": 1218
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 7,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1377,
+          "repeat": 355,
+          "consult": 68
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 7,
+      "sessions": 589,
+      "repeat_sessions": 86,
+      "successful_measurements": 1052,
+      "degraded_measurements": 73,
+      "failed_measurements": 53,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 6.181818181818182,
+        "missed_events": 2,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1424,
+          "repeat": 260,
+          "consult": 116
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 3.740740740740741,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 597,
+          "monitor": 1203
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 7,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1377,
+          "repeat": 355,
+          "consult": 68
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 7,
+      "sessions": 602,
+      "repeat_sessions": 88,
+      "successful_measurements": 1076,
+      "degraded_measurements": 76,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.545454545454546,
+        "missed_events": 2,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1409,
+          "repeat": 261,
+          "consult": 130
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 3.5555555555555554,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 606,
+          "monitor": 1194
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 14,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1375,
+          "repeat": 313,
+          "consult": 112
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 14,
+      "sessions": 558,
+      "repeat_sessions": 80,
+      "successful_measurements": 998,
+      "degraded_measurements": 71,
+      "failed_measurements": 47,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 6.565217391304348,
+        "missed_events": 1,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1431,
+          "repeat": 250,
+          "consult": 119
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 5.444444444444445,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 550,
+          "monitor": 1250
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 14,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1375,
+          "repeat": 313,
+          "consult": 112
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 14,
+      "sessions": 568,
+      "repeat_sessions": 85,
+      "successful_measurements": 1012,
+      "degraded_measurements": 73,
+      "failed_measurements": 51,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 6.818181818181818,
+        "missed_events": 2,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1437,
+          "repeat": 255,
+          "consult": 108
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.7407407407407405,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 569,
+          "monitor": 1231
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 14,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1375,
+          "repeat": 313,
+          "consult": 112
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 14,
+      "sessions": 578,
+      "repeat_sessions": 87,
+      "successful_measurements": 1028,
+      "degraded_measurements": 75,
+      "failed_measurements": 53,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 6.409090909090909,
+        "missed_events": 2,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1426,
+          "repeat": 258,
+          "consult": 116
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.333333333333333,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 582,
+          "monitor": 1218
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 14,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1375,
+          "repeat": 313,
+          "consult": 112
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 14,
+      "sessions": 589,
+      "repeat_sessions": 86,
+      "successful_measurements": 1052,
+      "degraded_measurements": 73,
+      "failed_measurements": 53,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 6.181818181818182,
+        "missed_events": 2,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1424,
+          "repeat": 260,
+          "consult": 116
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 3.740740740740741,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 597,
+          "monitor": 1203
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 14,
+      "sessions": 358,
+      "repeat_sessions": 58,
+      "successful_measurements": 641,
+      "degraded_measurements": 40,
+      "failed_measurements": 35,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.391304347826087,
+        "missed_events": 1,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1375,
+          "repeat": 313,
+          "consult": 112
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 4.555555555555555,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 647,
+          "monitor": 1153
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 14,
+      "sessions": 602,
+      "repeat_sessions": 88,
+      "successful_measurements": 1076,
+      "degraded_measurements": 76,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.545454545454546,
+        "missed_events": 2,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1409,
+          "repeat": 261,
+          "consult": 130
+        }
+      },
+      "venous": {
+        "detected_events": 27,
+        "mean_detection_delay": 3.5555555555555554,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "repeat": 606,
+          "monitor": 1194
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 4,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1448,
+          "repeat": 315,
+          "consult": 37
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 4,
+      "sessions": 475,
+      "repeat_sessions": 66,
+      "successful_measurements": 858,
+      "degraded_measurements": 48,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 21,
+        "mean_detection_delay": 6.714285714285714,
+        "missed_events": 3,
+        "false_escalation_days": 10,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1516,
+          "repeat": 198,
+          "consult": 86
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.2,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1511,
+          "repeat": 289
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 4,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1448,
+          "repeat": 315,
+          "consult": 37
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 4,
+      "sessions": 484,
+      "repeat_sessions": 69,
+      "successful_measurements": 874,
+      "degraded_measurements": 50,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 21,
+        "mean_detection_delay": 6.476190476190476,
+        "missed_events": 3,
+        "false_escalation_days": 10,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1511,
+          "repeat": 203,
+          "consult": 86
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 3.5,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1504,
+          "repeat": 296
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 4,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1448,
+          "repeat": 315,
+          "consult": 37
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 4,
+      "sessions": 490,
+      "repeat_sessions": 69,
+      "successful_measurements": 885,
+      "degraded_measurements": 51,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 5.65,
+        "missed_events": 4,
+        "false_escalation_days": 10,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1504,
+          "repeat": 210,
+          "consult": 86
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 3.1,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1497,
+          "repeat": 303
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 4,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1448,
+          "repeat": 315,
+          "consult": 37
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 4,
+      "sessions": 491,
+      "repeat_sessions": 69,
+      "successful_measurements": 887,
+      "degraded_measurements": 51,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 5.65,
+        "missed_events": 4,
+        "false_escalation_days": 10,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1504,
+          "repeat": 210,
+          "consult": 86
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 3.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1499,
+          "repeat": 301
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 4,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 2,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1448,
+          "repeat": 315,
+          "consult": 37
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 4,
+      "sessions": 498,
+      "repeat_sessions": 70,
+      "successful_measurements": 899,
+      "degraded_measurements": 51,
+      "failed_measurements": 46,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 5.2,
+        "missed_events": 4,
+        "false_escalation_days": 10,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1499,
+          "repeat": 214,
+          "consult": 87
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 2.7,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1490,
+          "repeat": 310
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 7,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 3,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1396,
+          "repeat": 359,
+          "consult": 45
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 7,
+      "sessions": 475,
+      "repeat_sessions": 66,
+      "successful_measurements": 858,
+      "degraded_measurements": 48,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 21,
+        "mean_detection_delay": 6.714285714285714,
+        "missed_events": 3,
+        "false_escalation_days": 12,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1516,
+          "repeat": 193,
+          "consult": 91
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.2,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1511,
+          "repeat": 289
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 7,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 3,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1396,
+          "repeat": 359,
+          "consult": 45
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 7,
+      "sessions": 484,
+      "repeat_sessions": 69,
+      "successful_measurements": 874,
+      "degraded_measurements": 50,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 21,
+        "mean_detection_delay": 6.476190476190476,
+        "missed_events": 3,
+        "false_escalation_days": 12,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1511,
+          "repeat": 198,
+          "consult": 91
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 3.5,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1504,
+          "repeat": 296
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 7,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 3,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1396,
+          "repeat": 359,
+          "consult": 45
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 7,
+      "sessions": 490,
+      "repeat_sessions": 69,
+      "successful_measurements": 885,
+      "degraded_measurements": 51,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 5.65,
+        "missed_events": 4,
+        "false_escalation_days": 12,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1504,
+          "repeat": 205,
+          "consult": 91
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 3.1,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1497,
+          "repeat": 303
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 7,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 3,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1396,
+          "repeat": 359,
+          "consult": 45
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 7,
+      "sessions": 491,
+      "repeat_sessions": 69,
+      "successful_measurements": 887,
+      "degraded_measurements": 51,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 5.65,
+        "missed_events": 4,
+        "false_escalation_days": 12,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1504,
+          "repeat": 205,
+          "consult": 91
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 3.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1499,
+          "repeat": 301
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 7,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 3,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1396,
+          "repeat": 359,
+          "consult": 45
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 7,
+      "sessions": 498,
+      "repeat_sessions": 70,
+      "successful_measurements": 899,
+      "degraded_measurements": 51,
+      "failed_measurements": 46,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 5.2,
+        "missed_events": 4,
+        "false_escalation_days": 12,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1499,
+          "repeat": 208,
+          "consult": 93
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 2.7,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1490,
+          "repeat": 310
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 14,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 6,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1392,
+          "repeat": 334,
+          "consult": 74
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 14,
+      "sessions": 475,
+      "repeat_sessions": 66,
+      "successful_measurements": 858,
+      "degraded_measurements": 48,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 21,
+        "mean_detection_delay": 6.714285714285714,
+        "missed_events": 3,
+        "false_escalation_days": 12,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1516,
+          "repeat": 193,
+          "consult": 91
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.2,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1511,
+          "repeat": 289
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 14,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 6,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1392,
+          "repeat": 334,
+          "consult": 74
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 14,
+      "sessions": 484,
+      "repeat_sessions": 69,
+      "successful_measurements": 874,
+      "degraded_measurements": 50,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 21,
+        "mean_detection_delay": 6.476190476190476,
+        "missed_events": 3,
+        "false_escalation_days": 12,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1511,
+          "repeat": 198,
+          "consult": 91
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 3.5,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1504,
+          "repeat": 296
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 14,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 6,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1392,
+          "repeat": 334,
+          "consult": 74
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 14,
+      "sessions": 490,
+      "repeat_sessions": 69,
+      "successful_measurements": 885,
+      "degraded_measurements": 51,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 5.65,
+        "missed_events": 4,
+        "false_escalation_days": 12,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1504,
+          "repeat": 205,
+          "consult": 91
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 3.1,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1497,
+          "repeat": 303
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 14,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 6,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1392,
+          "repeat": 334,
+          "consult": 74
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 14,
+      "sessions": 491,
+      "repeat_sessions": 69,
+      "successful_measurements": 887,
+      "degraded_measurements": 51,
+      "failed_measurements": 44,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 5.65,
+        "missed_events": 4,
+        "false_escalation_days": 12,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1504,
+          "repeat": 205,
+          "consult": 91
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 3.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1499,
+          "repeat": 301
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 14,
+      "sessions": 346,
+      "repeat_sessions": 46,
+      "successful_measurements": 631,
+      "degraded_measurements": 30,
+      "failed_measurements": 31,
+      "sans": {
+        "detected_events": 23,
+        "mean_detection_delay": 7.695652173913044,
+        "missed_events": 1,
+        "false_escalation_days": 6,
+        "falsely_escalated_astronauts": 1,
+        "tier_distribution": {
+          "monitor": 1392,
+          "repeat": 334,
+          "consult": 74
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 4.3,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1427,
+          "repeat": 373
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 14,
+      "sessions": 498,
+      "repeat_sessions": 70,
+      "successful_measurements": 899,
+      "degraded_measurements": 51,
+      "failed_measurements": 46,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 5.2,
+        "missed_events": 4,
+        "false_escalation_days": 12,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1499,
+          "repeat": 208,
+          "consult": 93
+        }
+      },
+      "venous": {
+        "detected_events": 10,
+        "mean_detection_delay": 2.7,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1490,
+          "repeat": 310
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 4,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 7,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1443,
+          "repeat": 306,
+          "consult": 51
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 4,
+      "sessions": 497,
+      "repeat_sessions": 82,
+      "successful_measurements": 889,
+      "degraded_measurements": 53,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 16,
+        "mean_detection_delay": 6.3125,
+        "missed_events": 4,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1515,
+          "repeat": 199,
+          "consult": 86
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.636363636363637,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1372,
+          "repeat": 428
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 4,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 7,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1443,
+          "repeat": 306,
+          "consult": 51
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 4,
+      "sessions": 502,
+      "repeat_sessions": 83,
+      "successful_measurements": 898,
+      "degraded_measurements": 54,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 16,
+        "mean_detection_delay": 6.25,
+        "missed_events": 4,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1514,
+          "repeat": 200,
+          "consult": 86
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.409090909090909,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1365,
+          "repeat": 435
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 4,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 7,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1443,
+          "repeat": 306,
+          "consult": 51
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 4,
+      "sessions": 511,
+      "repeat_sessions": 84,
+      "successful_measurements": 915,
+      "degraded_measurements": 55,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 17,
+        "mean_detection_delay": 6.176470588235294,
+        "missed_events": 3,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1503,
+          "repeat": 200,
+          "consult": 97
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.318181818181818,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1355,
+          "repeat": 445
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 4,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 7,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1443,
+          "repeat": 306,
+          "consult": 51
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 4,
+      "sessions": 520,
+      "repeat_sessions": 87,
+      "successful_measurements": 931,
+      "degraded_measurements": 56,
+      "failed_measurements": 53,
+      "sans": {
+        "detected_events": 17,
+        "mean_detection_delay": 5.529411764705882,
+        "missed_events": 3,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1492,
+          "repeat": 211,
+          "consult": 97
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.590909090909091,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1361,
+          "repeat": 439
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 4,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 7,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1443,
+          "repeat": 306,
+          "consult": 51
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 4,
+      "sessions": 527,
+      "repeat_sessions": 88,
+      "successful_measurements": 945,
+      "degraded_measurements": 55,
+      "failed_measurements": 54,
+      "sans": {
+        "detected_events": 17,
+        "mean_detection_delay": 6.411764705882353,
+        "missed_events": 3,
+        "false_escalation_days": 6,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1498,
+          "repeat": 203,
+          "consult": 99
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.5,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1355,
+          "repeat": 445
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 7,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 9,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1401,
+          "repeat": 335,
+          "consult": 64
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 7,
+      "sessions": 497,
+      "repeat_sessions": 82,
+      "successful_measurements": 889,
+      "degraded_measurements": 53,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 16,
+        "mean_detection_delay": 6.3125,
+        "missed_events": 4,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1515,
+          "repeat": 195,
+          "consult": 90
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.636363636363637,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1372,
+          "repeat": 428
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 7,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 9,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1401,
+          "repeat": 335,
+          "consult": 64
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 7,
+      "sessions": 502,
+      "repeat_sessions": 83,
+      "successful_measurements": 898,
+      "degraded_measurements": 54,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 16,
+        "mean_detection_delay": 6.25,
+        "missed_events": 4,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1514,
+          "repeat": 196,
+          "consult": 90
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.409090909090909,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1365,
+          "repeat": 435
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 7,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 9,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1401,
+          "repeat": 335,
+          "consult": 64
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 7,
+      "sessions": 511,
+      "repeat_sessions": 84,
+      "successful_measurements": 915,
+      "degraded_measurements": 55,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 17,
+        "mean_detection_delay": 6.176470588235294,
+        "missed_events": 3,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1503,
+          "repeat": 196,
+          "consult": 101
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.318181818181818,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1355,
+          "repeat": 445
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 7,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 9,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1401,
+          "repeat": 335,
+          "consult": 64
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 7,
+      "sessions": 520,
+      "repeat_sessions": 87,
+      "successful_measurements": 931,
+      "degraded_measurements": 56,
+      "failed_measurements": 53,
+      "sans": {
+        "detected_events": 17,
+        "mean_detection_delay": 5.529411764705882,
+        "missed_events": 3,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1492,
+          "repeat": 207,
+          "consult": 101
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.590909090909091,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1361,
+          "repeat": 439
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 7,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 9,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1401,
+          "repeat": 335,
+          "consult": 64
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 7,
+      "sessions": 527,
+      "repeat_sessions": 88,
+      "successful_measurements": 945,
+      "degraded_measurements": 55,
+      "failed_measurements": 54,
+      "sans": {
+        "detected_events": 17,
+        "mean_detection_delay": 6.411764705882353,
+        "missed_events": 3,
+        "false_escalation_days": 8,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1498,
+          "repeat": 197,
+          "consult": 105
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.5,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1355,
+          "repeat": 445
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 14,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 17,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1399,
+          "repeat": 292,
+          "consult": 109
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.5,
+      "half_life_days": 14,
+      "sessions": 497,
+      "repeat_sessions": 82,
+      "successful_measurements": 889,
+      "degraded_measurements": 53,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 16,
+        "mean_detection_delay": 6.3125,
+        "missed_events": 4,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1515,
+          "repeat": 195,
+          "consult": 90
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.636363636363637,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1372,
+          "repeat": 428
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 14,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 17,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1399,
+          "repeat": 292,
+          "consult": 109
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.6,
+      "half_life_days": 14,
+      "sessions": 502,
+      "repeat_sessions": 83,
+      "successful_measurements": 898,
+      "degraded_measurements": 54,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 16,
+        "mean_detection_delay": 6.25,
+        "missed_events": 4,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1514,
+          "repeat": 196,
+          "consult": 90
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.409090909090909,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1365,
+          "repeat": 435
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 14,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 17,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1399,
+          "repeat": 292,
+          "consult": 109
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.7,
+      "half_life_days": 14,
+      "sessions": 511,
+      "repeat_sessions": 84,
+      "successful_measurements": 915,
+      "degraded_measurements": 55,
+      "failed_measurements": 52,
+      "sans": {
+        "detected_events": 17,
+        "mean_detection_delay": 6.176470588235294,
+        "missed_events": 3,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1503,
+          "repeat": 196,
+          "consult": 101
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.318181818181818,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1355,
+          "repeat": 445
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 14,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 17,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1399,
+          "repeat": 292,
+          "consult": 109
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.8,
+      "half_life_days": 14,
+      "sessions": 520,
+      "repeat_sessions": 87,
+      "successful_measurements": 931,
+      "degraded_measurements": 56,
+      "failed_measurements": 53,
+      "sans": {
+        "detected_events": 17,
+        "mean_detection_delay": 5.529411764705882,
+        "missed_events": 3,
+        "false_escalation_days": 5,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1492,
+          "repeat": 207,
+          "consult": 101
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.590909090909091,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1361,
+          "repeat": 439
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "fixed",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 14,
+      "sessions": 364,
+      "repeat_sessions": 64,
+      "successful_measurements": 651,
+      "degraded_measurements": 39,
+      "failed_measurements": 38,
+      "sans": {
+        "detected_events": 20,
+        "mean_detection_delay": 7.1,
+        "missed_events": 0,
+        "false_escalation_days": 17,
+        "falsely_escalated_astronauts": 4,
+        "tier_distribution": {
+          "monitor": 1399,
+          "repeat": 292,
+          "consult": 109
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.2272727272727275,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1294,
+          "repeat": 506
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "policy": "adaptive_replacement",
+      "days": 30,
+      "crew_size": 60,
+      "trigger_sensitivity": 0.9,
+      "half_life_days": 14,
+      "sessions": 527,
+      "repeat_sessions": 88,
+      "successful_measurements": 945,
+      "degraded_measurements": 55,
+      "failed_measurements": 54,
+      "sans": {
+        "detected_events": 17,
+        "mean_detection_delay": 6.411764705882353,
+        "missed_events": 3,
+        "false_escalation_days": 8,
+        "falsely_escalated_astronauts": 3,
+        "tier_distribution": {
+          "monitor": 1498,
+          "repeat": 197,
+          "consult": 105
+        }
+      },
+      "venous": {
+        "detected_events": 22,
+        "mean_detection_delay": 5.5,
+        "missed_events": 0,
+        "false_escalation_days": 0,
+        "falsely_escalated_astronauts": 0,
+        "tier_distribution": {
+          "monitor": 1355,
+          "repeat": 445
+        }
+      }
+    }
+  ],
+  "metric_definitions": {
+    "sessions": "One shared session regardless of two attempted measurements",
+    "detection": "Repeat or higher from physiological evidence acquired on/after onset; technical quality Repeat excluded",
+    "delay": "Mean among detected events only; missed count always reported alongside",
+    "false_escalations": "Healthy outcome reaching Consult/Urgent, counted per assessment day per mission convention; unique astronauts also reported"
+  },
+  "limitations": [
+    "Sequential evidence aggregation was not specified. Engineering fixtures use only the latest usable measurement's decayed log LR, never multiply correlated observations; this preserves the historical venous restriction.",
+    "Readable degraded evidence at 0.2 log weight conflicts with the historical exclusion rule. Relayed shared-session failures do not specify degraded/failed split; engineering fixtures retain the historically approved 50/50 split and +0.4mm off-axis bias, pending confirmation for jugular quality.",
+    "Venous baseline distribution and measurement-noise distribution were not specified. Engineering fixtures use positive-truncated normal baseline and Gaussian proportional noise; neither is activated for experiments.",
+    "Adaptive required trigger evidence conditions and usable-recent-scan window were not fully specified. Fixtures interpret recent as the 3-day lookback and require an observable trigger for either outcome plus no usable shared session in that window.",
+    "Fixtures prioritize first scan, single next-day failed retry, Urgent, Repeat/Consult, maximum gap, trigger, routine deferral. Follow-up is measured from the last session to avoid daily resetting of due dates. Confirm this precedence and whether a failed retry can spawn another retry (fixtures say no).",
+    "Routine deferral in fixtures requires both Monitor tiers, usable measurements, and no recent trigger. An unresolved or poor assessment prevents deferral.",
+    "Area flag implies at least Repeat (Tier 2), but no LR is inferred from area. No red flags are randomly invented.",
+    "No automatic Urgent clearance is specified; Urgent remains sticky. Consult persists across technically inadequate scans, including readable degraded acquisitions; a lower quality-weighted estimate alone cannot clear a serious tier. Successful newer evidence can change Consult per the monitoring model.",
+    "Synthetic high/low susceptibility is hidden ground truth. Fixtures supply the associated starting prior as an explicitly synthetic preflight input; a real observable prior-assignment protocol still needs confirmation."
+  ],
+  "crossover": "No validated crossover claim: model and precedence remain pending independent confirmation. Raw paired differences are available for engineering inspection."
+}

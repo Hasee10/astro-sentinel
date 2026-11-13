@@ -11,13 +11,14 @@ export default function CohortBrowser({
   astronautId,
   onSelect,
   onOpenResearch,
+  engineeringFixture = false,
 }) {
   const [query, setQuery] = useState("");
   const [outcome, setOutcome] = useState("sans");
   const [tier, setTier] = useState("all");
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(null);
   const [open, setOpen] = useState(false);
-  const { ref, size } = usePageSize(57);
+  const { ref, size } = usePageSize(72, 0, 8);
   const ids = indexed.ids.filter(
     (id) =>
       id.toLowerCase().includes(query.toLowerCase().trim()) &&
@@ -25,14 +26,14 @@ export default function CohortBrowser({
         recordThrough(indexed.crew.get(id), day)?.[outcome]?.tier === tier),
   );
   const count = Math.max(1, Math.ceil(ids.length / size));
-  const current = Math.min(page, count - 1);
+  const current = Math.min(page ?? Math.floor(Math.max(0, ids.indexOf(astronautId)) / size), count - 1);
   return (
     <aside className="pv-sidebar" aria-label="Synthetic cohort browser">
       <div className="pv-cohort-heading">
-        <h2>Research cohort</h2>
+        <h2>{engineeringFixture ? "Engineering cases" : "Research cohort"}</h2>
         <span className="pv-count">{indexed.ids.length}</span>
       </div>
-      <p className="pv-sidebar-note">Synthetic astronaut profiles</p>
+      <p className="pv-sidebar-note">{engineeringFixture ? "Synthetic acceptance profiles" : "Synthetic astronaut profiles"}</p>
       <button
         type="button"
         className="pv-mobile-browser"
@@ -106,6 +107,8 @@ export default function CohortBrowser({
                   onClick={() => {
                     onSelect(id);
                     setOpen(false);
+                    setQuery("");
+                    setPage(null);
                   }}
                 >
                   <span className="pv-avatar">
